@@ -95,3 +95,5 @@ node tests/evm_arbitrum.cjs --dir $runDir `
 ```
 
 Choose new output directories for every run and keep the same ledger across the batch. Successful receipts, public inputs, events, contract details, and Rust replay results are written below `results/local/`. Private shares, voter material, oracle plaintext, and proving work remain local and are not exported. Reproductions create new transactions and gas measurements; they do not reuse historical receipts.
+
+If a process stops after broadcasting transactions, keep the original protocol run, output directory, and spend ledger. Commit the runner fix first, then rerun the same command with `--resume`. Resume checks the original manifest and public inputs, polls unresolved receipts with bounded concurrency, matches the accepted on-chain ballot count to the manifest, and continues from that count using the existing poll. It refuses a completed run or mismatched inputs. Do not create a second poll to recover an interrupted batch.

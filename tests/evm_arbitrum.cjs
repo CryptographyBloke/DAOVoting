@@ -7,10 +7,11 @@ const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 function args(argv) {
-  const out = { broadcast: false, preflightOnly: false };
+  const out = { broadcast: false, preflightOnly: false, resume: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--broadcast') { out.broadcast = true; continue; }
     if (argv[i] === '--preflight-only') { out.preflightOnly = true; continue; }
+    if (argv[i] === '--resume') { out.resume = true; continue; }
     if (!argv[i].startsWith('--') || !argv[i + 1]) throw new Error('expected --name value');
     out[argv[i].slice(2)] = argv[++i];
   }
@@ -41,6 +42,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     if (!opt[k]) throw new Error(`missing --${k}`);
   }
   if (opt.broadcast === opt.preflightOnly) throw new Error('select exactly one of --preflight-only or --broadcast');
+  if (opt.resume && !opt.broadcast) throw new Error('--resume requires --broadcast');
   const ballotBatchSize = Number(opt['batch-size'] || 1);
   if (!Number.isInteger(ballotBatchSize) || ballotBatchSize < 1 || ballotBatchSize > 16) {
     throw new Error('--batch-size must be an integer from 1 to 16');
@@ -52,7 +54,9 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
   for (const p of [outDir, ledgerPath]) {
     if (!p.startsWith(localRoot)) throw new Error('experiment output and budget ledger must stay under results/local');
   }
-  if (fs.existsSync(outDir)) throw new Error('refusing to reuse an existing output directory');
+  if (opt.resume ? !fs.existsSync(outDir) : fs.existsSync(outDir)) {
+    throw new Error(opt.resume ? 'resume output directory does not exist' : 'refusing to reuse an existing output directory');
+  }
   if (!fs.existsSync(path.join(runDir, 'public', 'setup.bin')) || !fs.existsSync(path.join(runDir, 'public', 'ledger.bin'))) {
     throw new Error('run is missing public setup or admission ledger');
   }
@@ -71,6 +75,10 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
   const publicInputPath = path.join(publicDir, 'evm-public-input.json');
   const logsPath = path.join(publicDir, 'evm-chain-logs.json');
   const manifestPath = path.join(publicDir, 'manifest.json');
+  const existingManifest = opt.resume ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : null;
+  if (opt.resume && (!fs.existsSync(publicInputPath) || existingManifest.status !== 'BROADCAST_STARTED')) {
+    throw new Error('resume requires the original public input and an unfinished manifest');
+  }
   const ledgerLock = `${ledgerPath}.lock`;
   let lockFd;
   try {
@@ -85,8 +93,9 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     if (priorVerification.accept !== true || runManifest.oracle_agrees !== true) throw new Error('Rust verifier and oracle checks must both pass');
     const verify = runRust(path.resolve(opt.wod), ['verify', '--dir', runDir]);
     if (verify.accept !== true) throw new Error('independent Rust verifier rejected the run');
-    runRust(path.resolve(opt.wod), ['evm-export', '--dir', runDir, '--out', publicInputPath]);
+    if (!opt.resume) runRust(path.resolve(opt.wod), ['evm-export', '--dir', runDir, '--out', publicInputPath]);
     const input = JSON.parse(fs.readFileSync(publicInputPath, 'utf8'));
+    const publicInputSha256 = sha256(fs.readFileSync(publicInputPath));
     const local = JSON.parse(fs.readFileSync(path.resolve(opt['local-summary']), 'utf8'));
     if (input.ballots.length !== Number(input.expectedBallots)) throw new Error('public ballot count mismatch');
 
@@ -165,15 +174,32 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const latestBlock = await provider.getBlock('latest');
     const gasPrice = BigInt(await provider.send('eth_gasPrice', []));
     const runId = path.basename(outDir);
-    const budgetOk = spent + reservedOthers + reserve <= cap;
-    const balanceOk = balance >= reservedOthers + reserve;
+    const ownReservations = ledger.reservations.filter(r => r.runId === runId);
+    if (opt.resume) {
+      const m = existingManifest;
+      if (ownReservations.length !== 1 || m.chain_id !== 421614 ||
+          m.wallet_address.toLowerCase() !== wallet.address.toLowerCase() ||
+          m.input_ballots !== Number(input.expectedBallots) || m.ballot_batch_size !== ballotBatchSize ||
+          m.protocol_run_source_commit !== protocolRunCommit || !m.verifier_address || !m.board_address ||
+          m.contract_source_sha256 !== sha256(source) ||
+          m.arkworks_verifying_key_sha256 !== sha256(Buffer.from(JSON.stringify(input.verifyingKey))) ||
+          (m.resume_input_sha256 && m.resume_input_sha256 !== publicInputSha256)) {
+        throw new Error('existing run identity does not match resume inputs or source');
+      }
+      const originalReserve = BigInt(m.preflight.two_x_reserve_wei);
+      if (BigInt(ownReservations[0].wei) !== originalReserve || originalReserve < reserve) {
+        throw new Error('existing run reservation is missing or below the current estimate');
+      }
+    }
+    const budgetOk = opt.resume ? spent + reservedOthers <= cap : spent + reservedOthers + reserve <= cap;
+    const balanceOk = opt.resume ? balance >= reservedOthers : balance >= reservedOthers + reserve;
     if (opt.broadcast && !budgetOk) throw new Error('estimated profile cost plus reserve exceeds remaining spending cap');
     if (opt.broadcast && !balanceOk) throw new Error('wallet balance is below estimated spending reserve');
-    if (opt.broadcast) {
+    if (opt.broadcast && !opt.resume) {
       ledger.reservations.push({ runId, wei: reserve.toString() });
       writeJson(ledgerPath, ledger);
     }
-    const manifest = {
+    const manifest = existingManifest || {
       schema: 'wod/arbitrum-sepolia-evidence/v1', network: 'Arbitrum Sepolia', chain_id: 421614,
       source_commit: head.stdout.trim(), source_dirty: false, created_utc: new Date().toISOString(),
       protocol_run_source_commit: protocolRunCommit, ballot_batch_size: ballotBatchSize,
@@ -205,7 +231,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       transactions: [], public_artifact_sha256: {}, status: opt.preflightOnly ?
         (budgetOk && balanceOk ? 'PREFLIGHT_PASS' : 'PREFLIGHT_BUDGET_EXCEEDED') : 'BROADCAST_STARTED'
     };
-    writeJson(manifestPath, manifest);
+    if (!opt.resume) writeJson(manifestPath, manifest);
     if (opt.preflightOnly) {
       console.log(JSON.stringify({ status: manifest.status, chainId: 421614, walletAddress: wallet.address,
         ballots: Number(input.expectedBallots), estimatedFeeEth: ethers.formatEther(rawEstimate),
@@ -218,48 +244,70 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
 
     let nonce = await provider.getTransactionCount(wallet.address, 'pending');
     const confirmedReceiptLogs = [];
-    async function settleBatch(pending) {
-      const settled = await Promise.all(pending.map(async item => {
-        let receipt;
-        try { receipt = await item.tx.wait(1); }
-        catch (e) { receipt = e.receipt; }
-        const rawReceipt = receipt ? await provider.send('eth_getTransactionReceipt', [item.entry.transaction_hash]).catch(() => null) : null;
-        return { item, receipt, rawReceipt };
-      }));
+    const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+    async function getReceiptWithRetry(entry, timeoutMs = 90000) {
+      const deadline = Date.now() + timeoutMs;
+      let delayMs = 250;
+      while (Date.now() < deadline) {
+        const raw = await provider.send('eth_getTransactionReceipt', [entry.transaction_hash]).catch(() => null);
+        if (raw) return raw;
+        await pause(delayMs);
+        delayMs = Math.min(2000, Math.ceil(delayMs * 1.5));
+      }
+      return null;
+    }
+    async function settleEntries(entries) {
+      const settled = new Array(entries.length);
+      let cursor = 0;
+      const worker = async () => {
+        while (cursor < entries.length) {
+          const index = cursor++;
+          settled[index] = { entry: entries[index], rawReceipt: await getReceiptWithRetry(entries[index]) };
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(4, entries.length) }, worker));
       const current = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
       let batchFeeWei = 0n;
       let failed = false;
+      const receipts = [];
       for (const result of settled) {
-        const { entry } = result.item;
-        const { receipt, rawReceipt } = result;
-        if (!receipt) {
+        const { entry, rawReceipt } = result;
+        if (!rawReceipt) {
           entry.status = 'RECEIPT_UNAVAILABLE';
           failed = true;
+          receipts.push(null);
           continue;
         }
-        const effectiveGasPrice = receipt.gasPrice ?? receipt.effectiveGasPrice ?? result.item.est.baseFee;
-        const feeWei = receipt.gasUsed * effectiveGasPrice;
-        batchFeeWei += feeWei;
-        entry.status = Number(receipt.status) === 1 ? 'CONFIRMED' : 'REVERTED';
-        entry.block_number = receipt.blockNumber; entry.gas_used = receipt.gasUsed.toString();
-        entry.effective_gas_price_wei = effectiveGasPrice.toString(); entry.fee_wei = feeWei.toString();
-        entry.rpc_receipt_fee_fields = {};
+        const status = Number(BigInt(rawReceipt.status));
+        const gasUsed = BigInt(rawReceipt.gasUsed);
+        const effectiveGasPrice = rawReceipt.effectiveGasPrice ? BigInt(rawReceipt.effectiveGasPrice) :
+          (rawReceipt.gasPrice ? BigInt(rawReceipt.gasPrice) : BigInt(entry.estimated_base_fee_wei));
+        const feeWei = gasUsed * effectiveGasPrice;
+        if (!['CONFIRMED', 'REVERTED'].includes(entry.status)) batchFeeWei += feeWei;
+        entry.status = status === 1 ? 'CONFIRMED' : 'REVERTED';
+        entry.block_number = Number(BigInt(rawReceipt.blockNumber));
+        entry.gas_used = gasUsed.toString(); entry.effective_gas_price_wei = effectiveGasPrice.toString();
+        entry.fee_wei = feeWei.toString(); entry.rpc_receipt_fee_fields = {};
         for (const field of ['l1Fee', 'l1GasUsed', 'l1GasPrice', 'l1BlockNumber', 'effectiveGasPrice']) {
-          if (rawReceipt && rawReceipt[field] != null) entry.rpc_receipt_fee_fields[field] = rawReceipt[field];
+          if (rawReceipt[field] != null) entry.rpc_receipt_fee_fields[field] = rawReceipt[field];
         }
-        confirmedReceiptLogs.push(...(receipt.logs || []).map(log => ({
-          address: log.address, topics: [...log.topics], data: log.data,
-          blockNumber: Number(log.blockNumber), transactionHash: log.transactionHash,
-          logIndex: Number(log.index ?? log.logIndex)
-        })));
-        if (receipt.contractAddress) entry.contract_address = receipt.contractAddress;
+        const logs = (rawReceipt.logs || []).map(log => ({ address: log.address, topics: [...log.topics], data: log.data,
+          blockNumber: Number(BigInt(log.blockNumber)), transactionHash: log.transactionHash,
+          logIndex: Number(BigInt(log.logIndex ?? log.index ?? 0)) }));
+        confirmedReceiptLogs.push(...logs);
+        if (rawReceipt.contractAddress) entry.contract_address = rawReceipt.contractAddress;
         if (entry.status !== 'CONFIRMED') failed = true;
+        receipts.push({ status, gasUsed, gasPrice: effectiveGasPrice,
+          blockNumber: entry.block_number, contractAddress: entry.contract_address || null, logs });
       }
       current.spentWei = (BigInt(current.spentWei) + batchFeeWei).toString();
       writeJson(ledgerPath, current);
       writeJson(manifestPath, manifest);
-      if (failed) throw new Error('one or more transactions in the confirmed batch failed');
-      return settled.map(result => result.receipt);
+      if (failed) throw new Error('one or more transactions lack successful receipts');
+      return receipts;
+    }
+    async function settleBatch(pending) {
+      return settleEntries(pending.map(item => item.entry));
     }
     async function send(kind, to, data, creation, preEstimate = null, waitForReceipt = true, gasPriceOverride = null) {
       stage = `broadcast ${kind}`;
@@ -291,21 +339,70 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       return (await settleBatch([pending]))[0];
     }
 
-    stage = 'deploy Groth16 verifier';
-    const vr = await send('verifier_deployment', null, verifierData, true, deployVerifier);
-    const verifierAddress = vr.contractAddress;
-    if (!verifierAddress) throw new Error('verifier deployment receipt has no address');
-    manifest.verifier_address = verifierAddress; writeJson(manifestPath, manifest);
-    stage = 'deploy admission board';
-    const boardData = (await boardFactory.getDeployTransaction(verifierAddress)).data;
-    const br = await send('board_deployment', null, boardData, true);
-    const boardAddress = br.contractAddress;
-    if (!boardAddress) throw new Error('board deployment receipt has no address');
-    manifest.board_address = boardAddress; writeJson(manifestPath, manifest);
-    const contract = new ethers.Contract(boardAddress, board.abi, wallet.connect(provider));
-    stage = 'register poll';
-    await send('poll_registration', boardAddress, registrationData, false);
-    for (let start = 0; start < input.ballots.length; start += ballotBatchSize) {
+    let verifierAddress, boardAddress, boardDeploymentBlock, startBallot = 0;
+    let contract, state;
+    if (opt.resume) {
+      stage = 'recover transaction receipts';
+      const unresolved = manifest.transactions.filter(t => !['CONFIRMED', 'REVERTED'].includes(t.status));
+      const ballotEntries = manifest.transactions.filter(t => t.kind === 'ballot_admission');
+      const checkTransaction = async entry => {
+        const raw = await provider.send('eth_getTransactionByHash', [entry.transaction_hash]).catch(() => null);
+        const ordinal = ballotEntries.indexOf(entry);
+        if (!raw || entry.kind !== 'ballot_admission' || ordinal < 0 ||
+            raw.from.toLowerCase() !== wallet.address.toLowerCase() ||
+            raw.to.toLowerCase() !== manifest.board_address.toLowerCase() ||
+            Number(BigInt(raw.nonce)) !== Number(entry.nonce) ||
+            raw.input.toLowerCase() !== ballotData[ordinal].toLowerCase()) {
+          throw new Error('unresolved transaction does not match the signed ballot manifest');
+        }
+      };
+      let checkCursor = 0;
+      await Promise.all(Array.from({ length: Math.min(4, unresolved.length) }, async () => {
+        while (checkCursor < unresolved.length) await checkTransaction(unresolved[checkCursor++]);
+      }));
+      if (unresolved.length) await settleEntries(unresolved);
+      const latestNonce = await provider.getTransactionCount(wallet.address, 'latest');
+      const pendingNonce = await provider.getTransactionCount(wallet.address, 'pending');
+      if (latestNonce !== pendingNonce) throw new Error('wallet has unrelated or unmined transactions; resume stopped safely');
+      nonce = latestNonce;
+      verifierAddress = manifest.verifier_address;
+      boardAddress = manifest.board_address;
+      const deployment = manifest.transactions.find(t => t.kind === 'board_deployment' && t.status === 'CONFIRMED');
+      if (!deployment || !Number.isInteger(deployment.block_number)) throw new Error('confirmed board deployment receipt is missing');
+      boardDeploymentBlock = deployment.block_number;
+      contract = new ethers.Contract(boardAddress, board.abi, wallet.connect(provider));
+      state = await contract.pollState(poll);
+      const confirmedBallots = manifest.transactions.filter(t => t.kind === 'ballot_admission' && t.status === 'CONFIRMED').length;
+      if (!state.registered || Number(state.expected) !== Number(input.expectedBallots) ||
+          Number(state.accepted) !== confirmedBallots || state.claimed && !state.isSealed ||
+          (state.isSealed && (confirmedBallots !== Number(input.expectedBallots) ||
+            state.commitment.toLowerCase() !== input.expectedSealedCommitment.toLowerCase()))) {
+        throw new Error('on-chain poll state does not match the verified transaction manifest');
+      }
+      startBallot = Number(state.accepted);
+      manifest.resume_input_sha256 = publicInputSha256;
+      manifest.resume_history = manifest.resume_history || [];
+      manifest.resume_history.push({ resumed_utc: new Date().toISOString(), runner_source_commit: head.stdout.trim(),
+        recovered_receipts: unresolved.length, accepted_ballots_at_resume: startBallot, next_nonce: nonce });
+      writeJson(manifestPath, manifest);
+    } else {
+      stage = 'deploy Groth16 verifier';
+      const vr = await send('verifier_deployment', null, verifierData, true, deployVerifier);
+      verifierAddress = vr.contractAddress;
+      if (!verifierAddress) throw new Error('verifier deployment receipt has no address');
+      manifest.verifier_address = verifierAddress; writeJson(manifestPath, manifest);
+      stage = 'deploy admission board';
+      const boardData = (await boardFactory.getDeployTransaction(verifierAddress)).data;
+      const br = await send('board_deployment', null, boardData, true);
+      boardAddress = br.contractAddress;
+      if (!boardAddress) throw new Error('board deployment receipt has no address');
+      boardDeploymentBlock = br.blockNumber;
+      manifest.board_address = boardAddress; writeJson(manifestPath, manifest);
+      contract = new ethers.Contract(boardAddress, board.abi, wallet.connect(provider));
+      stage = 'register poll';
+      await send('poll_registration', boardAddress, registrationData, false);
+    }
+    if (!state || !state.isSealed) for (let start = startBallot; start < input.ballots.length; start += ballotBatchSize) {
       const end = Math.min(start + ballotBatchSize, input.ballots.length);
       const dataBatch = ballotData.slice(start, end);
       stage = `estimate ballot batch ${start + 1}-${end}/${input.ballots.length}`;
@@ -325,20 +422,27 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       stage = `confirm ballot batch ${start + 1}-${end}/${input.ballots.length}`;
       await settleBatch(pending);
     }
-    stage = 'seal accepted board';
-    await send('board_sealing', boardAddress, sealData, false);
-    const state = await contract.pollState(poll);
+    state = await contract.pollState(poll);
+    if (!state.isSealed) {
+      stage = 'seal accepted board';
+      await send('board_sealing', boardAddress, sealData, false);
+      state = await contract.pollState(poll);
+    }
     if (!state.registered || !state.isSealed || Number(state.accepted) !== Number(input.expectedBallots) ||
         state.commitment.toLowerCase() !== input.expectedSealedCommitment.toLowerCase()) {
       throw new Error('on-chain sealed board does not match the Rust commitment');
     }
-    stage = 'publish winner-only decision';
-    await send('decision_claim', boardAddress, claimData, false);
+    if (!state.claimed) {
+      stage = 'publish winner-only decision';
+      await send('decision_claim', boardAddress, claimData, false);
+    }
     stage = 'public event replay';
     let rawLogs;
-    try { rawLogs = await provider.getLogs({ address: boardAddress, fromBlock: br.blockNumber, toBlock: 'latest' }); }
+    try { rawLogs = await provider.getLogs({ address: boardAddress, fromBlock: boardDeploymentBlock, toBlock: 'latest' }); }
     catch { rawLogs = []; }
     if (rawLogs.length !== Number(input.expectedBallots) + 3) {
+      confirmedReceiptLogs.length = 0;
+      await settleEntries(manifest.transactions.filter(t => t.status === 'CONFIRMED'));
       rawLogs = confirmedReceiptLogs.filter(log => log.address.toLowerCase() === boardAddress.toLowerCase());
       manifest.event_log_source = 'individual confirmed transaction receipts captured during submission';
     } else {
