@@ -44,7 +44,6 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
   }
   if (opt.broadcast === opt.preflightOnly) throw new Error('select exactly one of --preflight-only or --broadcast');
   if (opt.resume && !opt.broadcast) throw new Error('--resume requires --broadcast');
-  if (opt.execute && opt.resume) throw new Error('execution demonstrations require a fresh output; inspect any interrupted transaction journal before recovery');
   if (opt.execute && !opt['execution-summary']) throw new Error('--execute requires --execution-summary from passing local executor tests');
   const ballotBatchSize = Number(opt['batch-size'] || 1);
   if (!Number.isInteger(ballotBatchSize) || ballotBatchSize < 1 || ballotBatchSize > 16) {
@@ -114,7 +113,15 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
         !executionLocal.tests.sharedProductionPath || !executionLocal.tests.tamperedTranscript || !executionLocal.tests.incorrectDecisionClaim)) {
       throw new Error('execution requires n=8, an approving verified result and passing local executor tests');
     }
-    const authority = opt.execute ? ethers.Wallet.createRandom() : null;
+    const authority = opt.execute ? (opt.resume ? new ethers.Wallet(JSON.parse(fs.readFileSync(
+      path.join(outDir, 'private', 'verification-authority.json'), 'utf8')).private_key) : ethers.Wallet.createRandom()) : null;
+    if (opt.execute && opt.resume && (existingManifest.transactions.length !== 17 ||
+        existingManifest.transactions.some(t => t.status !== 'CONFIRMED') ||
+        existingManifest.execution_configuration?.verificationAuthority.toLowerCase() !== authority.address.toLowerCase() ||
+        ['execution-receipts.json', 'execution-verification.json', 'execution-attestation.json', 'execution-governance.json']
+          .some(name => fs.existsSync(path.join(publicDir, name))))) {
+      throw new Error('execution recovery requires exactly 17 confirmed setup/poll transactions, the original authority, and no prior execution artifacts');
+    }
 
     stage = 'Solidity compilation';
     const sourcePath = path.join(repo, 'contracts', 'WodAdmission.sol');
@@ -366,6 +373,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
 
     let verifierAddress, boardAddress, boardDeploymentBlock, startBallot = 0;
     let executionConfiguration;
+    if (opt.execute && opt.resume) executionConfiguration = existingManifest.execution_configuration;
     let contract, state;
     if (opt.resume) {
       stage = 'recover transaction receipts';
@@ -502,6 +510,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       for (const name of ['setup.bin', 'transcript.bin']) fs.copyFileSync(path.join(runDir, 'public', name), path.join(chainPublicDir, 'public', name));
       manifest.governance_execution = await executionModule.finishExecution({ provider, ethers,
         admission: boardAddress, pollId: input.pollId, fromBlock: boardDeploymentBlock,
+        transactionHashes: manifest.transactions.filter(t => ['poll_registration', 'ballot_admission', 'board_sealing', 'decision_claim'].includes(t.kind)).map(t => t.transaction_hash),
         runtimeHash: ethers.keccak256(await provider.getCode(boardAddress)), outDir: publicDir,
         wod: path.resolve(opt.wod), publicDir: chainPublicDir, setupHash: input.setupHash,
         sourceCommit: head.stdout.trim(), label: 'execution' }, executionConfiguration, authority, executionArtifacts, send);

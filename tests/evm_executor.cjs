@@ -35,18 +35,22 @@ function rust(wod, args) {
 
 // The caller provides a live authenticated RPC connection and pins the exact
 // deployed runtime hash. An offline receipt JSON is not a chain authenticator.
-async function collect(provider, ethers, admission, pollId, fromBlock, runtimeHash, destination) {
+async function collect(provider, ethers, admission, pollId, fromBlock, runtimeHash, destination, transactionHashes) {
   const chainId = Number(BigInt(await provider.send('eth_chainId', [])));
   if (chainId !== 421614) throw new Error('wrong chain ID');
   const pollTopic = ethers.zeroPadValue(ethers.toBeHex(pollId), 32);
-  const logs = await provider.getLogs({ address: admission, fromBlock, toBlock: 'latest', topics: [null, pollTopic] });
-  if (!logs.length) throw new Error('no live poll events');
-  const hashes = [...new Set(logs.map(log => log.transactionHash))];
+  // A confirmed submission journal avoids RPC eth_getLogs range limits. Every
+  // supplied hash is fetched again from the live RPC; Rust checks the complete
+  // registration/admission/seal/claim sequence and every ballot proof.
+  const logs = transactionHashes ? null : await provider.getLogs({ address: admission, fromBlock, toBlock: 'latest', topics: [null, pollTopic] });
+  const hashes = [...new Set(transactionHashes || logs.map(log => log.transactionHash))];
+  if (!hashes.length) throw new Error('no live poll receipts');
   const receipts = [];
   const blocks = new Map();
   for (const hash of hashes) {
     const receipt = await provider.send('eth_getTransactionReceipt', [hash]);
-    if (!receipt || BigInt(receipt.status) !== 1n || receipt.to.toLowerCase() !== admission.toLowerCase()) {
+    if (!receipt || BigInt(receipt.status) !== 1n || receipt.to.toLowerCase() !== admission.toLowerCase() ||
+        !receipt.logs.some(log => log.address.toLowerCase() === admission.toLowerCase() && log.topics[1]?.toLowerCase() === pollTopic.toLowerCase())) {
       throw new Error('missing or failed poll receipt');
     }
     const block = await provider.send('eth_getBlockByNumber', [receipt.blockNumber, false]);
@@ -74,9 +78,9 @@ async function collect(provider, ethers, admission, pollId, fromBlock, runtimeHa
 }
 
 async function verifyLive({ provider, ethers, admission, pollId, fromBlock, runtimeHash, outDir,
-  wod, publicDir, setupHash, sourceCommit, label }) {
+  wod, publicDir, setupHash, sourceCommit, label, transactionHashes }) {
   const receiptsFile = path.join(outDir, `${label}-receipts.json`);
-  const bundle = await collect(provider, ethers, admission, pollId, fromBlock, runtimeHash, receiptsFile);
+  const bundle = await collect(provider, ethers, admission, pollId, fromBlock, runtimeHash, receiptsFile, transactionHashes);
   const report = rust(wod, ['evm-verify-chain', '--dir', publicDir, '--receipts', receiptsFile,
     '--contract', admission, '--chain-id', '421614', '--setup-hash', setupHash, '--source-commit', sourceCommit]);
   const anchor = await provider.send('eth_getBlockByNumber', [bundle.anchor.number, false]);
@@ -267,6 +271,10 @@ async function localTest() {
     await expectRevert('wrongExecutorDomain', v, await authority.signTypedData({ ...attestation.domain, verifyingContract: targetAddress }, types, v));
     const goodReceiptFile = path.join(out, 'public', 'approval-receipts.json');
     const originalBundle = JSON.parse(fs.readFileSync(goodReceiptFile, 'utf8'));
+    const journalReport = await verifyLive({ ...yes.options, label: 'receipt-journal',
+      transactionHashes: originalBundle.receipts.map(r => r.transactionHash) });
+    if (!journalReport.accept || journalReport.transcript_hash !== v.transcriptHash) throw new Error('receipt journal replay differs');
+    tests.receiptJournalReplay = true;
     async function expectRustRejection(label, bundle, dir = yes.options.publicDir, setupHash = yes.input.setupHash) {
       const before = await target.value();
       const file = path.join(out, 'public', `${label}-receipts.json`); writeNew(file, bundle);
