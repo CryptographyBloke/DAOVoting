@@ -68,11 +68,21 @@ Before broadcasting, check RPC connectivity, chain ID, locally derived wallet ad
 
 Arbitrum incorporates L1 data-posting cost into its gas estimate. `NodeInterface.gasEstimateComponents()` reports `gasEstimate`, `gasEstimateForL1`, `baseFee`, and `l1BaseFeeEstimate`; do not add the L1 component twice. See [Arbitrum gas estimation](https://docs.arbitrum.io/arbitrum-essentials/how-to-estimate-gas) and the [NodeInterface reference](https://docs.arbitrum.io/arbitrum-essentials/nodeinterface/reference).
 
-The runner requires a clean committed tree, a fresh output path, passing local verification and oracle agreement, a spend ledger, and `--broadcast`. It checks the budget before sending the first transaction and records each receipt. For each voter count, generate a fresh protocol run and local EVM summary, then invoke:
+The runner requires a clean committed tree, a fresh output path, passing local verification and oracle agreement, and a spend ledger. For each voter count, generate a fresh protocol run and local EVM summary. First run the read-only estimate with its own output path:
+
+```powershell
+$preflightOut = Join-Path "results/local/$runId" 'preflight/n8'
+$ledger = Join-Path "results/local/$runId" 'spend-ledger.json'
+node tests/evm_arbitrum.cjs --dir $runDir `
+  --local-summary (Join-Path $evmOut 'public/evm-local-summary.json') `
+  --out-dir $preflightOut --budget-ledger $ledger --env-file (Join-Path $PWD '.env') `
+  --wod .\target\release\wod.exe --tools $evmTools --preflight-only
+```
+
+Review the estimate manifest and confirm it fits both the configured cap and wallet balance. The read-only mode does not reserve funds or send transactions. Only then use a fresh output path and pass `--broadcast`:
 
 ```powershell
 $chainOut = Join-Path "results/local/$runId" 'arbitrum-sepolia/n8'
-$ledger = Join-Path "results/local/$runId" 'spend-ledger.json'
 node tests/evm_arbitrum.cjs --dir $runDir `
   --local-summary (Join-Path $evmOut 'public/evm-local-summary.json') `
   --out-dir $chainOut --budget-ledger $ledger --env-file (Join-Path $PWD '.env') `

@@ -7,9 +7,10 @@ const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 function args(argv) {
-  const out = { broadcast: false };
+  const out = { broadcast: false, preflightOnly: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--broadcast') { out.broadcast = true; continue; }
+    if (argv[i] === '--preflight-only') { out.preflightOnly = true; continue; }
     if (!argv[i].startsWith('--') || !argv[i + 1]) throw new Error('expected --name value');
     out[argv[i].slice(2)] = argv[++i];
   }
@@ -39,7 +40,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
   for (const k of ['dir', 'out-dir', 'local-summary', 'wod', 'tools', 'budget-ledger']) {
     if (!opt[k]) throw new Error(`missing --${k}`);
   }
-  if (!opt.broadcast) throw new Error('refusing network transactions without --broadcast');
+  if (opt.broadcast === opt.preflightOnly) throw new Error('select exactly one of --preflight-only or --broadcast');
   const repo = path.resolve(__dirname, '..');
   const runDir = path.resolve(opt.dir), outDir = path.resolve(opt['out-dir']);
   const ledgerPath = path.resolve(opt['budget-ledger']);
@@ -147,7 +148,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const rawEstimate = deployVerifier.gas * deployVerifier.baseFee + deployBoard.gas * deployBoard.baseFee +
       (localOtherGas + BigInt(input.expectedBallots) * localBallotGas + callL1) * maxBaseFee;
     const reserve = rawEstimate * 2n;
-    lockFd = fs.openSync(ledgerLock, 'wx');
+    if (opt.broadcast) lockFd = fs.openSync(ledgerLock, 'wx');
     let ledger = fs.existsSync(ledgerPath) ? JSON.parse(fs.readFileSync(ledgerPath, 'utf8')) :
       { chainId: 421614, wallet: wallet.address, capWei: cap.toString(), spentWei: '0', reservations: [] };
     if (ledger.wallet.toLowerCase() !== wallet.address.toLowerCase() || ledger.chainId !== 421614 || BigInt(ledger.capWei) !== cap) {
@@ -155,12 +156,17 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     }
     const reservedOthers = ledger.reservations.reduce((sum, r) => sum + BigInt(r.wei), 0n);
     const spent = BigInt(ledger.spentWei);
-    if (spent + reservedOthers + reserve > cap) throw new Error('estimated profile cost plus reserve exceeds remaining spending cap');
     const latestBlock = await provider.getBlock('latest');
     const gasPrice = BigInt(await provider.send('eth_gasPrice', []));
     const runId = path.basename(outDir);
-    ledger.reservations.push({ runId, wei: reserve.toString() });
-    writeJson(ledgerPath, ledger);
+    const budgetOk = spent + reservedOthers + reserve <= cap;
+    const balanceOk = balance >= spent + reservedOthers + reserve;
+    if (opt.broadcast && !budgetOk) throw new Error('estimated profile cost plus reserve exceeds remaining spending cap');
+    if (opt.broadcast && !balanceOk) throw new Error('wallet balance is below estimated spending reserve');
+    if (opt.broadcast) {
+      ledger.reservations.push({ runId, wei: reserve.toString() });
+      writeJson(ledgerPath, ledger);
+    }
     const manifest = {
       schema: 'wod/arbitrum-sepolia-evidence/v1', network: 'Arbitrum Sepolia', chain_id: 421614,
       source_commit: head.stdout.trim(), source_dirty: false, created_utc: new Date().toISOString(),
@@ -185,12 +191,23 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
         l1_estimation_method: 'NodeInterface gasEstimateComponents for deployments; gasEstimateL1Component for calls; local Ganache receipt gas for call execution before deployment',
         local_call_gas_basis: 'maximum local gas among real Rust proof samples and measured registration/seal/claim receipts',
         ballots_preflighted_l1_samples: l1Samples.length,
-        expected_transactions: Number(input.expectedBallots) + 5
+        expected_transactions: Number(input.expectedBallots) + 5,
+        spending_cap_check: budgetOk ? 'PASS' : 'EXCEEDS_CAP',
+        balance_check: balanceOk ? 'PASS' : 'INSUFFICIENT_BALANCE'
       },
-      transactions: [], public_artifact_sha256: {}, status: 'PREFLIGHT_PASS_BROADCAST_STARTED'
+      transactions: [], public_artifact_sha256: {}, status: opt.preflightOnly ?
+        (budgetOk && balanceOk ? 'PREFLIGHT_PASS' : 'PREFLIGHT_BUDGET_EXCEEDED') : 'BROADCAST_STARTED'
     };
     writeJson(manifestPath, manifest);
-    if (balance < spent + reservedOthers + reserve) throw new Error('wallet balance is below estimated spending reserve');
+    if (opt.preflightOnly) {
+      console.log(JSON.stringify({ status: manifest.status, chainId: 421614, walletAddress: wallet.address,
+        ballots: Number(input.expectedBallots), estimatedFeeEth: ethers.formatEther(rawEstimate),
+        reserveEth: ethers.formatEther(reserve), testEthBalance: ethers.formatEther(balance),
+        configuredSpendCapEth: env.ARB_SEPOLIA_MAX_TOTAL_ETH, gasPriceGwei: ethers.formatUnits(gasPrice, 'gwei'),
+        expectedTransactions: Number(input.expectedBallots) + 5, manifest: manifestPath }, null, 2));
+      if (!budgetOk || !balanceOk) process.exitCode = 2;
+      return;
+    }
 
     let nonce = await provider.getTransactionCount(wallet.address, 'pending');
     const confirmedReceiptLogs = [];
