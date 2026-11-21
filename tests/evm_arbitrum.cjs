@@ -41,6 +41,10 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     if (!opt[k]) throw new Error(`missing --${k}`);
   }
   if (opt.broadcast === opt.preflightOnly) throw new Error('select exactly one of --preflight-only or --broadcast');
+  const ballotBatchSize = Number(opt['batch-size'] || 1);
+  if (!Number.isInteger(ballotBatchSize) || ballotBatchSize < 1 || ballotBatchSize > 16) {
+    throw new Error('--batch-size must be an integer from 1 to 16');
+  }
   const repo = path.resolve(__dirname, '..');
   const runDir = path.resolve(opt.dir), outDir = path.resolve(opt['out-dir']);
   const ledgerPath = path.resolve(opt['budget-ledger']);
@@ -75,6 +79,8 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const status = spawnSync('git', ['status', '--porcelain', '--untracked-files=all'], { encoding: 'utf8', cwd: repo });
     if (head.status !== 0 || status.status !== 0 || status.stdout.trim()) throw new Error('source must be committed and clean before publication measurements');
     const runManifest = JSON.parse(fs.readFileSync(path.join(runDir, 'public', 'manifest.json'), 'utf8'));
+    const protocolRunCommit = opt['protocol-run-commit'] || runManifest.source_commit || head.stdout.trim();
+    if (!/^[0-9a-f]{40}$/i.test(protocolRunCommit)) throw new Error('protocol run commit must be a full Git SHA');
     const priorVerification = JSON.parse(fs.readFileSync(path.join(runDir, 'public', 'verify.json'), 'utf8'));
     if (priorVerification.accept !== true || runManifest.oracle_agrees !== true) throw new Error('Rust verifier and oracle checks must both pass');
     const verify = runRust(path.resolve(opt.wod), ['verify', '--dir', runDir]);
@@ -170,6 +176,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const manifest = {
       schema: 'wod/arbitrum-sepolia-evidence/v1', network: 'Arbitrum Sepolia', chain_id: 421614,
       source_commit: head.stdout.trim(), source_dirty: false, created_utc: new Date().toISOString(),
+      protocol_run_source_commit: protocolRunCommit, ballot_batch_size: ballotBatchSize,
       machine: { os: `${os.type()} ${os.release()}`, cpu: os.cpus()[0]?.model || 'unknown', logical_processors: os.cpus().length },
       wallet_address: wallet.address, configured_spend_cap_eth: env.ARB_SEPOLIA_MAX_TOTAL_ETH,
       preflight_wallet_balance_eth: ethers.formatEther(balance),
@@ -211,11 +218,55 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
 
     let nonce = await provider.getTransactionCount(wallet.address, 'pending');
     const confirmedReceiptLogs = [];
-    async function send(kind, to, data, creation, preEstimate = null) {
+    async function settleBatch(pending) {
+      const settled = await Promise.all(pending.map(async item => {
+        let receipt;
+        try { receipt = await item.tx.wait(1); }
+        catch (e) { receipt = e.receipt; }
+        const rawReceipt = receipt ? await provider.send('eth_getTransactionReceipt', [item.entry.transaction_hash]).catch(() => null) : null;
+        return { item, receipt, rawReceipt };
+      }));
+      const current = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+      let batchFeeWei = 0n;
+      let failed = false;
+      for (const result of settled) {
+        const { entry } = result.item;
+        const { receipt, rawReceipt } = result;
+        if (!receipt) {
+          entry.status = 'RECEIPT_UNAVAILABLE';
+          failed = true;
+          continue;
+        }
+        const effectiveGasPrice = receipt.gasPrice ?? receipt.effectiveGasPrice ?? result.item.est.baseFee;
+        const feeWei = receipt.gasUsed * effectiveGasPrice;
+        batchFeeWei += feeWei;
+        entry.status = Number(receipt.status) === 1 ? 'CONFIRMED' : 'REVERTED';
+        entry.block_number = receipt.blockNumber; entry.gas_used = receipt.gasUsed.toString();
+        entry.effective_gas_price_wei = effectiveGasPrice.toString(); entry.fee_wei = feeWei.toString();
+        entry.rpc_receipt_fee_fields = {};
+        for (const field of ['l1Fee', 'l1GasUsed', 'l1GasPrice', 'l1BlockNumber', 'effectiveGasPrice']) {
+          if (rawReceipt && rawReceipt[field] != null) entry.rpc_receipt_fee_fields[field] = rawReceipt[field];
+        }
+        confirmedReceiptLogs.push(...(receipt.logs || []).map(log => ({
+          address: log.address, topics: [...log.topics], data: log.data,
+          blockNumber: Number(log.blockNumber), transactionHash: log.transactionHash,
+          logIndex: Number(log.index ?? log.logIndex)
+        })));
+        if (receipt.contractAddress) entry.contract_address = receipt.contractAddress;
+        if (entry.status !== 'CONFIRMED') failed = true;
+      }
+      current.spentWei = (BigInt(current.spentWei) + batchFeeWei).toString();
+      writeJson(ledgerPath, current);
+      writeJson(manifestPath, manifest);
+      if (failed) throw new Error('one or more transactions in the confirmed batch failed');
+      return settled.map(result => result.receipt);
+    }
+    async function send(kind, to, data, creation, preEstimate = null, waitForReceipt = true, gasPriceOverride = null) {
       stage = `broadcast ${kind}`;
       const est = preEstimate || await components(to || ethers.ZeroAddress, creation, data);
       const gasLimit = ceilMul(est.gas, 120n, 100n);
-      const maxFeePerGas = ceilMul(max(await provider.send('eth_gasPrice', []).then(BigInt), est.baseFee), 120n, 100n);
+      const gasPrice = gasPriceOverride ?? BigInt(await provider.send('eth_gasPrice', []));
+      const maxFeePerGas = ceilMul(max(gasPrice, est.baseFee), 120n, 100n);
       const estimatedCostReserve = gasLimit * maxFeePerGas;
       const currentLedger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
       const allReserved = currentLedger.reservations.reduce((s, r) => s + BigInt(r.wei), 0n);
@@ -235,32 +286,9 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       const tx = await provider.broadcastTransaction(rawTx);
       nonce++;
       entry.status = 'PENDING'; writeJson(manifestPath, manifest);
-      let receipt;
-      try { receipt = await tx.wait(1); }
-      catch (e) { receipt = e.receipt; }
-      if (!receipt) throw new Error(`transaction receipt unavailable for ${kind}`);
-      const effectiveGasPrice = receipt.gasPrice || receipt.effectiveGasPrice || est.baseFee;
-      const feeWei = receipt.gasUsed * effectiveGasPrice;
-      entry.status = Number(receipt.status) === 1 ? 'CONFIRMED' : 'REVERTED';
-      entry.block_number = receipt.blockNumber; entry.gas_used = receipt.gasUsed.toString();
-      entry.effective_gas_price_wei = effectiveGasPrice.toString(); entry.fee_wei = feeWei.toString();
-      const rawReceipt = await provider.send('eth_getTransactionReceipt', [hash]);
-      entry.rpc_receipt_fee_fields = {};
-      for (const field of ['l1Fee', 'l1GasUsed', 'l1GasPrice', 'l1BlockNumber', 'effectiveGasPrice']) {
-        if (rawReceipt && rawReceipt[field] != null) entry.rpc_receipt_fee_fields[field] = rawReceipt[field];
-      }
-      confirmedReceiptLogs.push(...(receipt.logs || []).map(log => ({
-        address: log.address, topics: [...log.topics], data: log.data,
-        blockNumber: Number(log.blockNumber), transactionHash: log.transactionHash,
-        logIndex: Number(log.index ?? log.logIndex)
-      })));
-      if (receipt.contractAddress) entry.contract_address = receipt.contractAddress;
-      const current = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
-      current.spentWei = (BigInt(current.spentWei) + feeWei).toString();
-      writeJson(ledgerPath, current);
-      writeJson(manifestPath, manifest);
-      if (entry.status !== 'CONFIRMED') throw new Error(`transaction reverted: ${kind}`);
-      return receipt;
+      const pending = { tx, entry, est };
+      if (!waitForReceipt) return pending;
+      return (await settleBatch([pending]))[0];
     }
 
     stage = 'deploy Groth16 verifier';
@@ -277,9 +305,25 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const contract = new ethers.Contract(boardAddress, board.abi, wallet.connect(provider));
     stage = 'register poll';
     await send('poll_registration', boardAddress, registrationData, false);
-    for (let i = 0; i < input.ballots.length; i++) {
-      stage = `submit ballot ${i + 1}/${input.ballots.length}`;
-      await send('ballot_admission', boardAddress, ballotData[i], false);
+    for (let start = 0; start < input.ballots.length; start += ballotBatchSize) {
+      const end = Math.min(start + ballotBatchSize, input.ballots.length);
+      const dataBatch = ballotData.slice(start, end);
+      stage = `estimate ballot batch ${start + 1}-${end}/${input.ballots.length}`;
+      const estimates = await Promise.all(dataBatch.map(data => components(boardAddress, false, data)));
+      const batchGasPrice = BigInt(await provider.send('eth_gasPrice', []));
+      const pending = [];
+      try {
+        for (let offset = 0; offset < dataBatch.length; offset++) {
+          stage = `submit ballot ${start + offset + 1}/${input.ballots.length}`;
+          pending.push(await send('ballot_admission', boardAddress, dataBatch[offset], false,
+            estimates[offset], false, batchGasPrice));
+        }
+      } catch (e) {
+        if (pending.length) { try { await settleBatch(pending); } catch {} }
+        throw e;
+      }
+      stage = `confirm ballot batch ${start + 1}-${end}/${input.ballots.length}`;
+      await settleBatch(pending);
     }
     stage = 'seal accepted board';
     await send('board_sealing', boardAddress, sealData, false);

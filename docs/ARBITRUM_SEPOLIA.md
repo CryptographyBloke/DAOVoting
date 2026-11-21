@@ -52,6 +52,7 @@ Create a fresh n=8 local run and exercise the Solidity verifier and event replay
 
 ```powershell
 $commit = (git rev-parse --short HEAD).Trim()
+$protocolCommit = (git rev-parse HEAD).Trim()
 $runId = "$(Get-Date -Format 'yyyyMMdd-HHmmss')-$commit-evm"
 $experimentOut = Join-Path "results/local/$runId" 'experiment'
 $evmOut = Join-Path "results/local/$runId" 'evm-local'
@@ -76,17 +77,21 @@ $ledger = Join-Path "results/local/$runId" 'spend-ledger.json'
 node tests/evm_arbitrum.cjs --dir $runDir `
   --local-summary (Join-Path $evmOut 'public/evm-local-summary.json') `
   --out-dir $preflightOut --budget-ledger $ledger --env-file (Join-Path $PWD '.env') `
-  --wod .\target\release\wod.exe --tools $evmTools --preflight-only
+  --wod .\target\release\wod.exe --tools $evmTools --preflight-only `
+  --protocol-run-commit $protocolCommit
 ```
 
 Review the estimate manifest and confirm it fits both the configured cap and wallet balance. The read-only mode does not reserve funds or send transactions. Only then use a fresh output path and pass `--broadcast`:
+
+For large profiles, `--batch-size` accepts 1–16 ballots. The runner assigns sequential wallet nonces, submits each bounded group in order, and waits for every receipt before starting the next group. It stops after any failed receipt. Pass `--protocol-run-commit` when the Rust run was produced by a different source revision than the current runner.
 
 ```powershell
 $chainOut = Join-Path "results/local/$runId" 'arbitrum-sepolia/n8'
 node tests/evm_arbitrum.cjs --dir $runDir `
   --local-summary (Join-Path $evmOut 'public/evm-local-summary.json') `
   --out-dir $chainOut --budget-ledger $ledger --env-file (Join-Path $PWD '.env') `
-  --wod .\target\release\wod.exe --tools $evmTools --broadcast
+  --wod .\target\release\wod.exe --tools $evmTools --broadcast `
+  --batch-size 16 --protocol-run-commit $protocolCommit
 ```
 
 Choose new output directories for every run and keep the same ledger across the batch. Successful receipts, public inputs, events, contract details, and Rust replay results are written below `results/local/`. Private shares, voter material, oracle plaintext, and proving work remain local and are not exported. Reproductions create new transactions and gas measurements; they do not reuse historical receipts.
