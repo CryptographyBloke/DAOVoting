@@ -166,7 +166,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const gasPrice = BigInt(await provider.send('eth_gasPrice', []));
     const runId = path.basename(outDir);
     const budgetOk = spent + reservedOthers + reserve <= cap;
-    const balanceOk = balance >= spent + reservedOthers + reserve;
+    const balanceOk = balance >= reservedOthers + reserve;
     if (opt.broadcast && !budgetOk) throw new Error('estimated profile cost plus reserve exceeds remaining spending cap');
     if (opt.broadcast && !balanceOk) throw new Error('wallet balance is below estimated spending reserve');
     if (opt.broadcast) {
