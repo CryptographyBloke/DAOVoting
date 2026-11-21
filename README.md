@@ -43,6 +43,8 @@ Each invocation creates a unique run directory under `results/local/`, with a ma
 
 `contracts/WodAdmission.sol` and `tests/evm_local.cjs` support local EVM validation. `tests/evm_arbitrum.cjs` runs the separate Arbitrum Sepolia admission and receipt experiment. Setup, local validation, cost estimation, and the explicitly opt-in broadcast procedure are documented in [docs/ARBITRUM_SEPOLIA.md](docs/ARBITRUM_SEPOLIA.md).
 
+Verified Arbitrum Sepolia measurements and transaction links are summarized in [evidence/README.md](evidence/README.md). Re-running the experiment deploys a fresh poll; it does not reuse these transactions.
+
 Never commit `.env`, wallet credentials, trustee shares, voter secrets, oracle inputs, or generated local runs. The testnet runner supports a read-only `--preflight-only` estimate; it sends transactions only when explicitly invoked with `--broadcast` and checks the configured spending cap before the first transaction.
 
 ## Scope and limitations
