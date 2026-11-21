@@ -216,7 +216,11 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
         throw new Error('existing run identity does not match resume inputs or source');
       }
       const originalReserve = BigInt(m.preflight.two_x_reserve_wei);
-      if (BigInt(ownReservations[0].wei) !== originalReserve || originalReserve < reserve) {
+      // All 17 setup/poll receipts are already confirmed in execution recovery.
+      // Re-estimate only the remaining execution allowance; a small fee change
+      // must not require funding all completed transactions for a second time.
+      const requiredReserve = opt.execute ? executionEstimate * 2n : reserve;
+      if (BigInt(ownReservations[0].wei) !== originalReserve || originalReserve < requiredReserve) {
         throw new Error('existing run reservation is missing or below the current estimate');
       }
     }
@@ -537,6 +541,8 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       transactionCount: manifest.transactions.length, manifest: manifestPath }, null, 2));
   } catch (e) {
     console.error(`Stopped at ${stage}; sensitive configuration is suppressed. Error code: ${String(e.code || e.info?.error?.code || 'unavailable')}.`);
+    if (!e.code && !e.info) console.error(String(e.message || 'validation rejected')
+      .replace(/https?:\/\/\S+/g, '[URL]').replace(/\b(?:0x)?[0-9a-fA-F]{64}\b/g, '[hex]').slice(0, 240));
     process.exitCode = 1;
   } finally {
     if (lockFd !== undefined) { fs.closeSync(lockFd); try { fs.unlinkSync(ledgerLock); } catch {} }
