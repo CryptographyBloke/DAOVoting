@@ -1,0 +1,38 @@
+[package]
+name = "wod"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.104"
+ark-bn254 = "0.5"
+ark-crypto-primitives = { version = "0.5", features = ["sponge", "r1cs", "crh"] }
+ark-ec = { version = "0.5", features = ["parallel"] }
+ark-ed-on-bn254 = { version = "0.5", features = ["r1cs"] }
+ark-ff = { version = "0.5", features = ["parallel"] }
+ark-groth16 = { version = "0.5", features = ["parallel"] }
+ark-r1cs-std = "0.5"
+ark-relations = "0.5"
+ark-serialize = "0.5"
+ark-snark = "0.5"
+ark-std = { version = "0.5", features = ["parallel"] }
+bincode = "1"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+hex = "0.4.3"
+rand = "0.8"
+rand_chacha = "0.3"
+rayon = "1.12.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.10"
+sha3 = "0.10"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "net", "io-util", "macros", "sync", "time"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = false
+
+[profile.test]
+opt-level = 3

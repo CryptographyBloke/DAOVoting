@@ -1,0 +1,18 @@
+/target/
+# experiment run directories contain private test material (shares, votes)
+/results/local/
+/run*/
+*.zip
+*.zip.sha256
+
+# Local deployment credentials and wallet material must never enter Git.
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+wallet.json
+wallets/
+keystore/

@@ -50,4 +50,3 @@ Never commit `.env`, wallet credentials, trustee shares, voter secrets, oracle i
 The distributed workflow launches five trustee processes on one host. They load separate shares from a shared local directory; this does not provide OS or hardware isolation. Setup uses a test-only dealer and the TCP board is trusted. The Solidity adapter verifies ballots and admission, then records a decision claim; independent Rust replay verifies the tally transcript. The adapter does not run the encrypted tally on chain. This artifact is a research prototype, not a production governance deployment.
 
 The code is organized in `src/`, integration tests in `tests/`, and the admission adapter in `contracts/`. Dependencies are pinned in `Cargo.lock`.
-
