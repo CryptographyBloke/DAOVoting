@@ -162,6 +162,61 @@ pub fn registry(s: &Setup) -> Registry {
     Registry::new(&e)
 }
 
+/// Prepare a fresh node directory with an explicit file allowlist. The board
+/// receives no private material; a trustee receives exactly its own key file.
+/// Credentials, votes, oracle inputs and proving artifacts never enter a node.
+pub fn export_node(
+    source: &Paths,
+    destination: &Paths,
+    id: Option<usize>,
+) -> Result<serde_json::Value> {
+    let setup: Setup = read_bin(&source.public("setup.bin"))?;
+    let events: Vec<crate::ledger::Event> = read_bin(&source.public("ledger.bin"))?;
+    let events: Vec<_> = events
+        .into_iter()
+        .filter(|e| !matches!(e, crate::ledger::Event::Claim { .. }))
+        .collect();
+    let pvk = ark_groth16::prepare_verifying_key(&setup.vk);
+    let mut ledger = crate::ledger::Contract::new(&pvk, setup.root, setup.poll, setup.pk, setup.n);
+    ledger.replay(&events, true)?;
+    ensure!(
+        ledger.sealed.is_some(),
+        "cannot provision an unsealed board"
+    );
+    let key = if let Some(id) = id {
+        ensure!(id < setup.a, "trustee index out of range");
+        let key: TrusteeKey = read_bin(&source.private(&format!("trustee_{id}.bin")))?;
+        ensure!(
+            key.id == id && g() * key.share == setup.hi[id],
+            "trustee share identity mismatch"
+        );
+        ensure!(
+            SigningKey::from_bytes(&key.signing)
+                .verifying_key()
+                .to_bytes()
+                == setup.trustee_vks[id],
+            "trustee signing key identity mismatch"
+        );
+        Some(key)
+    } else {
+        None
+    };
+    destination.create()?;
+    write_bin(&destination.public("setup.bin"), &setup)?;
+    write_bin(&destination.public("ledger.bin"), &events)?;
+    if let Some(key) = key {
+        write_bin(
+            &destination.private(&format!("trustee_{}.bin", key.id)),
+            &key,
+        )?;
+    }
+    Ok(
+        serde_json::json!({"role":if id.is_some(){"trustee"}else{"board"},"trustee_id":id,
+        "setup_hash":hex::encode(setup.hash()),"sealed_commitment":hex::encode(ledger.sealed.unwrap()),
+        "private_file_count":usize::from(id.is_some()),"public_files":["setup.bin","ledger.bin"]}),
+    )
+}
+
 pub struct Paths {
     pub root: PathBuf,
 }

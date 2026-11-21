@@ -44,9 +44,22 @@ pub struct Report {
 }
 
 pub fn verify_dir(p: &Paths) -> Report {
+    let r = verify_with_events(p, None);
+    let _ = write_json(&p.public("verify.json"), &r);
+    r
+}
+
+/// Verify a chain-reconstructed board without reading a local ledger. The
+/// caller authenticates the receipt source (A6); all cryptographic checks here
+/// are identical to the ordinary public verifier.
+pub fn verify_events(p: &Paths, events: &[Event]) -> Report {
+    verify_with_events(p, Some(events))
+}
+
+fn verify_with_events(p: &Paths, events: Option<&[Event]>) -> Report {
     let t0 = Instant::now();
     let mut r = Report::default();
-    if let Err(e) = run(p, &mut r) {
+    if let Err(e) = run(p, &mut r, events) {
         r.error = Some(format!("{e:#}"));
     }
     r.accept = r.chain
@@ -59,13 +72,15 @@ pub fn verify_dir(p: &Paths) -> Report {
         && r.error.is_none();
     r.seconds_total = t0.elapsed().as_secs_f64();
     r.peak_rss_bytes = crate::experiment::peak_rss_bytes();
-    let _ = write_json(&p.public("verify.json"), &r);
     r
 }
 
-fn run(p: &Paths, r: &mut Report) -> Result<()> {
+fn run(p: &Paths, r: &mut Report, supplied: Option<&[Event]>) -> Result<()> {
     let setup: Setup = read_bin(&p.public("setup.bin"))?;
-    let events: Vec<Event> = read_bin(&p.public("ledger.bin"))?;
+    let events: Vec<Event> = match supplied {
+        Some(events) => events.to_vec(),
+        None => read_bin(&p.public("ledger.bin"))?,
+    };
 
     // Snapshot: the registry root is the root of the published (credential, weight) list.
     r.snapshot = setup.creds.len() == setup.n

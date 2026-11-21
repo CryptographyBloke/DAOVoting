@@ -18,8 +18,11 @@ Pipeline (one poll in DIR):
   wod trustee --dir DIR --id I --addr HOST:PORT [--rtt-ms R]   one trustee process
   wod verify  --dir DIR                              independent public verifier
   wod oracle  --dir DIR                              plaintext oracle (testing only)
+  wod export-node --dir DIR --out DIR [--id I]        isolated board/trustee provisioning
   wod evm-export --dir DIR --out FILE                export public Arkworks proofs for the EVM
   wod evm-check-events --dir DIR --logs FILE --contract ADDRESS  verify EVM events with Rust
+  wod evm-verify-chain --dir DIR --receipts FILE --contract ADDRESS --chain-id ID
+                      --setup-hash HASH --source-commit SHA   full receipt-derived public replay
 
 Experiments:
   wod gate       [--reps 20] [--out results]         single conditional gate
@@ -95,6 +98,7 @@ fn main() -> Result<()> {
                 a.num("--rtt-ms", 0)?,
             )?;
             eprintln!("trustee {} done: {}", st.id, serde_json::to_string(&st)?);
+            print(&serde_json::to_value(&st)?);
         }
         "verify" => {
             let r = verify::verify_dir(&a.dir()?);
@@ -107,6 +111,11 @@ fn main() -> Result<()> {
             let o = oracle::evaluate(&a.dir()?)?;
             println!("oracle bit = {} (W written to private/oracle.json)", o.bit);
         }
+        "export-node" => print(&wod::setup::export_node(
+            &a.dir()?,
+            &Paths::new(a.req("--out")?),
+            a.get("--id").map(|v| v.parse()).transpose()?,
+        )?),
         "gate" => gate(&a)?,
         "bench" => {
             let v = bench::run(a.num("--iters", 200)?, a.num("--groth-iters", 5)?);
@@ -129,6 +138,14 @@ fn main() -> Result<()> {
             &a.dir()?,
             &PathBuf::from(a.req("--logs")?),
             &a.req("--contract")?,
+        )?),
+        "evm-verify-chain" => print(&evm::verify_chain_receipts(
+            &a.dir()?,
+            &PathBuf::from(a.req("--receipts")?),
+            &a.req("--contract")?,
+            a.num("--chain-id", 421614)?,
+            &a.req("--setup-hash")?,
+            &a.req("--source-commit")?,
         )?),
         "experiment" => run_experiments(&a)?,
         _ => print!("{HELP}"),

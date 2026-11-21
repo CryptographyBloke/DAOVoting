@@ -13,6 +13,7 @@ use ark_ec::{AffineRepr, CurveGroup};
 use ark_ff::{BigInteger, PrimeField};
 use ark_groth16::Proof;
 use serde_json::{Value, json};
+use sha2::Sha256;
 use sha3::{Digest, Keccak256};
 use std::path::Path;
 
@@ -138,6 +139,7 @@ pub fn export_run(paths: &Paths, destination: &Path) -> Result<Value> {
         "pollId": setup.poll,
         "expectedBallots": setup.n,
         "threshold": setup.tau,
+        "setupHash": format!("0x{}", hex::encode(setup.hash())),
         "registryRoot": hex32(&setup.root)?,
         "committeeKey": [hex32(&setup.pk.into_affine().x)?, hex32(&setup.pk.into_affine().y)?],
         "verifyingKey": vk,
@@ -278,6 +280,33 @@ pub fn check_event_file(paths: &Paths, logs_path: &Path, contract: &str) -> Resu
     let logs = logs
         .as_array()
         .ok_or_else(|| anyhow!("expected an array of RPC log objects"))?;
+    let events = decode_events(&setup, logs, contract)?;
+    let pvk = ark_groth16::prepare_verifying_key(&setup.vk);
+    let mut replay = Contract::new(&pvk, setup.root, setup.poll, setup.pk, setup.n);
+    replay.replay(&events, true)?;
+    ensure!(
+        replay.accepted.len() == ballots.len(),
+        "reconstructed board length mismatch"
+    );
+    for (actual, expected) in replay.accepted.iter().zip(&ballots) {
+        ensure!(
+            bincode::serialize(actual)? == bincode::serialize(expected)?,
+            "on-chain ballot differs from Rust ballot"
+        );
+    }
+    ensure!(
+        bincode::serialize(&events)? == bincode::serialize(&expected_events)?,
+        "EVM events differ from replayed Rust ledger"
+    );
+    let expected_seal = replay
+        .sealed
+        .ok_or_else(|| anyhow!("original run has no sealed board"))?;
+    Ok(
+        json!({"event_replay":"PASS","proofs_verified":replay.accepted.len(),"public_inputs_per_ballot":37,"ciphertexts_reconstructed":replay.accepted.iter().map(|b| b.cts.len()).sum::<usize>(),"sealed_commitment":hex::encode(expected_seal),"matches_original_run":true}),
+    )
+}
+
+fn decode_events(setup: &Setup, logs: &[Value], contract: &str) -> Result<Vec<Event>> {
     let poll_registered_sig = "PollRegistered(uint64,uint256,uint256,uint256,uint64)";
     let accepted_sig =
         "BallotAccepted(uint64,uint64,uint256,uint256[32],uint256[2],uint256[2][2],uint256[2])";
@@ -379,37 +408,182 @@ pub fn check_event_file(paths: &Paths, logs_path: &Path, contract: &str) -> Resu
         "wrong accepted ballot count"
     );
 
-    let pvk = ark_groth16::prepare_verifying_key(&setup.vk);
-    let mut replay = Contract::new(&pvk, setup.root, setup.poll, setup.pk, setup.n);
-    replay.replay(&events, true)?;
-    ensure!(
-        replay.accepted.len() == ballots.len(),
-        "reconstructed board length mismatch"
-    );
-    for (actual, expected) in replay.accepted.iter().zip(&ballots) {
-        ensure!(
-            bincode::serialize(actual)? == bincode::serialize(expected)?,
-            "on-chain ballot differs from Rust ballot"
-        );
+    Ok(events)
+}
+
+fn rpc_u64(v: &Value) -> Result<u64> {
+    if let Some(n) = v.as_u64() {
+        return Ok(n);
     }
+    let s = v.as_str().ok_or_else(|| anyhow!("missing RPC integer"))?;
+    Ok(u64::from_str_radix(
+        s.strip_prefix("0x")
+            .ok_or_else(|| anyhow!("RPC integer is not hex"))?,
+        16,
+    )?)
+}
+
+/// Public replay from receipt-derived events. This entry point deliberately
+/// never opens ledger.bin. Canonical-chain authentication is performed by the
+/// live RPC collector, not by an offline JSON file or an Ethereum light client.
+pub fn verify_chain_receipts(
+    paths: &Paths,
+    bundle_path: &Path,
+    contract: &str,
+    chain_id: u64,
+    expected_setup: &str,
+    source_commit: &str,
+) -> Result<Value> {
     ensure!(
-        bincode::serialize(&events)? == bincode::serialize(&expected_events)?,
-        "EVM events differ from replayed Rust ledger"
+        source_commit.len() == 40 && source_commit.bytes().all(|b| b.is_ascii_hexdigit()),
+        "source revision must be a full commit SHA"
     );
-    let expected_seal = expected_events
-        .iter()
-        .find_map(|event| match event {
-            Event::Sealed { commitment, .. } => Some(*commitment),
-            _ => None,
-        })
-        .ok_or_else(|| anyhow!("original run has no sealed board"))?;
+    let setup: Setup = read_bin(&paths.public("setup.bin"))?;
+    let setup_hash = format!("0x{}", hex::encode(setup.hash()));
     ensure!(
-        replay.sealed == Some(expected_seal),
-        "EVM accepted-board commitment mismatch"
+        setup_hash.eq_ignore_ascii_case(expected_setup),
+        "official setup hash mismatch"
     );
-    Ok(
-        json!({"event_replay":"PASS","proofs_verified":replay.accepted.len(),"public_inputs_per_ballot":37,"ciphertexts_reconstructed":replay.accepted.iter().map(|b| b.cts.len()).sum::<usize>(),"sealed_commitment":hex::encode(expected_seal),"matches_original_run":true}),
-    )
+    let bytes = std::fs::read(bundle_path)?;
+    let bundle: Value = serde_json::from_slice(&bytes)?;
+    ensure!(
+        bundle["schema"] == "wod/chain-receipts/v1",
+        "unknown chain evidence schema"
+    );
+    ensure!(
+        bundle["chain_id"].as_u64() == Some(chain_id),
+        "chain ID mismatch"
+    );
+    ensure!(
+        bundle["contract"]
+            .as_str()
+            .is_some_and(|x| x.eq_ignore_ascii_case(contract)),
+        "admission contract mismatch"
+    );
+    let anchor = rpc_u64(&bundle["anchor"]["number"])?;
+    ensure!(
+        parse_hex(
+            bundle["anchor"]["hash"]
+                .as_str()
+                .ok_or_else(|| anyhow!("missing anchor hash"))?
+        )?
+        .len()
+            == 32,
+        "invalid anchor hash"
+    );
+    let receipts = bundle["receipts"]
+        .as_array()
+        .ok_or_else(|| anyhow!("missing confirmed receipts"))?;
+    ensure!(!receipts.is_empty(), "no confirmed receipts");
+    let blocks = bundle["blocks"]
+        .as_array()
+        .ok_or_else(|| anyhow!("missing canonical block identities"))?;
+    let mut seen = std::collections::HashSet::new();
+    let mut logs = Vec::new();
+    let mut previous = None;
+    for receipt in receipts {
+        ensure!(
+            rpc_u64(&receipt["status"])? == 1,
+            "failed transaction receipt"
+        );
+        let hash = receipt["transactionHash"]
+            .as_str()
+            .ok_or_else(|| anyhow!("receipt missing transaction hash"))?;
+        ensure!(
+            parse_hex(hash)?.len() == 32 && seen.insert(hash.to_ascii_lowercase()),
+            "malformed or duplicate transaction receipt"
+        );
+        ensure!(
+            receipt["to"]
+                .as_str()
+                .is_some_and(|x| x.eq_ignore_ascii_case(contract)),
+            "receipt targets another contract"
+        );
+        let block = rpc_u64(&receipt["blockNumber"])?;
+        ensure!(
+            block < anchor,
+            "receipt lacks a subsequent confirmation block"
+        );
+        let block_hash = receipt["blockHash"]
+            .as_str()
+            .ok_or_else(|| anyhow!("missing receipt block hash"))?;
+        ensure!(
+            blocks
+                .iter()
+                .any(|b| rpc_u64(&b["number"]).ok() == Some(block)
+                    && b["hash"].as_str() == Some(block_hash)),
+            "receipt does not match canonical block record"
+        );
+        let receipt_logs = receipt["logs"]
+            .as_array()
+            .ok_or_else(|| anyhow!("receipt missing logs"))?;
+        for log in receipt_logs {
+            if !log["address"]
+                .as_str()
+                .is_some_and(|a| a.eq_ignore_ascii_case(contract))
+            {
+                continue;
+            }
+            ensure!(
+                log["removed"].as_bool() != Some(true),
+                "removed chain event"
+            );
+            ensure!(
+                log["transactionHash"].as_str() == Some(hash)
+                    && log["blockHash"].as_str() == Some(block_hash),
+                "event receipt identity mismatch"
+            );
+            ensure!(
+                rpc_u64(&log["blockNumber"])? == block,
+                "event block mismatch"
+            );
+            let order = (
+                block,
+                rpc_u64(&log["transactionIndex"])?,
+                rpc_u64(&log["logIndex"])?,
+            );
+            ensure!(
+                previous.is_none_or(|prior| order > prior),
+                "reordered or repeated chain event"
+            );
+            previous = Some(order);
+            // A board may host multiple polls. Events for this poll alone form
+            // its transcript; the collector preserves their original order.
+            let topics = log["topics"]
+                .as_array()
+                .ok_or_else(|| anyhow!("event missing topics"))?;
+            ensure!(topics.len() == 2, "unexpected indexed event shape");
+            let poll_word: [u8; 32] = parse_hex(
+                topics[1]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("bad poll topic"))?,
+            )?
+            .try_into()
+            .map_err(|_| anyhow!("bad poll topic size"))?;
+            if word_u64(poll_word)? == setup.poll {
+                logs.push(log.clone());
+            }
+        }
+    }
+    let events = decode_events(&setup, &logs, contract)?;
+    let report = crate::verify::verify_events(paths, &events);
+    ensure!(
+        report.accept,
+        "public chain/transcript verification rejected: {}",
+        report
+            .error
+            .as_deref()
+            .unwrap_or("acceptance predicate failed")
+    );
+    Ok(json!({"schema":"wod/chain-verification/v1", "accept":true,
+        "source_commit":source_commit, "chain_id":chain_id, "admission":contract,
+        "poll_id":setup.poll, "setup_hash":setup_hash, "threshold":setup.tau,
+        "board_commitment":format!("0x{}",report.sealed_commitment),
+        "transcript_hash":format!("0x{}",report.transcript_hash), "decision":u8::from(report.decision == Some(true)),
+        "anchor":bundle["anchor"], "runtime_code_keccak256":bundle["runtime_code_keccak256"],
+        "receipt_bundle_sha256":hex::encode(Sha256::digest(&bytes)),
+        "receipt_count":receipts.len(), "authenticated_view_assumption":"live trusted RPC, deployment identity and canonical-block checks by collector; no offline light-client proof",
+        "predicate":report}))
 }
 
 #[cfg(test)]

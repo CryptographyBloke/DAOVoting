@@ -37,6 +37,8 @@ const K_ENTRY: u8 = 2;
 const K_HELLO: u8 = 10;
 const K_POST: u8 = 11;
 const K_STATS: u8 = 12;
+// Internal channel notification, never a network frame.
+const K_CLOSED: u8 = 255;
 
 type Frame = (u8, Arc<Vec<u8>>);
 
@@ -111,6 +113,7 @@ pub struct BoardStats {
     pub decision: Option<bool>,
     pub transcript_hash: String,
     pub trustees: Vec<TrusteeStats>,
+    pub peak_rss_bytes: Option<u64>,
 }
 
 /// Loads the public poll state shared by board and trustees.
@@ -228,7 +231,10 @@ async fn board(p: &Paths, listener: std::net::TcpListener, rtt_ms: u64) -> Resul
                             break;
                         }
                     }
-                    Err(_) => break,
+                    Err(_) => {
+                        let _ = up.send((id, K_CLOSED, Vec::new()));
+                        break;
+                    }
                 }
             }
         });
@@ -289,6 +295,8 @@ async fn board(p: &Paths, listener: std::net::TcpListener, rtt_ms: u64) -> Resul
                 pub_tx.send(m)?;
             }
             K_STATS => stats[id] = Some(serde_json::from_slice(&body)?),
+            K_CLOSED if stats[id].is_some() => {}
+            K_CLOSED => bail!("trustee {id} disconnected before completing the protocol"),
             _ => bail!("unexpected frame kind {k}"),
         }
     }
@@ -315,6 +323,7 @@ async fn board(p: &Paths, listener: std::net::TcpListener, rtt_ms: u64) -> Resul
         bytes_relayed: relayed,
         decision: Some(bit),
         transcript_hash: hex::encode(h),
+        peak_rss_bytes: crate::experiment::peak_rss_bytes(),
         trustees: stats
             .into_iter()
             .enumerate()
@@ -341,10 +350,15 @@ pub fn run_trustee(p: &Paths, id: usize, addr: &str, rtt_ms: u64) -> Result<Trus
     let key: TrusteeKey = read_bin(&p.private(&format!("trustee_{id}.bin")))?;
     ensure!(key.id == id, "key file belongs to trustee {}", key.id);
     let s = Session::load(p, false)?;
+    ensure!(id < s.setup.a, "trustee index out of range");
     let sk = SigningKey::from_bytes(&key.signing);
     ensure!(
         sk.verifying_key().to_bytes() == s.setup.trustee_vks[id],
         "signing key not registered"
+    );
+    ensure!(
+        crate::group::g() * key.share == s.setup.hi[id],
+        "secret share does not match the registered trustee"
     );
     let mut eng = Engine::new(Arc::new(s.public()?), Arc::new(s.circuit()), &s.inputs)?;
     let mut me = Trustee::new(id, key.share, sk.clone());
