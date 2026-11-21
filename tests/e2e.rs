@@ -147,6 +147,45 @@ fn eight_voter_election_local_and_distributed() {
         assert_eq!(std::fs::read_dir(node.join("work")).unwrap().count(), 0);
         assert_eq!(std::fs::read_dir(node.join("public")).unwrap().count(), 2);
     }
+    // Compare both endpoints of real TCP connections. Internal EOF channel
+    // notifications must never add bytes to the public communication metric.
+    let count_dir = out.join("byte-count-board");
+    assert!(
+        wod()
+            .args(["export-node", "--dir"])
+            .arg(&good)
+            .arg("--out")
+            .arg(&count_dir)
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let count_addr = listener.local_addr().unwrap().to_string();
+    let mut counters = Vec::new();
+    for id in 0..5 {
+        counters.push(
+            wod()
+                .args(["trustee", "--dir"])
+                .arg(out.join(format!("isolated-trustee-{id}")))
+                .args(["--id", &id.to_string(), "--addr", &count_addr])
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .unwrap(),
+        );
+    }
+    let counts = wod::net::run_board(&wod::setup::Paths::new(count_dir), listener, 0).unwrap();
+    for (id, child) in counters.into_iter().enumerate() {
+        let output = child.wait_with_output().unwrap();
+        assert!(output.status.success());
+        let peer: wod::net::TrusteeStats = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(
+            counts.trustees[id].bytes_sent, peer.bytes_sent,
+            "board byte accounting differs from the actual trustee writer"
+        );
+    }
     let bad_node = out.join("isolated-trustee-0");
     std::fs::copy(
         good.join("private/trustee_1.bin"),

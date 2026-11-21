@@ -277,7 +277,9 @@ async fn board(p: &Paths, listener: std::net::TcpListener, rtt_ms: u64) -> Resul
             .recv()
             .await
             .ok_or(anyhow!("all trustees disconnected"))?;
-        up_bytes[id] += body.len() as u64 + 5;
+        if k != K_CLOSED {
+            up_bytes[id] += body.len() as u64 + 5;
+        }
         match k {
             K_POST => {
                 let m: Msg = bincode::deserialize(&body)?;
