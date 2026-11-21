@@ -1,0 +1,408 @@
+{
+  "schema": "wod/governance-summary/v1",
+  "status": "PASS",
+  "execution": {
+    "schema": "wod/replay-gated-execution/v1",
+    "status": "PASS",
+    "executor": "0xa7ac2f0da9cf19a76b108ce0adfbbdba3f9d1ac7",
+    "target": "0x10737cc2e23709836ad3711db9cb5be30388625c",
+    "data": "0x55241077000000000000000000000000000000000000000000000000000000000000002a",
+    "actionHash": "0x4ee23f7f7e5122d7f4efa8e53c4edc95f5c5caf9dde0dbd0c4c8b1df0949a730",
+    "verificationAuthority": "0xeb83f0fb333716B1fAC2079F5eA5A6658A7AD78a",
+    "pollId": 900000,
+    "admission": "0xad0861b33a3b3f3251930284016957c6aa52d95e",
+    "setupHash": "0x7275550875c10dfb888fe3f44dedfbd868640f3ef56f081603cbb036e6bec6ee",
+    "threshold": 1,
+    "chain_id": 421614,
+    "source_commit": "110846d0f148caa6caee3a5afa7edce370411bd0",
+    "transcript_hash": "0xb74b652d5dce59ab2f6922b5cd66fe1d8331f04f9ec3c564ee4b3e033dd37607",
+    "board_commitment": "0xb68e2317f23b8e283294e38be2e31bf05765fbba7852ef30df9caba59c13c868",
+    "decision": 1,
+    "state_before": "0",
+    "state_after": "42",
+    "execution_block": 331314568,
+    "execution_transaction": "0xbe07f559c6665296682840ce9929932452c5db8e77e42e976e990157ab4eb84d",
+    "execution_gas": "107841",
+    "receipt_bundle_sha256": "cd1250de1784797b20a23c0592142f16132a74b50bcd48d3e8ab9fd9030830b3",
+    "trust": "honest verification authority; authenticated RPC view; no on-chain CGY transcript verification"
+  },
+  "transactions": [
+    {
+      "kind": "verifier_deployment",
+      "transaction_hash": "0x18fc1eb07e3919817fd4001ebb4e215080a7409670393022afcd5e7eadbc48a9",
+      "nonce": 2928,
+      "estimated_gas_total": "2501611",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20012000",
+      "gas_limit": "3001934",
+      "status": "CONFIRMED",
+      "block_number": 331312999,
+      "gas_used": "2480755",
+      "effective_gas_price_wei": "20040000",
+      "fee_wei": "49714330200000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb2",
+        "effectiveGasPrice": "0x131c940"
+      },
+      "contract_address": "0x1cecd3444e229f4ad4af2d2d9a8c57a668a73639"
+    },
+    {
+      "kind": "board_deployment",
+      "transaction_hash": "0x671c1d7624fac1eedc5a2ec93f05e5edd0734c569a5cf9f245c282e7501b7c9d",
+      "nonce": 2929,
+      "estimated_gas_total": "1062818",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20232000",
+      "gas_limit": "1275382",
+      "status": "CONFIRMED",
+      "block_number": 331313005,
+      "gas_used": "1053291",
+      "effective_gas_price_wei": "20084000",
+      "fee_wei": "21154296444000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb2",
+        "effectiveGasPrice": "0x1327520"
+      },
+      "contract_address": "0xad0861b33a3b3f3251930284016957c6aa52d95e"
+    },
+    {
+      "kind": "executor_deployment",
+      "transaction_hash": "0xdc9dcead2c6ddd4d71fb4ebecb2b032f24f960b515c0613530d801eb3c36aeb6",
+      "nonce": 2930,
+      "estimated_gas_total": "1096036",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20134000",
+      "gas_limit": "1315244",
+      "status": "CONFIRMED",
+      "block_number": 331313014,
+      "gas_used": "1086248",
+      "effective_gas_price_wei": "20000000",
+      "fee_wei": "21724960000000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb2",
+        "effectiveGasPrice": "0x1312d00"
+      },
+      "contract_address": "0xa7ac2f0da9cf19a76b108ce0adfbbdba3f9d1ac7"
+    },
+    {
+      "kind": "governed_target_deployment",
+      "transaction_hash": "0xe40ebfcf51c054274f5234eb928d0e02f3de069eb33e24ba1acd61e74681b7ce",
+      "nonce": 2931,
+      "estimated_gas_total": "206521",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20174000",
+      "gas_limit": "247826",
+      "status": "CONFIRMED",
+      "block_number": 331313021,
+      "gas_used": "203737",
+      "effective_gas_price_wei": "20034000",
+      "fee_wei": "4081667058000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb2",
+        "effectiveGasPrice": "0x131b1d0"
+      },
+      "contract_address": "0x10737cc2e23709836ad3711db9cb5be30388625c"
+    },
+    {
+      "kind": "governed_executor_binding",
+      "transaction_hash": "0xaa6a404a5a71424aeaa37589aad054daf951af9481362f232fd3d398a539a423",
+      "nonce": 2932,
+      "estimated_gas_total": "47051",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20026000",
+      "gas_limit": "56462",
+      "status": "CONFIRMED",
+      "block_number": 331313027,
+      "gas_used": "46668",
+      "effective_gas_price_wei": "20016000",
+      "fee_wei": "934106688000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb3",
+        "effectiveGasPrice": "0x1316b80"
+      }
+    },
+    {
+      "kind": "governance_proposal_registration",
+      "transaction_hash": "0xc4c6070ab72cd30a19625dd9fe522268eb1fea06328795975ce2ddede3f3fe3b",
+      "nonce": 2933,
+      "estimated_gas_total": "125075",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20058000",
+      "gas_limit": "150090",
+      "status": "CONFIRMED",
+      "block_number": 331313034,
+      "gas_used": "124000",
+      "effective_gas_price_wei": "20064000",
+      "fee_wei": "2487936000000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb3",
+        "effectiveGasPrice": "0x1322700"
+      }
+    },
+    {
+      "kind": "poll_registration",
+      "transaction_hash": "0xf26ddc087f5bcc1c31bf446e38f85715a3c46629844f17b75f912f492a1c439d",
+      "nonce": 2934,
+      "estimated_gas_total": "138720",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20066000",
+      "gas_limit": "166464",
+      "status": "CONFIRMED",
+      "block_number": 331313043,
+      "gas_used": "137591",
+      "effective_gas_price_wei": "20056000",
+      "fee_wei": "2759525096000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb3",
+        "effectiveGasPrice": "0x13207c0"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0xde173756deff1e5f0d890bfb62509fe911ab5bb158e4741ff4bac43054ffb671",
+      "nonce": 2935,
+      "estimated_gas_total": "781362",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20020000",
+      "gas_limit": "937635",
+      "status": "CONFIRMED",
+      "block_number": 331313052,
+      "gas_used": "774051",
+      "effective_gas_price_wei": "20004000",
+      "fee_wei": "15484116204000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb3",
+        "effectiveGasPrice": "0x1313ca0"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0xddfada81ff46ff1ea8524e3038888445ae91934ebdb7dbd39efcbd9d745baecf",
+      "nonce": 2936,
+      "estimated_gas_total": "781386",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20056000",
+      "gas_limit": "937664",
+      "status": "CONFIRMED",
+      "block_number": 331313062,
+      "gas_used": "774075",
+      "effective_gas_price_wei": "20434000",
+      "fee_wei": "15817448550000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb3",
+        "effectiveGasPrice": "0x137cc50"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0x268e4379dc8dca099df1fa7d6ad61668c316a996156113d7f4589e0ce40c0c2d",
+      "nonce": 2937,
+      "estimated_gas_total": "781374",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20154000",
+      "gas_limit": "937649",
+      "status": "CONFIRMED",
+      "block_number": 331313069,
+      "gas_used": "774063",
+      "effective_gas_price_wei": "20086000",
+      "fee_wei": "15547829418000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb3",
+        "effectiveGasPrice": "0x1327cf0"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0xaae83707ef3168fa57287ca71a1d809e7b47cbe546e341fec25403342b76e315",
+      "nonce": 2938,
+      "estimated_gas_total": "781386",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20404000",
+      "gas_limit": "937664",
+      "status": "CONFIRMED",
+      "block_number": 331313076,
+      "gas_used": "774075",
+      "effective_gas_price_wei": "20094000",
+      "fee_wei": "15554263050000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb5",
+        "effectiveGasPrice": "0x1329c30"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0xcb816c559ca21e8e1e38879fb8fd72ee1fcb0445a0bd549349541a14578ba03c",
+      "nonce": 2939,
+      "estimated_gas_total": "781386",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20004000",
+      "gas_limit": "937664",
+      "status": "CONFIRMED",
+      "block_number": 331313085,
+      "gas_used": "774075",
+      "effective_gas_price_wei": "20000000",
+      "fee_wei": "15481500000000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb5",
+        "effectiveGasPrice": "0x1312d00"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0x07625a2c189549c5774bf617d03e14cd549f013644f54aadec90b691e80330ba",
+      "nonce": 2940,
+      "estimated_gas_total": "781386",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20000000",
+      "gas_limit": "937664",
+      "status": "CONFIRMED",
+      "block_number": 331313091,
+      "gas_used": "774075",
+      "effective_gas_price_wei": "20000000",
+      "fee_wei": "15481500000000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb5",
+        "effectiveGasPrice": "0x1312d00"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0xf4daabed003fddeda2a4014be659710afc4eae400eacc088d6411fd16df6d58e",
+      "nonce": 2941,
+      "estimated_gas_total": "781410",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20388000",
+      "gas_limit": "937692",
+      "status": "CONFIRMED",
+      "block_number": 331313098,
+      "gas_used": "774099",
+      "effective_gas_price_wei": "20116000",
+      "fee_wei": "15571775484000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb5",
+        "effectiveGasPrice": "0x132f220"
+      }
+    },
+    {
+      "kind": "ballot_admission",
+      "transaction_hash": "0x26817baf3ab9aa31095649fd158aa58f6f80bd545dcac6bf18fd40a0f724bd37",
+      "nonce": 2942,
+      "estimated_gas_total": "781362",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20086000",
+      "gas_limit": "937635",
+      "status": "CONFIRMED",
+      "block_number": 331313105,
+      "gas_used": "774051",
+      "effective_gas_price_wei": "20036000",
+      "fee_wei": "15508885836000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb5",
+        "effectiveGasPrice": "0x131b9a0"
+      }
+    },
+    {
+      "kind": "board_sealing",
+      "transaction_hash": "0x5ad47b28d0cc4624124b8dfe339ce4ac8aafa03fac6e0ce2d37ae87c169f4545",
+      "nonce": 2943,
+      "estimated_gas_total": "54551",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20000000",
+      "gas_limit": "65462",
+      "status": "CONFIRMED",
+      "block_number": 331313114,
+      "gas_used": "53755",
+      "effective_gas_price_wei": "20000000",
+      "fee_wei": "1075100000000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb5",
+        "effectiveGasPrice": "0x1312d00"
+      }
+    },
+    {
+      "kind": "decision_claim",
+      "transaction_hash": "0xbb205766c8e92d2c6403f89e7b845adc84ea5f230c0bcc08f34772c29cea4b25",
+      "nonce": 2944,
+      "estimated_gas_total": "32857",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20014000",
+      "gas_limit": "39429",
+      "status": "CONFIRMED",
+      "block_number": 331313122,
+      "gas_used": "32502",
+      "effective_gas_price_wei": "20000000",
+      "fee_wei": "650040000000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcb5",
+        "effectiveGasPrice": "0x1312d00"
+      }
+    },
+    {
+      "kind": "governance_execution",
+      "transaction_hash": "0xbe07f559c6665296682840ce9929932452c5db8e77e42e976e990157ab4eb84d",
+      "nonce": 2945,
+      "estimated_gas_total": "108852",
+      "estimated_l1_gas": "0",
+      "estimated_base_fee_wei": "20072000",
+      "gas_limit": "130623",
+      "status": "CONFIRMED",
+      "block_number": 331314568,
+      "gas_used": "107841",
+      "effective_gas_price_wei": "20028000",
+      "fee_wei": "2159839548000",
+      "rpc_receipt_fee_fields": {
+        "l1BlockNumber": "0xb9dcd5",
+        "effectiveGasPrice": "0x1319a60"
+      }
+    }
+  ],
+  "actual_fee_total_eth": "0.000231189119576",
+  "source_commit": "36a5efdaec81b63eda0b986861ec3be9421c3c20",
+  "resume_history": [
+    {
+      "resumed_utc": "2026-11-21T08:29:04.386Z",
+      "runner_source_commit": "110846d0f148caa6caee3a5afa7edce370411bd0",
+      "recovered_receipts": 0,
+      "accepted_ballots_at_resume": 8,
+      "next_nonce": 2945
+    }
+  ],
+  "local_tests": {
+    "chainDerivedAllPredicates": true,
+    "noSimulatedLedgerInVerifierDirectory": true,
+    "wrongSetupHash": true,
+    "wrongThreshold": true,
+    "wrongBoardCommitment": true,
+    "wrongActionHash": true,
+    "wrongPoll": true,
+    "wrongAdmission": true,
+    "wrongNonce": true,
+    "decisionZero": true,
+    "modifiedAction": true,
+    "forgedSignature": true,
+    "wrongChainDomain": true,
+    "wrongExecutorDomain": true,
+    "receiptJournalReplay": true,
+    "tamperedTranscript": true,
+    "modifiedAcceptedBoard": true,
+    "unapprovedSetup": true,
+    "incorrectDecisionClaim": true,
+    "validDecisionZeroOnChain": true,
+    "validDecisionZeroRefused": true,
+    "validExecution": true,
+    "replayedAuthorization": true,
+    "repeatedExecution": true,
+    "sharedProductionPath": true
+  },
+  "local_test_source": "f2cdb237233cd35caa6844642d029a964263c8b3",
+  "public_artifact_sha256": {
+    "evm-public-input.json": "509f6b56002afb0a7c2bb2ad36255deece11528e87677028c68c26807770b0e1",
+    "evm-chain-logs.json": "0e1fc521a3cfe8c7cc5e602b52399a4f167ab393c172bdbb8e457226e72f7e67",
+    "execution-receipts.json": "cd1250de1784797b20a23c0592142f16132a74b50bcd48d3e8ab9fd9030830b3",
+    "execution-verification.json": "d0bfc77462b919272bdd3766346f6566abf4b17dbf89416071df1f39ff40a454",
+    "execution-attestation.json": "157e155c6f67b6af2a9bec4ff98a929ca2b4fb5fc4b0a6698994b39bf20e3ff7",
+    "execution-governance.json": "f1f6664edee33b40dabc1c56581330eceec1e8d62faa0050ed65ae90f243dd0b"
+  },
+  "independent_verifier_inputs": "live confirmed poll receipts, setup.bin and transcript.bin only; no ledger.bin or private directory",
+  "on_chain_cgy_verification": false
+}

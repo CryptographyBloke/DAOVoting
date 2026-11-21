@@ -49,6 +49,10 @@ Never commit `.env`, wallet credentials, trustee shares, voter secrets, oracle i
 
 ## Scope and limitations
 
-The distributed workflow launches five trustee processes on one host. They load separate shares from a shared local directory; this does not provide OS or hardware isolation. Setup uses a test-only dealer and the TCP board is trusted. The Solidity adapter verifies ballots and admission, then records a decision claim; independent Rust replay verifies the tally transcript. The adapter does not run the encrypted tally on chain. This artifact is a research prototype, not a production governance deployment.
+The default distributed workflow launches five trustee processes on one host and loads indexed shares from a shared directory. A separate [multi-host procedure](docs/MULTIHOST.md) provisions one Board VM and five Trustee VMs, with only each Trustee's own key file on its host. [Measured results](evidence/multihost.json) cover n=8 and 64 with three repetitions, and n=256 and 1024 with one repetition. Distinct physical servers and independent operators are not established. Setup uses a test-only dealer and the common-view TCP board remains trusted.
+
+The admission adapter records a decision claim; independent Rust replay verifies the tally transcript. The optional `ReplayGatedExecutor` demonstrates a fixed governance action after receipt-derived public verification and an EIP-712 authorization. It additionally trusts the named attesting verifier and authenticated RPC view; it does not verify CGY on chain. [The separate execution evidence](evidence/governance.json) records the n=8 Sepolia demonstration and local rejection tests. This is a research prototype, not a production governance deployment.
+
+The [public evidence package](https://github.com/CryptographyBloke/DAOVoting/releases/tag/v0.2.0) contains independently replayable public inputs, original manifests, per-host measurements and SHA-256 checksums. Private inputs and large transcripts stay outside Git history.
 
 The code is organized in `src/`, integration tests in `tests/`, and the admission adapter in `contracts/`. Dependencies are pinned in `Cargo.lock`.
