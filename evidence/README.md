@@ -8,7 +8,7 @@ Each profile completed with all transactions confirmed, public event replay pass
 |---:|---:|---:|---:|---:|---:|---:|---:|---|
 | 8 | 6,192,720 | 774,090.0 | 3,671,697 | 53,755 | 32,502 | 9,950,674 | 0.000200458920670 | PASS |
 | 64 | 49,541,388 | 774,084.2 | 3,671,721 | 53,755 | 32,502 | 53,299,366 | 0.001071110119324 | PASS |
-| 256 | 198,170,616 | 774,104.8 | 3,671,745 | 53,755 | 32,502 | 201,928,618 | 0.004058359559042 | PASS |
+| 256 | 198,170,616 | 774,104.0 | 3,671,745 | 53,755 | 32,502 | 201,928,618 | 0.004058359559042 | PASS |
 | 1,024 | 792,668,748 | 774,090.6 | 3,671,733 | 53,755 | 32,490 | 796,426,726 | 0.016038167473630 | PASS |
 
 ¹ Setup gas includes verifier deployment, admission-board deployment, and poll registration. Total gas is the sum of all successful transaction receipts. Receipt fees are the sum of `gasUsed × effectiveGasPrice`; Arbitrum's L1 posting charge is already represented in the receipt fee and is not added again, following the [Arbitrum gas-estimation method](https://docs.arbitrum.io/arbitrum-essentials/how-to-estimate-gas). Values are measurements from the listed transactions, not extrapolations.
@@ -24,7 +24,7 @@ Each board address links to its Arbiscan transaction and event history. The deci
 | 256 | [0x9C7C0477…63F223](https://sepolia.arbiscan.io/address/0x9C7C047789A86b027276ab38D45C1651cC63F223) | [transaction](https://sepolia.arbiscan.io/tx/0x71ffffacb7f17ed9f1b39fd0976d091e591735c5c23b39b1bd6fe0e67871885e) | 256/256 | 1 |
 | 1,024 | [0x0a6e96DD…061b86B7](https://sepolia.arbiscan.io/address/0x0a6e96DDc1095D521559E8Ffe9Db9E6A061b86B7) | [transaction](https://sepolia.arbiscan.io/tx/0xc8d4832450987a07f0c8c38a76bb1d18b645f51ffeb6f3309b73462a383e43b7) | 1,024/1,024 | 0 |
 
-The contracts were compiled with Solidity `0.8.30`, optimizer enabled for 200 runs, targeting Shanghai. Gas depends on the deployed bytecode, calldata, and network fee conditions; these values describe the recorded profiles.
+The contracts were compiled with Solidity `0.8.30`, optimizer enabled for 200 runs, targeting Shanghai. The measured adapter leaves the threshold in the Rust setup and checks leading ciphertext coordinates against `(0,0)`; Rust replay additionally rejects the Edwards identity `(0,1)`. Every recorded ballot passes the stricter Rust policy. Gas depends on the deployed bytecode, calldata, and network fee conditions; these values describe the recorded profiles.
 
 ## Source and evidence
 
