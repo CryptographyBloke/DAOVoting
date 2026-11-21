@@ -7,11 +7,12 @@ const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
 function args(argv) {
-  const out = { broadcast: false, preflightOnly: false, resume: false };
+  const out = { broadcast: false, preflightOnly: false, resume: false, execute: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--broadcast') { out.broadcast = true; continue; }
     if (argv[i] === '--preflight-only') { out.preflightOnly = true; continue; }
     if (argv[i] === '--resume') { out.resume = true; continue; }
+    if (argv[i] === '--execute') { out.execute = true; continue; }
     if (!argv[i].startsWith('--') || !argv[i + 1]) throw new Error('expected --name value');
     out[argv[i].slice(2)] = argv[++i];
   }
@@ -43,6 +44,8 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
   }
   if (opt.broadcast === opt.preflightOnly) throw new Error('select exactly one of --preflight-only or --broadcast');
   if (opt.resume && !opt.broadcast) throw new Error('--resume requires --broadcast');
+  if (opt.execute && opt.resume) throw new Error('execution demonstrations require a fresh output; inspect any interrupted transaction journal before recovery');
+  if (opt.execute && !opt['execution-summary']) throw new Error('--execute requires --execution-summary from passing local executor tests');
   const ballotBatchSize = Number(opt['batch-size'] || 1);
   if (!Number.isInteger(ballotBatchSize) || ballotBatchSize < 1 || ballotBatchSize > 16) {
     throw new Error('--batch-size must be an integer from 1 to 16');
@@ -91,13 +94,27 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     if (!/^[0-9a-f]{40}$/i.test(protocolRunCommit)) throw new Error('protocol run commit must be a full Git SHA');
     const priorVerification = JSON.parse(fs.readFileSync(path.join(runDir, 'public', 'verify.json'), 'utf8'));
     if (priorVerification.accept !== true || runManifest.oracle_agrees !== true) throw new Error('Rust verifier and oracle checks must both pass');
-    const verify = runRust(path.resolve(opt.wod), ['verify', '--dir', runDir]);
+    // Verification must not overwrite verify.json inside a frozen source run.
+    const verificationDir = path.join(outDir, 'work', 'local-verifier');
+    fs.mkdirSync(path.join(verificationDir, 'public'), { recursive: true });
+    for (const name of ['setup.bin', 'ledger.bin', 'transcript.bin']) {
+      fs.copyFileSync(path.join(runDir, 'public', name), path.join(verificationDir, 'public', name));
+    }
+    const verify = runRust(path.resolve(opt.wod), ['verify', '--dir', verificationDir]);
     if (verify.accept !== true) throw new Error('independent Rust verifier rejected the run');
     if (!opt.resume) runRust(path.resolve(opt.wod), ['evm-export', '--dir', runDir, '--out', publicInputPath]);
     const input = JSON.parse(fs.readFileSync(publicInputPath, 'utf8'));
     const publicInputSha256 = sha256(fs.readFileSync(publicInputPath));
     const local = JSON.parse(fs.readFileSync(path.resolve(opt['local-summary']), 'utf8'));
     if (input.ballots.length !== Number(input.expectedBallots)) throw new Error('public ballot count mismatch');
+    const executionModule = opt.execute ? require('./evm_executor.cjs') : null;
+    const executionLocal = opt.execute ? JSON.parse(fs.readFileSync(path.resolve(opt['execution-summary']), 'utf8')) : null;
+    if (opt.execute && (Number(input.expectedBallots) !== 8 || Number(input.expectedClaim.decision) !== 1 ||
+        executionLocal.status !== 'PASS' || !executionLocal.local_evm_only ||
+        !executionLocal.tests.sharedProductionPath || !executionLocal.tests.tamperedTranscript || !executionLocal.tests.incorrectDecisionClaim)) {
+      throw new Error('execution requires n=8, an approving verified result and passing local executor tests');
+    }
+    const authority = opt.execute ? ethers.Wallet.createRandom() : null;
 
     stage = 'Solidity compilation';
     const sourcePath = path.join(repo, 'contracts', 'WodAdmission.sol');
@@ -113,6 +130,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const artifact = name => ({ abi: artifacts[name].abi, bytecode: `0x${artifacts[name].evm.bytecode.object}`,
       runtime: `0x${artifacts[name].evm.deployedBytecode.object}` });
     const verifier = artifact('RustGroth16Verifier'), board = artifact('WodAdmission');
+    const executionArtifacts = opt.execute ? executionModule.compile(solc, repo) : null;
     const verifierFactory = new ethers.ContractFactory(verifier.abi, verifier.bytecode);
     const verifierData = (await verifierFactory.getDeployTransaction(input.verifyingKey.alpha, input.verifyingKey.beta,
       input.verifyingKey.gamma, input.verifyingKey.delta, input.verifyingKey.ic)).data;
@@ -160,7 +178,11 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     const localBallotGas = local.ballots.map(b => BigInt(b.gasUsed)).reduce(max, 0n);
     const localOtherGas = BigInt(local.deployment.registrationGas) + BigInt(local.sealGas) + BigInt(local.claimGas);
     const callL1 = BigInt(l1Registration.l1) + BigInt(l1Seal.l1) + BigInt(l1Claim.l1) + BigInt(input.expectedBallots) * maxBallotL1;
-    const rawEstimate = deployVerifier.gas * deployVerifier.baseFee + deployBoard.gas * deployBoard.baseFee +
+    const executionGasReserve = opt.execute ? Object.entries(executionLocal.gas)
+      .filter(([name]) => ['ReplayGatedExecutor', 'TestGovernedParameter', 'setExecutor', 'registerProposal', 'execute'].includes(name))
+      .reduce((sum, [, value]) => sum + BigInt(value), 0n) + 1000000n : 0n;
+    const executionEstimate = executionGasReserve * maxBaseFee;
+    const rawEstimate = executionEstimate + deployVerifier.gas * deployVerifier.baseFee + deployBoard.gas * deployBoard.baseFee +
       (localOtherGas + BigInt(input.expectedBallots) * localBallotGas + callL1) * maxBaseFee;
     const reserve = rawEstimate * 2n;
     if (opt.broadcast) lockFd = fs.openSync(ledgerLock, 'wx');
@@ -203,6 +225,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       schema: 'wod/arbitrum-sepolia-evidence/v1', network: 'Arbitrum Sepolia', chain_id: 421614,
       source_commit: head.stdout.trim(), source_dirty: false, created_utc: new Date().toISOString(),
       protocol_run_source_commit: protocolRunCommit, ballot_batch_size: ballotBatchSize,
+      execution_demonstration: opt.execute,
       machine: { os: `${os.type()} ${os.release()}`, cpu: os.cpus()[0]?.model || 'unknown', logical_processors: os.cpus().length },
       wallet_address: wallet.address, configured_spend_cap_eth: env.ARB_SEPOLIA_MAX_TOTAL_ETH,
       preflight_wallet_balance_eth: ethers.formatEther(balance),
@@ -224,7 +247,9 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
         l1_estimation_method: 'NodeInterface gasEstimateComponents for deployments; gasEstimateL1Component for calls; local Ganache receipt gas for call execution before deployment',
         local_call_gas_basis: 'maximum local gas among real Rust proof samples and measured registration/seal/claim receipts',
         ballots_preflighted_l1_samples: l1Samples.length,
-        expected_transactions: Number(input.expectedBallots) + 5,
+        expected_transactions: Number(input.expectedBallots) + (opt.execute ? 10 : 5),
+        execution_extra_fee_estimate_wei: executionEstimate.toString(),
+        execution_estimation_method: opt.execute ? 'passing local executor receipt gas plus 1000000 gas posting/variation allowance; full profile receives a further 2x reserve' : null,
         spending_cap_check: budgetOk ? 'PASS' : 'EXCEEDS_CAP',
         balance_check: balanceOk ? 'PASS' : 'INSUFFICIENT_BALANCE'
       },
@@ -237,7 +262,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
         ballots: Number(input.expectedBallots), estimatedFeeEth: ethers.formatEther(rawEstimate),
         reserveEth: ethers.formatEther(reserve), testEthBalance: ethers.formatEther(balance),
         configuredSpendCapEth: env.ARB_SEPOLIA_MAX_TOTAL_ETH, gasPriceGwei: ethers.formatUnits(gasPrice, 'gwei'),
-        expectedTransactions: Number(input.expectedBallots) + 5, manifest: manifestPath }, null, 2));
+        expectedTransactions: Number(input.expectedBallots) + (opt.execute ? 10 : 5), manifest: manifestPath }, null, 2));
       if (!budgetOk || !balanceOk) process.exitCode = 2;
       return;
     }
@@ -297,7 +322,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
         confirmedReceiptLogs.push(...logs);
         if (rawReceipt.contractAddress) entry.contract_address = rawReceipt.contractAddress;
         if (entry.status !== 'CONFIRMED') failed = true;
-        receipts.push({ status, gasUsed, gasPrice: effectiveGasPrice,
+        receipts.push({ hash: entry.transaction_hash, status, gasUsed, gasPrice: effectiveGasPrice,
           blockNumber: entry.block_number, contractAddress: entry.contract_address || null, logs });
       }
       current.spentWei = (BigInt(current.spentWei) + batchFeeWei).toString();
@@ -340,6 +365,7 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     }
 
     let verifierAddress, boardAddress, boardDeploymentBlock, startBallot = 0;
+    let executionConfiguration;
     let contract, state;
     if (opt.resume) {
       stage = 'recover transaction receipts';
@@ -398,6 +424,18 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       if (!boardAddress) throw new Error('board deployment receipt has no address');
       boardDeploymentBlock = br.blockNumber;
       manifest.board_address = boardAddress; writeJson(manifestPath, manifest);
+      if (opt.execute) {
+        const privateDir = path.join(outDir, 'private');
+        fs.mkdirSync(privateDir, { recursive: true });
+        fs.writeFileSync(path.join(privateDir, 'verification-authority.json'),
+          JSON.stringify({ address: authority.address, private_key: authority.privateKey }) + '\n', { flag: 'wx', mode: 0o600 });
+        stage = 'register bound governance action before ballot admission';
+        executionConfiguration = await executionModule.prepareExecution({ ethers, artifacts: executionArtifacts,
+          input: { ...input, admission: boardAddress }, authority, send });
+        manifest.execution_configuration = executionConfiguration;
+        manifest.executor_source_sha256 = sha256(fs.readFileSync(path.join(repo, 'contracts', 'ReplayExecutor.sol')));
+        writeJson(manifestPath, manifest);
+      }
       contract = new ethers.Contract(boardAddress, board.abi, wallet.connect(provider));
       stage = 'register poll';
       await send('poll_registration', boardAddress, registrationData, false);
@@ -457,6 +495,17 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
     if (replay.event_replay !== 'PASS' || replay.proofs_verified !== Number(input.expectedBallots) || !replay.matches_original_run) {
       throw new Error('independent Rust event replay failed');
     }
+    if (opt.execute) {
+      stage = 'receipt-derived independent verification and authorized governance execution';
+      const chainPublicDir = path.join(outDir, 'work', 'chain-verifier');
+      fs.mkdirSync(path.join(chainPublicDir, 'public'), { recursive: true });
+      for (const name of ['setup.bin', 'transcript.bin']) fs.copyFileSync(path.join(runDir, 'public', name), path.join(chainPublicDir, 'public', name));
+      manifest.governance_execution = await executionModule.finishExecution({ provider, ethers,
+        admission: boardAddress, pollId: input.pollId, fromBlock: boardDeploymentBlock,
+        runtimeHash: ethers.keccak256(await provider.getCode(boardAddress)), outDir: publicDir,
+        wod: path.resolve(opt.wod), publicDir: chainPublicDir, setupHash: input.setupHash,
+        sourceCommit: head.stdout.trim(), label: 'execution' }, executionConfiguration, authority, executionArtifacts, send);
+    }
     const currentLedger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
     currentLedger.reservations = currentLedger.reservations.filter(r => r.runId !== runId);
     writeJson(ledgerPath, currentLedger);
@@ -467,6 +516,9 @@ function ceilMul(a, b, d) { return (a * b + d - 1n) / d; }
       'evm-public-input.json': sha256(fs.readFileSync(publicInputPath)),
       'evm-chain-logs.json': sha256(fs.readFileSync(logsPath))
     };
+    if (opt.execute) for (const name of ['execution-receipts.json', 'execution-verification.json', 'execution-attestation.json', 'execution-governance.json']) {
+      manifest.public_artifact_sha256[name] = sha256(fs.readFileSync(path.join(publicDir, name)));
+    }
     manifest.actual_fee_total_wei = manifest.transactions.reduce((s, x) => s + BigInt(x.fee_wei), 0n).toString();
     manifest.actual_fee_total_eth = ethers.formatEther(BigInt(manifest.actual_fee_total_wei));
     writeJson(manifestPath, manifest);

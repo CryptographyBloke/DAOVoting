@@ -109,7 +109,63 @@ async function verifiedAuthorization(options, authority, executor, actionHash, n
   return attestation;
 }
 
-module.exports = { compile, collect, verifyLive, verifiedAuthorization, domain, statement, types, writeNew, sha256 };
+async function prepareExecution({ ethers, artifacts, input, authority, send }) {
+  const artifact = name => artifacts[name];
+  const executorFactory = new ethers.ContractFactory(artifact('ReplayGatedExecutor').abi,
+    '0x' + artifact('ReplayGatedExecutor').evm.bytecode.object);
+  const targetFactory = new ethers.ContractFactory(artifact('TestGovernedParameter').abi,
+    '0x' + artifact('TestGovernedParameter').evm.bytecode.object);
+  const executorReceipt = await send('executor_deployment', null,
+    (await executorFactory.getDeployTransaction(authority.address)).data, true);
+  const targetReceipt = await send('governed_target_deployment', null,
+    (await targetFactory.getDeployTransaction()).data, true);
+  const executor = executorReceipt.contractAddress, target = targetReceipt.contractAddress;
+  if (!executor || !target) throw new Error('execution deployment is missing a contract address');
+  const executorIface = new ethers.Interface(artifact('ReplayGatedExecutor').abi);
+  const targetIface = new ethers.Interface(artifact('TestGovernedParameter').abi);
+  const data = targetIface.encodeFunctionData('setValue', [42]);
+  const actionHash = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
+    ['address', 'uint256', 'bytes32'], [target, 0, ethers.keccak256(data)]));
+  await send('governed_executor_binding', target, targetIface.encodeFunctionData('setExecutor', [executor]), false);
+  await send('governance_proposal_registration', executor, executorIface.encodeFunctionData('registerProposal',
+    [input.admission, input.pollId, input.setupHash, input.threshold, target, 0, data]), false);
+  return { executor, target, data, actionHash, verificationAuthority: authority.address,
+    pollId: input.pollId, admission: input.admission, setupHash: input.setupHash, threshold: input.threshold };
+}
+
+async function finishExecution(options, configuration, authority, artifacts, send) {
+  const { provider, ethers } = options;
+  const iface = new ethers.Interface(artifacts.ReplayGatedExecutor.abi);
+  const targetIface = new ethers.Interface(artifacts.TestGovernedParameter.abi);
+  const getValue = async block => BigInt(await provider.send('eth_call', [{ to: configuration.target,
+    data: targetIface.encodeFunctionData('value', []) }, block]));
+  const before = await getValue('latest');
+  if (before !== 0n) throw new Error('governed target is not in its fresh initial state');
+  const attestation = await verifiedAuthorization(options, authority, configuration.executor, configuration.actionHash, 0);
+  const receipt = await send('governance_execution', configuration.executor,
+    iface.encodeFunctionData('execute', [attestation.value, configuration.target, 0, configuration.data, attestation.signature]), false);
+  const after = await getValue(ethers.toQuantity(receipt.blockNumber));
+  if (after !== 42n) throw new Error('confirmed governance action did not set the expected state');
+  const logs = receipt.logs || [];
+  const event = logs.filter(l => l.address.toLowerCase() === configuration.executor.toLowerCase())
+    .map(l => { try { return iface.parseLog(l); } catch { return null; } }).find(l => l?.name === 'GovernanceExecuted');
+  if (!event || Number(event.args.pollId) !== Number(attestation.value.pollId) ||
+      event.args.transcriptHash !== attestation.value.transcriptHash || event.args.actionHash !== configuration.actionHash) {
+    throw new Error('execution event does not match the verified authorization');
+  }
+  const result = { schema: 'wod/replay-gated-execution/v1', status: 'PASS', ...configuration,
+    chain_id: attestation.domain.chainId, source_commit: options.sourceCommit,
+    transcript_hash: attestation.value.transcriptHash, board_commitment: attestation.value.boardCommitment,
+    decision: 1, state_before: before.toString(), state_after: after.toString(),
+    execution_block: receipt.blockNumber, execution_transaction: receipt.hash || logs[0]?.transactionHash,
+    execution_gas: receipt.gasUsed.toString(), receipt_bundle_sha256: attestation.receipt_bundle_sha256,
+    trust: attestation.trust };
+  writeNew(path.join(options.outDir, `${options.label}-governance.json`), result);
+  return result;
+}
+
+module.exports = { compile, collect, verifyLive, verifiedAuthorization, prepareExecution, finishExecution,
+  domain, statement, types, writeNew, sha256 };
 
 async function localTest() {
   const opt = {};
@@ -256,6 +312,19 @@ async function localTest() {
     await expectRevert('replayedAuthorization', v, attestation.signature);
     const repeated = { ...v, nonce: 1 };
     await expectRevert('repeatedExecution', repeated, await sign(repeated));
+    // Exercise the exact deployment and execution helpers used by the opt-in
+    // testnet runner, through real local transactions and receipt collection.
+    const localSend = async (kind, to, data, creation) => {
+      const request = { data, gasLimit: creation ? 6000000n : 1500000n };
+      if (!creation) request.to = to;
+      return (await signer.sendTransaction(request)).wait();
+    };
+    const productionConfig = await prepareExecution({ ethers, artifacts, authority,
+      input: { ...yes.input, admission: yes.options.admission }, send: localSend });
+    const productionResult = await finishExecution({ ...yes.options, label: 'production-path' },
+      productionConfig, authority, artifacts, localSend);
+    if (productionResult.status !== 'PASS' || productionResult.state_after !== '42') throw new Error('shared execution path failed');
+    tests.sharedProductionPath = true;
     const status = spawnSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' });
     const result = { schema: 'wod/executor-local-test/v1', status: 'PASS', local_evm_only: true,
       source_commit: sourceCommit, source_dirty: Boolean(status.stdout.trim()),
