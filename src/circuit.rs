@@ -7,6 +7,43 @@
 //! conditional-gate outputs, and *affine* nodes (public integer combinations
 //! of other wires, computed homomorphically by everyone).
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Scheduler {
+    Reference,
+    #[default]
+    Dataflow,
+}
+
+impl Scheduler {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Reference => "reference",
+            Self::Dataflow => "dataflow",
+        }
+    }
+}
+
+impl std::str::FromStr for Scheduler {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "reference" => Ok(Self::Reference),
+            "dataflow" => Ok(Self::Dataflow),
+            _ => Err(format!("unknown scheduler {s}")),
+        }
+    }
+}
+
+/// Scheduling constraints only; gate IDs, wires and cryptographic statements
+/// remain those of the original DAG. Independent adders need no per-gate barrier.
+pub struct ReferenceSchedule {
+    pub stage: Vec<usize>,
+    pub previous: Vec<Option<usize>>,
+    pub levels: Vec<u32>,
+    pub stage_gates: Vec<usize>,
+}
+
 #[derive(Clone, Debug)]
 pub enum Node {
     /// Ballot ciphertext `CT_{i,k}` at flat index `8i + k`.
@@ -200,6 +237,57 @@ impl Circuit {
         (0..k).map(|l| 2 * (self.l_vote + l) - 1).sum::<usize>() + 2 * self.l_agg - 1
     }
 
+    /// Each adder follows its construction order p0,p1,q1,... . Adders in a
+    /// tree level progress independently; a barrier separates tree levels.
+    /// The subtractor is the final sequential chain. No gate is duplicated.
+    pub fn reference_schedule(&self) -> ReferenceSchedule {
+        let mut plan = ReferenceSchedule {
+            stage: Vec::new(),
+            previous: Vec::new(),
+            levels: Vec::new(),
+            stage_gates: Vec::new(),
+        };
+        let mut append = |stage: usize, chains: usize, length: usize, base: usize| {
+            plan.stage_gates.push(chains * length);
+            for _ in 0..chains {
+                let first = plan.levels.len();
+                for j in 0..length {
+                    plan.stage.push(stage);
+                    plan.previous
+                        .push(if j == 0 { None } else { Some(first + j - 1) });
+                    plan.levels.push((base + j + 1) as u32);
+                }
+            }
+        };
+        if self.n == 1 {
+            append(0, 1, 1, 0);
+        } else {
+            let k = self.n.trailing_zeros() as usize;
+            let mut base = 0;
+            for level in 0..k {
+                let length = 2 * (self.l_vote + level) - 1;
+                append(level, self.n >> (level + 1), length, base);
+                base += length;
+            }
+            append(k, 1, 2 * self.l_agg - 1, base);
+        }
+        assert_eq!(plan.levels.len(), self.n_gates());
+        plan
+    }
+
+    pub fn scheduler_shape(&self, scheduler: Scheduler) -> (usize, usize) {
+        let levels = match scheduler {
+            Scheduler::Reference => self.reference_schedule().levels,
+            Scheduler::Dataflow => self.gate_levels(),
+        };
+        let depth = *levels.iter().max().unwrap_or(&0) as usize;
+        let mut widths = vec![0; depth + 1];
+        for level in levels {
+            widths[level as usize] += 1;
+        }
+        (depth, *widths.iter().max().unwrap_or(&0))
+    }
+
     /// As-soon-as-possible (dataflow) gate depth per gate.
     pub fn gate_levels(&self) -> Vec<u32> {
         let mut d = vec![0u32; self.nodes.len()];
@@ -257,6 +345,46 @@ mod tests {
         }
         assert_eq!(Circuit::build(8, 8, 100).paper_schedule_depth(), 72);
         assert_eq!(Circuit::build(1024, 8, 100).paper_schedule_depth(), 275);
+    }
+
+    #[test]
+    fn reference_schedule_preserves_dag_and_parallel_adders() {
+        for (n, depth, df) in [(8, 72, 25), (64, 147, 37), (256, 207, 45), (1024, 275, 53)] {
+            let circuit = Circuit::build(n, 8, 100);
+            let plan = circuit.reference_schedule();
+            assert_eq!(
+                circuit.scheduler_shape(Scheduler::Reference),
+                (depth, n / 2)
+            );
+            assert_eq!(circuit.scheduler_shape(Scheduler::Dataflow).0, df);
+            assert_eq!(depth, circuit.paper_schedule_depth());
+            assert_eq!(plan.stage_gates.iter().sum::<usize>(), circuit.n_gates());
+            assert_eq!(plan.stage_gates.len(), n.trailing_zeros() as usize + 1);
+            let mut node_levels = vec![0; circuit.nodes.len()];
+            for (i, node) in circuit.nodes.iter().enumerate() {
+                node_levels[i] = match node {
+                    Node::Input(_) => 0,
+                    Node::Affine { terms, .. } => terms
+                        .iter()
+                        .map(|(w, _)| node_levels[*w as usize])
+                        .max()
+                        .unwrap_or(0),
+                    Node::Gate { x, y } => {
+                        let level = plan.levels[circuit.gate_of[i] as usize];
+                        assert!(
+                            level > node_levels[*x as usize] && level > node_levels[*y as usize]
+                        );
+                        level
+                    }
+                };
+            }
+            for (gate, previous) in plan.previous.iter().enumerate() {
+                if let Some(p) = previous {
+                    assert_eq!(plan.stage[*p], plan.stage[gate]);
+                    assert_eq!(plan.levels[*p] + 1, plan.levels[gate]);
+                }
+            }
+        }
     }
 
     #[test]

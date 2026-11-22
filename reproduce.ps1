@@ -16,11 +16,21 @@ param(
     [ValidateRange(1, 2147483647)][int] $BenchIters = 300,
     [string] $Out         = "results\local",
     [switch] $Large,
-    [switch] $SkipTests
+    [switch] $SkipTests,
+    [switch] $SchedulerComparison,
+    [ValidateRange(1, 4096)][int] $SchedulerThreads = 24
 )
 
 $ErrorActionPreference = "Stop"
+$previousRayonThreads = $env:RAYON_NUM_THREADS
+try {
 Set-Location $PSScriptRoot
+if ($SchedulerComparison) {
+    if ($Large) { throw '-SchedulerComparison and -Large are separate experiment profiles' }
+    if (-not $PSBoundParameters.ContainsKey('N')) { $N = @(8,64,256,1024) }
+    $RttMs = @(0)
+    $env:RAYON_NUM_THREADS = "$SchedulerThreads"
+}
 
 function Step([string]$Message) {
     Write-Host "`n=== $Message ===" -ForegroundColor Cyan
@@ -125,6 +135,8 @@ $machine = [ordered]@{
     rustc = $rustc
     cargo = $cargo
     powershell = $PSVersionTable.PSVersion.ToString()
+    rayon_threads_environment = $env:RAYON_NUM_THREADS
+    active_power_scheme = ((& powercfg /getactivescheme) -join ' ')
 }
 $machineJsonPath = Join-Path $Out "machine.json"
 Write-Utf8NoBom $machineJsonPath ($machine | ConvertTo-Json -Depth 8)
@@ -152,9 +164,12 @@ if (-not $SkipTests) {
 }
 
 # 4. Single conditional gate and operation benchmarks -------------------------
-Step "4. Single CGY conditional gate ($GateReps reps) and operation benchmarks"
+if ($SchedulerComparison) { Step "4. Controlled scheduler profile (microbenchmarks excluded)" }
+else { Step "4. Single CGY conditional gate ($GateReps reps) and operation benchmarks" }
+if (-not $SchedulerComparison) {
 Run $wod @("gate", "--reps", "$GateReps", "--out", $Out) (Join-Path $logs "gate.log")
 Run $wod @("bench", "--iters", "$BenchIters", "--groth-iters", "5", "--out", $Out) (Join-Path $logs "bench.log")
+}
 
 # 5. Full elections: local and five trustee processes at configured RTTs -------
 $rtt = ($RttMs -join ",")
@@ -163,13 +178,23 @@ if ($Large) {
     $runs += @{ n = "64"; reps = 3; rtt = "0" }
     $runs += @{ n = "256,1024"; reps = 1; rtt = "0" }
 }
+if ($SchedulerComparison) {
+    $runs = @($N | ForEach-Object { @{ n = "$_"; reps = $(if ($_ -eq 1024) { 1 } else { $Reps }); rtt = "0" } })
+}
 $runIndex = 0
+$orderOffset = 0
 foreach ($experiment in $runs) {
     $runIndex++
-    Step "5. Experiment n=$($experiment.n) reps=$($experiment.reps) (co-located + 5 trustee processes, RTT $($experiment.rtt) ms)"
+    if ($SchedulerComparison) { Step "5. Paired local schedulers n=$($experiment.n) reps=$($experiment.reps), alternating order" }
+    else { Step "5. Experiment n=$($experiment.n) reps=$($experiment.reps) (co-located + 5 trustee processes, RTT $($experiment.rtt) ms)" }
     $dir = Join-Path $Out "exp$runIndex"
     $timer = [System.Diagnostics.Stopwatch]::StartNew()
-    Run $wod @("experiment", "--n", $experiment.n, "--modes", "local,dist", "--rtt-ms", $experiment.rtt, "--reps", "$($experiment.reps)", "--out", $dir) (Join-Path $logs "experiment-$runIndex.log")
+    if ($SchedulerComparison) {
+        Run $wod @("experiment", "--n", $experiment.n, "--modes", "local", "--scheduler", "both", "--order-offset", "$orderOffset", "--machine-json", $machineJsonPath, "--reps", "$($experiment.reps)", "--out", $dir) (Join-Path $logs "experiment-$runIndex.log")
+        $orderOffset += $experiment.reps
+    } else {
+        Run $wod @("experiment", "--n", $experiment.n, "--modes", "local,dist", "--rtt-ms", $experiment.rtt, "--reps", "$($experiment.reps)", "--out", $dir) (Join-Path $logs "experiment-$runIndex.log")
+    }
     $timer.Stop()
     $wall = [ordered]@{ seconds_end_to_end = $timer.Elapsed.TotalSeconds }
     Write-Utf8NoBom (Join-Path $dir "wall.json") ($wall | ConvertTo-Json -Depth 4)
@@ -184,6 +209,7 @@ Step "6. Independent public verification and 7. plaintext oracle results"
 $firstN = $N | Select-Object -First 1
 $firstRtt = $RttMs | Select-Object -First 1
 $runDir = Join-Path $Out "exp1\n$firstN\rep0\dist-rtt$firstRtt"
+if ($SchedulerComparison) { $runDir = Join-Path $Out "exp1\n$firstN\rep0\local-reference" }
 $claim = Get-Content (Join-Path $runDir "public\claim.json") -Raw | ConvertFrom-Json
 $standalone = Get-Content (Join-Path $runDir "public\verify.json") -Raw | ConvertFrom-Json
 $firstManifest = Get-Content (Join-Path $runDir "public\manifest.json") -Raw | ConvertFrom-Json
@@ -202,8 +228,8 @@ $results = [ordered]@{
     source_dirty = $sourceDirty
     machine = $machine
     cargo_lock_sha256 = $lockHash
-    gate = (Get-Content (Join-Path $Out "gate.json") -Raw | ConvertFrom-Json)
-    bench = (Get-Content (Join-Path $Out "bench.json") -Raw | ConvertFrom-Json).bench
+    gate = if ($SchedulerComparison) { $null } else { (Get-Content (Join-Path $Out "gate.json") -Raw | ConvertFrom-Json) }
+    bench = if ($SchedulerComparison) { $null } else { (Get-Content (Join-Path $Out "bench.json") -Raw | ConvertFrom-Json).bench }
     experiments = $summaries
     standalone_verification = $standalone
     plaintext_oracle_agrees = $firstManifest.oracle_agrees
@@ -279,10 +305,13 @@ $manifest = [ordered]@{
         n = $N
         repetitions = $Reps
         rtt_ms = $RttMs
-        gate_repetitions = $GateReps
-        benchmark_iterations = $BenchIters
+        gate_repetitions = $(if ($SchedulerComparison) { 0 } else { $GateReps })
+        benchmark_iterations = $(if ($SchedulerComparison) { 0 } else { $BenchIters })
         large = [bool]$Large
         tests = $testsStatus
+        scheduler_comparison = [bool]$SchedulerComparison
+        scheduler_threads = $(if ($SchedulerComparison) { $SchedulerThreads } else { $null })
+        profiles = $runs
     }
     timings_seconds = [ordered]@{
         release_build = $buildSeconds
@@ -305,3 +334,6 @@ Write-Utf8NoBom (Join-Path $Out "manifest.json") ($manifest | ConvertTo-Json -De
 Get-Content (Join-Path $Out "summary.md")
 Write-Host "`nResults: $Out\manifest.json, $Out\results.json and $Out\summary.md" -ForegroundColor Green
 Write-Host "Each experiment contains public\, private\ and work\ data. Never publish private\; inspect work\ before sharing." -ForegroundColor Yellow
+} finally {
+    $env:RAYON_NUM_THREADS = $previousRayonThreads
+}

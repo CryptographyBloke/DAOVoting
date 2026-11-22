@@ -19,7 +19,7 @@
 //! `y' = σ(2y−1) ∈ {±1}`. The release slot uses `Commit`, `Reveal`, `Dec` on
 //! `C_b` and only accepts a decryption equal to the identity or `g`.
 
-use crate::circuit::{Circuit, Node};
+use crate::circuit::{Circuit, Node, ReferenceSchedule, Scheduler};
 use crate::group::*;
 use crate::shamir;
 use crate::sigma::{Csz, CszStmt, Dleq, Zkp0};
@@ -198,6 +198,11 @@ pub struct Engine {
     pub result: Option<bool>,
     pub n_msgs: usize,
     pub n_items: usize,
+    reference: Option<ReferenceSchedule>,
+    stage_remaining: Vec<usize>,
+    pub completed_stages: usize,
+    pub gate_batches: usize,
+    pub max_gate_batch: usize,
 }
 
 fn inv2() -> F {
@@ -247,6 +252,11 @@ impl Engine {
             result: None,
             n_msgs: 0,
             n_items: 0,
+            reference: None,
+            stage_remaining: Vec::new(),
+            completed_stages: 0,
+            gate_batches: 0,
+            max_gate_batch: 0,
             pp,
             circ,
         };
@@ -261,6 +271,25 @@ impl Engine {
             }
         }
         Ok(e)
+    }
+
+    /// Select a producer policy before processing any message. Public replay
+    /// keeps the original DAG acceptance predicate and needs no scheduler flag.
+    pub fn select_scheduler(&mut self, scheduler: Scheduler) -> Result<()> {
+        ensure!(
+            self.n_msgs == 0 && self.gates_done == 0,
+            "cannot switch an active scheduler"
+        );
+        self.reference = match scheduler {
+            Scheduler::Dataflow => None,
+            Scheduler::Reference => Some(self.circ.reference_schedule()),
+        };
+        self.stage_remaining = self
+            .reference
+            .as_ref()
+            .map(|p| p.stage_gates.clone())
+            .unwrap_or_default();
+        Ok(())
     }
 
     pub fn release_slot(&self) -> u32 {
@@ -324,6 +353,16 @@ impl Engine {
         let a = self.pp.a;
         let mut out = Vec::new();
         for &sid in &self.active {
+            if !self.is_release(sid) {
+                if let Some(plan) = &self.reference {
+                    let gate = sid as usize;
+                    if plan.stage[gate] != self.completed_stages
+                        || plan.previous[gate].is_some_and(|p| !self.slots[p].done)
+                    {
+                        continue;
+                    }
+                }
+            }
             let s = &self.slots[sid as usize];
             if s.done {
                 continue;
@@ -496,6 +535,13 @@ impl Engine {
             // Z = (X · X'^{y'})^{1/2}
             let z = sum.scale(&inv2());
             self.gates_done += 1;
+            if let Some(plan) = &self.reference {
+                let stage = plan.stage[sid as usize];
+                self.stage_remaining[stage] -= 1;
+                if self.stage_remaining[stage] == 0 {
+                    self.completed_stages += 1;
+                }
+            }
             let node = self.circ.gates[sid as usize];
             self.set_wire(node, z);
         }
@@ -519,11 +565,19 @@ impl Engine {
             .map(|b| bincode::deserialize(b))
             .collect::<Result<_, _>>()?;
         let mut seen = HashSet::new();
+        let mut starts = 0;
         for it in &items {
+            if from == 0 && matches!(it, Item::Mask { .. }) {
+                starts += 1;
+            }
             ensure!(
                 seen.insert((std::mem::discriminant(it), it.slot())),
                 "duplicate item in batch"
             );
+        }
+        if starts > 0 {
+            self.gate_batches += 1;
+            self.max_gate_batch = self.max_gate_batch.max(starts);
         }
         if verify {
             items.par_iter().try_for_each(|it| {
@@ -847,5 +901,77 @@ mod tests {
         assert_eq!(eng.gates_done, circ.n_gates());
         assert_eq!(eng.result, Some(25 >= tau));
         assert_eq!(decrypt_small(&sk, &eng.output_ct().unwrap(), 2), Some(1));
+    }
+
+    #[test]
+    fn schedulers_share_circuit_and_reject_invalid_proofs() {
+        let mut rng = thread_rng();
+        let (_, pp, keys) = committee(5);
+        for tau in [25, 26] {
+            let circ = Arc::new(Circuit::build(4, 8, tau));
+            let plan = circ.reference_schedule();
+            let inputs: Vec<Ct> = [3u64, 5, 0, 17]
+                .into_iter()
+                .flat_map(|w| (0..8).map(move |bit| (w >> bit) & 1))
+                .map(|b| pp.key.enc(&F::from(b), &rand_scalar(&mut rng)))
+                .collect();
+            for scheduler in [Scheduler::Reference, Scheduler::Dataflow] {
+                let mut trustees: Vec<_> = keys
+                    .iter()
+                    .map(|k| Trustee::new(k.id, k.share, k.sk.clone()))
+                    .collect();
+                let mut engine = Engine::new(pp.clone(), circ.clone(), &inputs).unwrap();
+                engine.select_scheduler(scheduler).unwrap();
+                let log = run_local(&mut engine, &mut trustees, true).unwrap();
+                assert_eq!(engine.result, Some(25 >= tau));
+                assert_eq!(engine.gates_done, circ.n_gates());
+                assert_eq!(engine.n_items, 15 * (circ.n_gates() + 1));
+                assert!(
+                    engine.max_gate_batch >= 2,
+                    "independent adders were serialized globally"
+                );
+                assert!(engine.select_scheduler(Scheduler::Dataflow).is_err());
+                let mut replay = Engine::new(pp.clone(), circ.clone(), &inputs).unwrap();
+                for message in &log {
+                    let enc: Vec<Vec<u8>> = bincode::deserialize(&message.body).unwrap();
+                    for bytes in enc {
+                        let item: Item = bincode::deserialize(&bytes).unwrap();
+                        if scheduler == Scheduler::Reference
+                            && message.from == 0
+                            && matches!(item, Item::Mask { .. })
+                        {
+                            let gate = item.slot() as usize;
+                            assert!(plan.previous[gate].is_none_or(|p| replay.slots[p].done));
+                            assert!(plan.stage.iter().enumerate().all(|(g, stage)| *stage
+                                >= plan.stage[gate]
+                                || replay.slots[g].done));
+                        }
+                    }
+                    replay.process(message, true).unwrap();
+                }
+                assert_eq!(replay.result, engine.result);
+                assert_eq!(replay.output_ct(), engine.output_ct());
+                let mut corrupted = log[0].clone();
+                corrupted.body[0] ^= 1;
+                let mut verifier = Engine::new(pp.clone(), circ.clone(), &inputs).unwrap();
+                assert!(verifier.process(&corrupted, true).is_err());
+                let enc: Vec<Vec<u8>> = bincode::deserialize(&log[0].body).unwrap();
+                let mut items: Vec<Item> = enc
+                    .iter()
+                    .map(|b| bincode::deserialize(b).unwrap())
+                    .collect();
+                if let Item::Mask { x, .. } = &mut items[0] {
+                    *x = x.add(&Ct::trivial(1));
+                } else {
+                    panic!("expected initial mask")
+                }
+                let forged = Msg::sign(&keys[0].sk, &pp.ctx, 0, 0, &items);
+                let mut verifier = Engine::new(pp.clone(), circ.clone(), &inputs).unwrap();
+                assert!(
+                    verifier.process(&forged, true).is_err(),
+                    "resigned invalid proof accepted"
+                );
+            }
+        }
     }
 }

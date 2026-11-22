@@ -39,6 +39,41 @@ powershell -ExecutionPolicy Bypass -File .\reproduce.ps1 -N 8,64 -Reps 3 -RttMs 
 
 Each invocation creates a unique run directory under `results/local/`, with a manifest recording the source revision, machine, parameters, measurements, verification outcomes, and public-file hashes. `public/` contains verifier inputs; `private/` and `work/` contain secrets or proving materials and must not be published. Large-scale runs can take substantially longer than n=8.
 
+## Controlled scheduler comparison
+
+Run the same circuit and admitted ballots through both local scheduling policies:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\reproduce.ps1 -SchedulerComparison -SchedulerThreads 24
+```
+
+This explicit profile runs n=8,64,256 with three fresh paired elections each and
+n=1024 with one pair. Within each pair, setup, weights, votes, threshold, admitted
+ciphertexts and trustee keys are identical. Each tally uses fresh protocol randomness,
+all cryptographic checks and the same 24-thread Rayon setting. Reference/dataflow
+order alternates across pairs; manifests record the order. Setup/proving/admission
+are separate from tally. This profile skips operation microbenchmarks and uses no
+cloud hosts, latency injection or blockchain calls. Use `-N 8 -Reps 1` for a small
+reproduction. Output directories are unique, and previous results remain intact.
+
+The reference policy serializes each ripple adder's gates in construction order,
+allows different adders in a tree level to progress independently, and places
+barriers between tree levels before the sequential subtractor. Dataflow dispatches
+all currently enabled gates. Both use the original gate IDs, DAG, proofs and release;
+public verification needs no scheduler flag. Reference depths are 72/147/207/275;
+dataflow depths are 25/37/45/53. These depths are distinct from runtime and message count.
+
+Direct CLI selection is `wod tally --dir DIR --scheduler reference|dataflow` or
+`wod experiment --n 8 --modes local --scheduler both --reps 3 --out FRESH_DIR`.
+Dataflow remains the default; TCP commands retain dataflow. `both` alternates the
+two policies, and `--order-offset` sets the starting parity across batches.
+Local tally timing includes role/RNG and public-engine initialization, scheduling,
+proof production/checks, encrypted affine propagation, serialization, signatures,
+transcript hashing and final flush. Gate, release, finalization and initialization
+fields state the boundaries. Claim publication, public replay, oracle, setup and
+ballot proving are outside tally timing. This is a same-circuit execution benchmark,
+not a comparison with CGY's independently implemented voting systems.
+
 ## Optional EVM reproduction
 
 `contracts/WodAdmission.sol` and `tests/evm_local.cjs` support local EVM validation. `tests/evm_arbitrum.cjs` runs the separate Arbitrum Sepolia admission and receipt experiment. Setup, local validation, cost estimation, and the explicitly opt-in broadcast procedure are documented in [docs/ARBITRUM_SEPOLIA.md](docs/ARBITRUM_SEPOLIA.md).

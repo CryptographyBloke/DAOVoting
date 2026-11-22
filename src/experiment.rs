@@ -3,7 +3,7 @@
 //! verification (separate process) → isolated plaintext oracle.
 
 use crate::ballot::{self, Ballot};
-use crate::circuit::Circuit;
+use crate::circuit::{Circuit, Scheduler};
 use crate::ledger::Contract;
 use crate::net::{self, BoardStats, Session};
 use crate::oracle;
@@ -124,24 +124,37 @@ pub struct TallyStats {
     pub transcript_bytes: u64,
     pub decision: Option<bool>,
     pub board: Option<BoardStats>,
+    pub scheduler: Scheduler,
+    pub scheduler_depth: usize,
+    pub scheduler_max_width: usize,
+    pub gate_batches: usize,
+    pub max_gate_batch: usize,
+    pub stage_barriers: usize,
+    pub seconds_initialization: f64,
+    pub seconds_finalize_transcript: f64,
 }
 
 /// Stage 4a: co-located tally (one process, all five trustees, one verifying
 /// replica), matching the paper's reported runs.
-pub fn stage_tally_local(p: &Paths) -> Result<TallyStats> {
+pub fn stage_tally_local(p: &Paths, scheduler: Scheduler) -> Result<TallyStats> {
     let s = Session::load(p, false)?;
     let keys: Vec<TrusteeKey> = (0..s.setup.a)
         .map(|i| read_bin(&p.private(&format!("trustee_{i}.bin"))))
         .collect::<Result<_>>()?;
+    let circ = Arc::new(s.circuit());
+    let mut tw =
+        transcript::Writer::create(&p.public("transcript.bin"), &s.setup.hash(), &s.board_hash)?;
+    // Identical boundaries in both modes: include public precomputation,
+    // encrypted DAG initialization, policy construction, proofs/signatures,
+    // verification, affine propagation and transcript append/hash updates.
+    let t0 = Instant::now();
     let mut ts: Vec<Trustee> = keys
         .iter()
         .map(|k| Trustee::new(k.id, k.share, SigningKey::from_bytes(&k.signing)))
         .collect();
-    let circ = Arc::new(s.circuit());
     let mut eng = Engine::new(Arc::new(s.public()?), circ.clone(), &s.inputs)?;
-    let mut tw =
-        transcript::Writer::create(&p.public("transcript.bin"), &s.setup.hash(), &s.board_hash)?;
-    let t0 = Instant::now();
+    eng.select_scheduler(scheduler)?;
+    let initialization = secs(t0);
     let mut t_gates = None;
     while !eng.finished() {
         let mut progressed = false;
@@ -157,21 +170,30 @@ pub fn stage_tally_local(p: &Paths) -> Result<TallyStats> {
         }
         ensure!(progressed, "protocol stalled");
     }
-    let total = secs(t0);
+    let decision_complete = secs(t0);
     let (messages, bytes, items) = (tw.msgs, tw.bytes, eng.n_items as u64);
     let h = tw.finish()?;
+    let total = secs(t0);
     let bit = eng.result.unwrap();
     net::publish_claim(p, &s, h, bit)?;
     let g = t_gates.unwrap_or(total);
     Ok(TallyStats {
         mode: "local".into(),
         seconds_gates: g,
-        seconds_release: total - g,
+        seconds_release: decision_complete - g,
         seconds_tally: total,
         messages,
         items,
         transcript_bytes: bytes,
         decision: Some(bit),
+        scheduler,
+        scheduler_depth: circ.scheduler_shape(scheduler).0,
+        scheduler_max_width: circ.scheduler_shape(scheduler).1,
+        gate_batches: eng.gate_batches,
+        max_gate_batch: eng.max_gate_batch,
+        stage_barriers: eng.completed_stages.saturating_sub(1),
+        seconds_initialization: initialization,
+        seconds_finalize_transcript: total - decision_complete,
         ..Default::default()
     })
 }
@@ -219,6 +241,7 @@ pub fn stage_tally_dist(
         transcript_bytes: b.transcript_bytes,
         decision: b.decision,
         board: Some(b),
+        ..Default::default()
     })
 }
 
@@ -306,7 +329,7 @@ pub fn machine() -> Value {
     let cargo_lock_sha256 = hex::encode(Sha256::digest(lock.as_bytes()));
     let ver = |name: &str| {
         lock.split("[[package]]")
-            .find(|b| b.contains(&format!("name = \"{name}\"\n")))
+            .find(|b| b.lines().any(|line| line == format!("name = \"{name}\"")))
             .and_then(|b| {
                 b.lines()
                     .find(|l| l.starts_with("version"))
@@ -383,12 +406,27 @@ pub struct Plan {
     pub reps: usize,
     pub out: PathBuf,
     pub threads_per_trustee: Option<usize>,
+    pub schedulers: Vec<Scheduler>,
+    pub order_offset: usize,
+    pub host: Option<Value>,
 }
 
 /// Runs `reps` fresh elections (setup, ballots) and, on each sealed board,
 /// every tally variant (`local`, or `dist` with an injected RTT); each variant
 /// is verified independently and checked against the oracle.
 pub fn run(plan: &Plan) -> Result<Value> {
+    ensure!(!plan.schedulers.is_empty(), "no scheduler selected");
+    ensure!(
+        plan.schedulers == [Scheduler::Dataflow] || plan.variants.iter().all(|v| v.0 == "local"),
+        "reference/comparison scheduling requires --modes local; TCP mode retains dataflow"
+    );
+    let git = |args: &[&str]| -> Result<String> {
+        let out = Command::new("git").args(args).output()?;
+        ensure!(out.status.success(), "Git provenance command failed");
+        Ok(String::from_utf8(out.stdout)?.trim().to_string())
+    };
+    let source_commit = git(&["rev-parse", "HEAD"])?;
+    let source_status = git(&["status", "--porcelain", "--untracked-files=all"])?;
     let circ = Circuit::build(plan.n, ballot::L_VOTE, 0);
     let (df_depth, df_width) = circ.dataflow_shape();
     let shape = json!({
@@ -412,43 +450,65 @@ pub fn run(plan: &Plan) -> Result<Value> {
         eprintln!("[n={} rep={rep}] proving {} ballots", plan.n, plan.n);
         let s_vote = stage_vote(&base)?;
         let s_admit = stage_admit(&base)?;
+        let paired_inputs = file_hashes(&base.root.join("public"))?;
         eprintln!("[n={} rep={rep}] admitted: {s_admit}", plan.n);
-        for (mode, rtt) in &plan.variants {
-            let name = if mode == "local" {
-                "local".to_string()
-            } else {
-                format!("dist-rtt{rtt}")
-            };
-            let v = Paths::new(base.root.parent().unwrap().join(&name));
-            copy_base(&base, &v)?;
-            eprintln!("[n={} rep={rep}] tally {name}", plan.n);
-            let tally = if mode == "local" {
-                stage_tally_local(&v)?
-            } else {
-                stage_tally_dist(&v, *rtt, plan.threads_per_trustee)?
-            };
-            eprintln!(
-                "[n={} rep={rep}] {name}: tally {:.2}s; verifying",
-                plan.n, tally.seconds_tally
-            );
-            let ver = stage_verify(&v)?;
-            let o = oracle::evaluate(&v)?;
-            let accept = ver["accept"].as_bool() == Some(true);
-            let agrees = ver["decision"].as_bool() == Some(o.bit) && tally.decision == Some(o.bit);
-            ensure!(accept, "verifier rejected {}", v.root.display());
-            ensure!(agrees, "decision disagrees with the plaintext oracle");
-            let setup: Setup = read_bin(&v.public("setup.bin"))?;
-            let manifest = json!({
-                "protocol": PROTOCOL, "n": plan.n, "rep": rep, "variant": name, "mode": mode, "rtt_ms": rtt,
-                "params": {"a": setup.a, "t": setup.t, "q_dec": setup.t + 1, "tau": setup.tau, "poll": setup.poll, "l_vote": setup.l_vote, "weights": setup.weights},
-                "circuit": shape, "machine": machine(),
-                "setup": s_setup, "voting": s_vote, "admission": s_admit, "tally": tally, "verification": ver,
-                "decision": tally.decision, "oracle_agrees": agrees,
-                "runner_peak_rss_bytes": peak_rss_bytes(),
-                "public_files": file_hashes(&v.root.join("public"))?,
-            });
-            write_json(&v.public("manifest.json"), &manifest)?;
-            runs.push(manifest);
+        let mut schedulers = plan.schedulers.clone();
+        if (rep + plan.order_offset) % 2 == 1 {
+            schedulers.reverse();
+        }
+        let execution_order: Vec<&str> = schedulers.iter().map(|s| s.name()).collect();
+        for (order, scheduler) in schedulers.iter().copied().enumerate() {
+            for (mode, rtt) in &plan.variants {
+                let name = if mode == "local"
+                    && (plan.schedulers.len() > 1 || scheduler == Scheduler::Reference)
+                {
+                    format!("local-{}", scheduler.name())
+                } else if mode == "local" {
+                    "local".to_string()
+                } else {
+                    format!("dist-rtt{rtt}")
+                };
+                let v = Paths::new(base.root.parent().unwrap().join(&name));
+                copy_base(&base, &v)?;
+                eprintln!("[n={} rep={rep}] tally {name}", plan.n);
+                let tally = if mode == "local" {
+                    stage_tally_local(&v, scheduler)?
+                } else {
+                    stage_tally_dist(&v, *rtt, plan.threads_per_trustee)?
+                };
+                eprintln!(
+                    "[n={} rep={rep}] {name}: tally {:.2}s; verifying",
+                    plan.n, tally.seconds_tally
+                );
+                let ver = stage_verify(&v)?;
+                let o = oracle::evaluate(&v)?;
+                let accept = ver["accept"].as_bool() == Some(true);
+                let agrees =
+                    ver["decision"].as_bool() == Some(o.bit) && tally.decision == Some(o.bit);
+                ensure!(accept, "verifier rejected {}", v.root.display());
+                ensure!(agrees, "decision disagrees with the plaintext oracle");
+                let setup: Setup = read_bin(&v.public("setup.bin"))?;
+                let mut host = machine();
+                if let Some(extra) = plan.host.as_ref().and_then(Value::as_object) {
+                    for (key, value) in extra {
+                        host[key] = value.clone();
+                    }
+                }
+                let manifest = json!({
+                    "source_commit": source_commit, "source_dirty": !source_status.is_empty(), "source_dirty_paths": source_status.lines().collect::<Vec<_>>(),
+                    "scheduler": scheduler, "execution_order": execution_order, "order_in_pair": order,
+                    "paired_input_files": paired_inputs,
+                    "protocol": PROTOCOL, "n": plan.n, "rep": rep, "variant": name, "mode": mode, "rtt_ms": rtt,
+                    "params": {"a": setup.a, "t": setup.t, "q_dec": setup.t + 1, "tau": setup.tau, "poll": setup.poll, "l_vote": setup.l_vote, "weights": setup.weights},
+                    "circuit": shape, "machine": host,
+                    "setup": s_setup, "voting": s_vote, "admission": s_admit, "tally": tally, "verification": ver,
+                    "decision": tally.decision, "oracle_agrees": agrees,
+                    "runner_peak_rss_bytes": peak_rss_bytes(),
+                    "public_files": file_hashes(&v.root.join("public"))?,
+                });
+                write_json(&v.public("manifest.json"), &manifest)?;
+                runs.push(manifest);
+            }
         }
         let _ = std::fs::remove_file(base.work("ballot_pk.bin"));
     }

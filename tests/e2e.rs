@@ -28,6 +28,88 @@ fn copy_dir(src: &Path, dst: &Path) {
 }
 
 #[test]
+fn paired_scheduler_public_replay_and_claim_rejection() {
+    let out = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("paired-schedulers");
+    if out.exists() {
+        std::fs::remove_dir_all(&out).unwrap();
+    }
+    let output = wod()
+        .args([
+            "experiment",
+            "--n",
+            "8",
+            "--modes",
+            "local",
+            "--scheduler",
+            "both",
+            "--reps",
+            "2",
+            "--out",
+        ])
+        .arg(&out)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let result = json(&out.join("n8/results.json"));
+    let runs = result["runs"].as_array().unwrap();
+    assert_eq!(runs.len(), 4);
+    assert_eq!(runs[0]["scheduler"], "reference");
+    assert_eq!(runs[2]["scheduler"], "dataflow");
+    for pair in runs.chunks(2) {
+        assert_eq!(pair[0]["paired_input_files"], pair[1]["paired_input_files"]);
+        assert_eq!(pair[0]["params"], pair[1]["params"]);
+        assert_eq!(pair[0]["decision"], pair[1]["decision"]);
+        assert_eq!(pair[0]["tally"]["items"], pair[1]["tally"]["items"]);
+    }
+    for (i, run) in runs.iter().enumerate() {
+        assert_eq!(run["verification"]["accept"], true);
+        assert_eq!(run["oracle_agrees"], true);
+        assert_eq!(run["verification"]["gates_verified"], 134);
+        let source = out.join(format!(
+            "n8/rep{}/{}",
+            run["rep"],
+            run["variant"].as_str().unwrap()
+        ));
+        for mutation in ["none", "claim", "transcript"] {
+            let bad = mutation != "none";
+            let dir = out.join(format!("public-replay-{i}-{mutation}"));
+            std::fs::create_dir_all(dir.join("public")).unwrap();
+            for file in ["setup.bin", "ledger.bin", "transcript.bin"] {
+                std::fs::copy(
+                    source.join("public").join(file),
+                    dir.join("public").join(file),
+                )
+                .unwrap();
+            }
+            if mutation == "claim" {
+                let path = dir.join("public/ledger.bin");
+                let mut events: Vec<wod::ledger::Event> = wod::setup::read_bin(&path).unwrap();
+                for event in &mut events {
+                    if let wod::ledger::Event::Claim { bit, .. } = event {
+                        *bit = !*bit;
+                    }
+                }
+                wod::setup::write_bin(&path, &events).unwrap();
+            }
+            if mutation == "transcript" {
+                let path = dir.join("public/transcript.bin");
+                let mut bytes = std::fs::read(&path).unwrap();
+                let index = bytes.len() / 2;
+                bytes[index] ^= 1;
+                std::fs::write(path, bytes).unwrap();
+            }
+            let result = wod().args(["verify", "--dir"]).arg(&dir).output().unwrap();
+            assert_eq!(result.status.success(), !bad);
+            assert!(!dir.join("private").exists());
+        }
+    }
+}
+
+#[test]
 fn eight_voter_election_local_and_distributed() {
     let out = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("e2e");
     let _ = std::fs::remove_dir_all(&out);

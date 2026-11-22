@@ -3,6 +3,7 @@
 use anyhow::{Result, anyhow, bail, ensure};
 use serde_json::{Value, json};
 use std::path::PathBuf;
+use wod::circuit::Scheduler;
 use wod::experiment::{self, Plan};
 use wod::setup::{Paths, write_json};
 use wod::{bench, evm, net, oracle, verify};
@@ -13,7 +14,7 @@ Pipeline (one poll in DIR):
   wod setup   --dir DIR --n N [--tau T] [--poll P]   test-only dealer + Groth16 CRS
   wod vote    --dir DIR                              prove all ballots
   wod admit   --dir DIR                              admission contract, seal board
-  wod tally   --dir DIR                              co-located tally (5 trustees, 1 process)
+  wod tally   --dir DIR [--scheduler dataflow|reference] co-located tally (5 trustees, 1 process)
   wod board   --dir DIR --addr HOST:PORT [--rtt-ms R]   public coordinator (TCP board)
   wod trustee --dir DIR --id I --addr HOST:PORT [--rtt-ms R]   one trustee process
   wod verify  --dir DIR                              independent public verifier
@@ -29,6 +30,8 @@ Experiments:
   wod bench      [--iters 200] [--groth-iters 5] [--out results]
   wod experiment --n 8[,64,...] [--modes local,dist] [--rtt-ms 0[,20,...]]
                  [--reps 3] [--tau T] [--threads-per-trustee K] [--out results]
+                 [--scheduler dataflow|reference|both] [--order-offset K] [--machine-json FILE]
+                 reference/both require --modes local; both alternates paired order
 ";
 
 struct Args(Vec<String>);
@@ -70,6 +73,10 @@ fn main() -> Result<()> {
     let argv: Vec<String> = std::env::args().skip(1).collect();
     let cmd = argv.first().cloned().unwrap_or_else(|| "help".into());
     let a = Args(argv);
+    ensure!(
+        a.get("--scheduler").is_none() || matches!(cmd.as_str(), "tally" | "experiment"),
+        "--scheduler is supported by tally and experiment only; TCP commands retain dataflow"
+    );
     match cmd.as_str() {
         "setup" => print(&experiment::stage_setup(
             &a.dir()?,
@@ -81,6 +88,10 @@ fn main() -> Result<()> {
         "admit" => print(&experiment::stage_admit(&a.dir()?)?),
         "tally" => print(&serde_json::to_value(experiment::stage_tally_local(
             &a.dir()?,
+            a.get("--scheduler")
+                .unwrap_or_else(|| "dataflow".into())
+                .parse::<Scheduler>()
+                .map_err(anyhow::Error::msg)?,
         )?)?),
         "board" => {
             let l = std::net::TcpListener::bind(a.req("--addr")?)?;
@@ -256,7 +267,17 @@ fn run_experiments(a: &Args) -> Result<()> {
         }
     }
     let mut all = Vec::new();
-    for n in a.list("--n", "8") {
+    let selection = a.get("--scheduler").unwrap_or_else(|| "dataflow".into());
+    let schedulers = if selection == "both" {
+        vec![Scheduler::Reference, Scheduler::Dataflow]
+    } else {
+        vec![selection.parse::<Scheduler>().map_err(anyhow::Error::msg)?]
+    };
+    let host = a
+        .get("--machine-json")
+        .map(|path| -> Result<Value> { Ok(serde_json::from_slice(&std::fs::read(path)?)?) })
+        .transpose()?;
+    for (index, n) in a.list("--n", "8").into_iter().enumerate() {
         let n: usize = n.parse()?;
         let plan = Plan {
             n,
@@ -265,6 +286,9 @@ fn run_experiments(a: &Args) -> Result<()> {
             reps,
             out: out.clone(),
             threads_per_trustee: tpt,
+            schedulers: schedulers.clone(),
+            order_offset: a.num("--order-offset", 0usize)? + index * reps,
+            host: host.clone(),
         };
         let r = experiment::run(&plan)?;
         write_json(&out.join(format!("n{n}")).join("results.json"), &r)?;
@@ -303,6 +327,14 @@ fn summarize(all: &[Value]) -> Value {
             let col = |p: &[&str]| experiment::stats(rs.iter().filter_map(|r| f(r, p)).collect());
             rows.push(json!({
                 "n": res["n"], "variant": name, "circuit": res["circuit"],
+                "scheduler": rs[0]["scheduler"],
+                "scheduler_depth": rs[0]["tally"]["scheduler_depth"],
+                "scheduler_max_width": rs[0]["tally"]["scheduler_max_width"],
+                "gate_batches": col(&["tally", "gate_batches"]),
+                "max_gate_batch": col(&["tally", "max_gate_batch"]),
+                "items": col(&["tally", "items"]),
+                "initialization_s": col(&["tally", "seconds_initialization"]),
+                "finalize_transcript_s": col(&["tally", "seconds_finalize_transcript"]),
                 "proving_s": col(&["voting", "seconds_proving"]),
                 "admission_s": col(&["admission", "seconds_admission"]),
                 "gates_s": col(&["tally", "seconds_gates"]),
