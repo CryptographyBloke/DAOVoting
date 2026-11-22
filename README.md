@@ -41,6 +41,10 @@ Each invocation creates a unique run directory under `results/local/`, with a ma
 
 ## Controlled scheduler comparison
 
+The [measured comparison and paper-ready table](reports/summary.md) and
+[public measurement index](evidence/schedulers.json) record the paired results,
+timing boundaries, source revision and checksums.
+
 Run the same circuit and admitted ballots through both local scheduling policies:
 
 ```powershell

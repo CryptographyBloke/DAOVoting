@@ -1,0 +1,1532 @@
+{
+  "runs": 20,
+  "pairs": 10,
+  "summary": [
+    {
+      "n": 8,
+      "gates": 134,
+      "schedulers": {
+        "reference": {
+          "repetitions": 3,
+          "median_s": 2.3287296,
+          "min_s": 2.2968033,
+          "max_s": 2.3299317999999998
+        },
+        "dataflow": {
+          "repetitions": 3,
+          "median_s": 1.1638576,
+          "min_s": 1.1571,
+          "max_s": 1.1792015
+        }
+      },
+      "speedup": 2.000871584290037,
+      "reduction_pct": 50.0217801156476
+    },
+    {
+      "n": 64,
+      "gates": 1086,
+      "schedulers": {
+        "reference": {
+          "repetitions": 3,
+          "median_s": 6.9680557,
+          "min_s": 6.8356049,
+          "max_s": 7.0807346
+        },
+        "dataflow": {
+          "repetitions": 3,
+          "median_s": 4.8943176,
+          "min_s": 4.8906079,
+          "max_s": 4.9224656
+        }
+      },
+      "speedup": 1.4237032145196298,
+      "reduction_pct": 29.76064183872698
+    },
+    {
+      "n": 256,
+      "gates": 4350,
+      "schedulers": {
+        "reference": {
+          "repetitions": 3,
+          "median_s": 19.9482749,
+          "min_s": 19.8888572,
+          "max_s": 19.970568
+        },
+        "dataflow": {
+          "repetitions": 3,
+          "median_s": 17.1461686,
+          "min_s": 17.1028927,
+          "max_s": 17.2203255
+        }
+      },
+      "speedup": 1.163424632369473,
+      "reduction_pct": 14.04686026258843
+    },
+    {
+      "n": 1024,
+      "gates": 17406,
+      "schedulers": {
+        "reference": {
+          "repetitions": 1,
+          "median_s": 69.4392439,
+          "min_s": 69.4392439,
+          "max_s": 69.4392439
+        },
+        "dataflow": {
+          "repetitions": 1,
+          "median_s": 65.5667029,
+          "min_s": 65.5667029,
+          "max_s": 65.5667029
+        }
+      },
+      "speedup": 1.059062616064533,
+      "reduction_pct": 5.576876680248528
+    }
+  ],
+  "raw": [
+    {
+      "n": 8,
+      "rep": 0,
+      "scheduler": "dataflow",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": false,
+      "gates": 134,
+      "threshold": 100,
+      "manifest": "exp1/n8/rep0/local-dataflow/public/manifest.json",
+      "manifest_sha256": "348dff8fed9bb2ad008d1d504875be9e4aa1aa8a45634314157af9bdada23c6c",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "6a2317b1355a8002ed1a27cb857b9af52c02becf56a59562d9491fc3c1c70f45"
+        },
+        "ledger.bin": {
+          "bytes": 6809,
+          "sha256": "421dfb538a13ef9efb3408c87149820315224391c6e67483aa9eddec1ed9e63a"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "168ae6b2de84e4a9071b4ddd0257429d8dd0a8d6251d0b7fce430f836ab83c38"
+        },
+        "transcript.bin": {
+          "bytes": 663260,
+          "sha256": "a5b049cb772f991df1ad0dc5482904c7db64647b628bd279ab8c3d104a12c3f9"
+        },
+        "verify.json": {
+          "bytes": 579,
+          "sha256": "23408b2229d79e7c088ef96d196835781ebb8ce52ff8b890a2cdcb2c6a86092c"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 6740,
+          "sha256": "a7598b913d2dfad9ba46ae1714c943970dbd1fb9b9fd0980c568ca9eb4ff7cd2"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "168ae6b2de84e4a9071b4ddd0257429d8dd0a8d6251d0b7fce430f836ab83c38"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 25,
+        "items": 2025,
+        "max_gate_batch": 32,
+        "messages": 390,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 25,
+        "scheduler_max_width": 32,
+        "seconds_finalize_transcript": 0.00023499999999998522,
+        "seconds_gates": 1.1458197,
+        "seconds_initialization": 0.0805137,
+        "seconds_release": 0.011045299999999925,
+        "seconds_tally": 1.1571,
+        "stage_barriers": 0,
+        "transcript_bytes": 663260
+      },
+      "verification_s": 0.600722,
+      "verification_process_wall_s": 0.6130989,
+      "proving_s": 1.9414478
+    },
+    {
+      "n": 8,
+      "rep": 0,
+      "scheduler": "reference",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": false,
+      "gates": 134,
+      "threshold": 100,
+      "manifest": "exp1/n8/rep0/local-reference/public/manifest.json",
+      "manifest_sha256": "84b280774250f6c64feddd9a19ab267faa5405aa4e40b610f43b10fa01008908",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "b5a3af3ca2ca4de4db93e210c7c70ec1f8edd1529708ff0f7e9e25898b87dd29"
+        },
+        "ledger.bin": {
+          "bytes": 6809,
+          "sha256": "be05c87452de2155f64abd4916c3a4926c347cf2df492776a76dd205e44e2817"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "168ae6b2de84e4a9071b4ddd0257429d8dd0a8d6251d0b7fce430f836ab83c38"
+        },
+        "transcript.bin": {
+          "bytes": 734465,
+          "sha256": "0a9ea24f9f24622670a461dc4a24771fba94806c56e5519350b30c69424a20cf"
+        },
+        "verify.json": {
+          "bytes": 582,
+          "sha256": "52e241b42e31eda826afe3b710d79a525b12ca707fa2a3a0bf926eac56368a12"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 6740,
+          "sha256": "a7598b913d2dfad9ba46ae1714c943970dbd1fb9b9fd0980c568ca9eb4ff7cd2"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "168ae6b2de84e4a9071b4ddd0257429d8dd0a8d6251d0b7fce430f836ab83c38"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 72,
+        "items": 2025,
+        "max_gate_batch": 4,
+        "messages": 1095,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 72,
+        "scheduler_max_width": 4,
+        "seconds_finalize_transcript": 0.00026020000000004373,
+        "seconds_gates": 2.2854166,
+        "seconds_initialization": 0.053324,
+        "seconds_release": 0.01112650000000004,
+        "seconds_tally": 2.2968033,
+        "stage_barriers": 3,
+        "transcript_bytes": 734465
+      },
+      "verification_s": 1.2346918,
+      "verification_process_wall_s": 1.24901,
+      "proving_s": 1.9414478
+    },
+    {
+      "n": 8,
+      "rep": 1,
+      "scheduler": "dataflow",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": true,
+      "gates": 134,
+      "threshold": 100,
+      "manifest": "exp1/n8/rep1/local-dataflow/public/manifest.json",
+      "manifest_sha256": "231a99f6ed23e9f1e77ab08935f02891fdaf2a9b97036f894e1be94af693d6f8",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "f63e751321065125c5945771f7eb57c0ff2fa29d019090379347370433bc0207"
+        },
+        "ledger.bin": {
+          "bytes": 6809,
+          "sha256": "016cbb0ea08893f8e1d6d3b7c700fe32ba86dbe2ef6391e9f28cfd01ef3b0b35"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "f83a529829e9414944593a1b035734fd2d2e16a84bf5806c9974d7f2851d48f7"
+        },
+        "transcript.bin": {
+          "bytes": 663260,
+          "sha256": "5f7c3d157f58623340ba73533bdbd6831cee10bf08a353ca8b8d303473c662c0"
+        },
+        "verify.json": {
+          "bytes": 579,
+          "sha256": "f0f4ec19a960c7cc7045af9846d2de3c043afd297c5daeaec8d5b88a2a55e6b0"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 6740,
+          "sha256": "a4954d3414c5a675aba5b80175c7b348576016ce06adba33c0cdf164f1f076bb"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "f83a529829e9414944593a1b035734fd2d2e16a84bf5806c9974d7f2851d48f7"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 25,
+        "items": 2025,
+        "max_gate_batch": 32,
+        "messages": 390,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 25,
+        "scheduler_max_width": 32,
+        "seconds_finalize_transcript": 0.00031599999999998296,
+        "seconds_gates": 1.1679428,
+        "seconds_initialization": 0.0816455,
+        "seconds_release": 0.010942699999999972,
+        "seconds_tally": 1.1792015,
+        "stage_barriers": 0,
+        "transcript_bytes": 663260
+      },
+      "verification_s": 0.6327895,
+      "verification_process_wall_s": 0.646542,
+      "proving_s": 3.8727371
+    },
+    {
+      "n": 8,
+      "rep": 1,
+      "scheduler": "reference",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": true,
+      "gates": 134,
+      "threshold": 100,
+      "manifest": "exp1/n8/rep1/local-reference/public/manifest.json",
+      "manifest_sha256": "de5f6e89af9fc3ce1d4ef83df2ea74f282d8f82c38400de5db2f6e01590aa8c7",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "c83bf2f279c4cdb8085827346b47151ca8c21f7d9c335a22511958677223f634"
+        },
+        "ledger.bin": {
+          "bytes": 6809,
+          "sha256": "aa56489f34c5a9a21187cff076447494bd734e108d2086c19757606ea7118789"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "f83a529829e9414944593a1b035734fd2d2e16a84bf5806c9974d7f2851d48f7"
+        },
+        "transcript.bin": {
+          "bytes": 734465,
+          "sha256": "c434cfe6930637ceb443ba1146d8579cd18a255369a84f4694a55de4dc13cfd2"
+        },
+        "verify.json": {
+          "bytes": 580,
+          "sha256": "bbf65694d0e6710280004f956db90c44d63ae8de36e15a06e9311eb0c4facdfe"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 6740,
+          "sha256": "a4954d3414c5a675aba5b80175c7b348576016ce06adba33c0cdf164f1f076bb"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "f83a529829e9414944593a1b035734fd2d2e16a84bf5806c9974d7f2851d48f7"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 72,
+        "items": 2025,
+        "max_gate_batch": 4,
+        "messages": 1095,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 72,
+        "scheduler_max_width": 4,
+        "seconds_finalize_transcript": 0.00028909999999982006,
+        "seconds_gates": 2.318797,
+        "seconds_initialization": 0.0802182,
+        "seconds_release": 0.010845699999999958,
+        "seconds_tally": 2.3299317999999998,
+        "stage_barriers": 3,
+        "transcript_bytes": 734465
+      },
+      "verification_s": 1.251506,
+      "verification_process_wall_s": 1.265426,
+      "proving_s": 3.8727371
+    },
+    {
+      "n": 8,
+      "rep": 2,
+      "scheduler": "dataflow",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": true,
+      "gates": 134,
+      "threshold": 100,
+      "manifest": "exp1/n8/rep2/local-dataflow/public/manifest.json",
+      "manifest_sha256": "add48318406f16a51b8cdea64289337eb27b2c01a443b4210c9a9569bb26201a",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "5d803837dafd99ee1636d018cc030a6e98554df5d8558059715f0d51532dbfb2"
+        },
+        "ledger.bin": {
+          "bytes": 6809,
+          "sha256": "f4abfa19def76858bb7354e78043731cd26a258556f2a6b9065e7debdcd24797"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "240e12aa2e66a6b2ffd935848830d500691ed9a7522197f28b0a0a27eaa4217a"
+        },
+        "transcript.bin": {
+          "bytes": 663260,
+          "sha256": "dafb5cfe73b9fc72191050f61225b6d307e5a78dbbfa6588950f8d4954528b0a"
+        },
+        "verify.json": {
+          "bytes": 579,
+          "sha256": "6d653c8c9cee7c6e6f0076fafbac665aee05960e77a3eb6cd3ccb2851c4497af"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 6740,
+          "sha256": "caa851e405fc8f74d6d434a6e7a99c27403fcd00c6ff63a98e8a86c62eb22b4a"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "240e12aa2e66a6b2ffd935848830d500691ed9a7522197f28b0a0a27eaa4217a"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 25,
+        "items": 2025,
+        "max_gate_batch": 32,
+        "messages": 390,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 25,
+        "scheduler_max_width": 32,
+        "seconds_finalize_transcript": 0.0002484000000000375,
+        "seconds_gates": 1.1530155,
+        "seconds_initialization": 0.0798379,
+        "seconds_release": 0.01059370000000004,
+        "seconds_tally": 1.1638576,
+        "stage_barriers": 0,
+        "transcript_bytes": 663260
+      },
+      "verification_s": 0.636678,
+      "verification_process_wall_s": 0.6494586,
+      "proving_s": 3.688193
+    },
+    {
+      "n": 8,
+      "rep": 2,
+      "scheduler": "reference",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": true,
+      "gates": 134,
+      "threshold": 100,
+      "manifest": "exp1/n8/rep2/local-reference/public/manifest.json",
+      "manifest_sha256": "3a8a0fa2d7e653de8c1cf8fa628d237499ee83d61bde58952dff7dbcf897d9ee",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "f169a075bf4ce3aa3517f04e1c6bcf787e20309d6bd5c236cdf1fc7c2f796248"
+        },
+        "ledger.bin": {
+          "bytes": 6809,
+          "sha256": "2274921359db9bf810a42c4f3674868d19e03bad075d3e337e770635e1b5ee4e"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "240e12aa2e66a6b2ffd935848830d500691ed9a7522197f28b0a0a27eaa4217a"
+        },
+        "transcript.bin": {
+          "bytes": 734465,
+          "sha256": "42e9b4a8ae50c00c0386699ab98dfa8381432284729298fe5006aa88ca85d6ad"
+        },
+        "verify.json": {
+          "bytes": 581,
+          "sha256": "1d7818dcbfab9a7246f4f4dced5ef279111b2c34c7070363f3d424a3df72c991"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 6740,
+          "sha256": "caa851e405fc8f74d6d434a6e7a99c27403fcd00c6ff63a98e8a86c62eb22b4a"
+        },
+        "setup.bin": {
+          "bytes": 2316,
+          "sha256": "240e12aa2e66a6b2ffd935848830d500691ed9a7522197f28b0a0a27eaa4217a"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 72,
+        "items": 2025,
+        "max_gate_batch": 4,
+        "messages": 1095,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 72,
+        "scheduler_max_width": 4,
+        "seconds_finalize_transcript": 0.0001968999999997223,
+        "seconds_gates": 2.3173157,
+        "seconds_initialization": 0.0817589,
+        "seconds_release": 0.011217000000000255,
+        "seconds_tally": 2.3287296,
+        "stage_barriers": 3,
+        "transcript_bytes": 734465
+      },
+      "verification_s": 1.2325516,
+      "verification_process_wall_s": 1.2469611999999999,
+      "proving_s": 3.688193
+    },
+    {
+      "n": 64,
+      "rep": 0,
+      "scheduler": "dataflow",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": false,
+      "gates": 1086,
+      "threshold": 4518,
+      "manifest": "exp2/n64/rep0/local-dataflow/public/manifest.json",
+      "manifest_sha256": "23b0ebf415e0afa11ccace7ffcdb2edf00c1df82e9933cda28924679eefa627c",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "af786cca7fabfefd34a49f0700eba93f74cd34289c79a2d63f62e005c8d89fd3"
+        },
+        "ledger.bin": {
+          "bytes": 53625,
+          "sha256": "14a2db366e4ee740e59fc0178990200e7375543162ddf358ef3019d968950c46"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "82a9d9b1b8ac928a07f9d8cc1de0c78c96aadfcc5e0e00c835b7049bce1f7da9"
+        },
+        "transcript.bin": {
+          "bytes": 5098720,
+          "sha256": "0d09d1b2d70a0c39f901487f45cf1f25c8917413c66ac874eda01cb78b773c16"
+        },
+        "verify.json": {
+          "bytes": 585,
+          "sha256": "bbdaa4cb07d5ff7c03691c7f57095030bf11f1af860b8ea6586080ef152688c9"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 53556,
+          "sha256": "26d75c07e2fb070bed84e4a2f61f42def243039dd892ac3338e9c71679fc3b2f"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "82a9d9b1b8ac928a07f9d8cc1de0c78c96aadfcc5e0e00c835b7049bce1f7da9"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 37,
+        "items": 16305,
+        "max_gate_batch": 256,
+        "messages": 570,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 37,
+        "scheduler_max_width": 256,
+        "seconds_finalize_transcript": 0.00025259999999960314,
+        "seconds_gates": 4.8828245,
+        "seconds_initialization": 0.0839468,
+        "seconds_release": 0.01124050000000043,
+        "seconds_tally": 4.8943176,
+        "stage_barriers": 0,
+        "transcript_bytes": 5098720
+      },
+      "verification_s": 1.8567528,
+      "verification_process_wall_s": 1.8778920000000001,
+      "proving_s": 27.8360542
+    },
+    {
+      "n": 64,
+      "rep": 0,
+      "scheduler": "reference",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": false,
+      "gates": 1086,
+      "threshold": 4518,
+      "manifest": "exp2/n64/rep0/local-reference/public/manifest.json",
+      "manifest_sha256": "6ab7ab6a2bb57a79f514aaf0cb1eb0e0a2d65d714067c39f67d1fb02ea63ca0e",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "1bc29be0c999f92259f3ea1dd6501c7d6187c62dc368f45833eb34700adaf3c7"
+        },
+        "ledger.bin": {
+          "bytes": 53625,
+          "sha256": "f55208d93f89be547944eb6d45abe70bb7940cca2bc4b656828d3c047d0d49bc"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "82a9d9b1b8ac928a07f9d8cc1de0c78c96aadfcc5e0e00c835b7049bce1f7da9"
+        },
+        "transcript.bin": {
+          "bytes": 5265370,
+          "sha256": "e1bd432bc32b68699b4ee0b9f40b82d4c64850f60545297489e65119655a948e"
+        },
+        "verify.json": {
+          "bytes": 595,
+          "sha256": "7713738863ff30bf3e41a071d490d16df29a244116177e3fb2aa82dd3c317118"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 53556,
+          "sha256": "26d75c07e2fb070bed84e4a2f61f42def243039dd892ac3338e9c71679fc3b2f"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "82a9d9b1b8ac928a07f9d8cc1de0c78c96aadfcc5e0e00c835b7049bce1f7da9"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 147,
+        "items": 16305,
+        "max_gate_batch": 32,
+        "messages": 2220,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 147,
+        "scheduler_max_width": 32,
+        "seconds_finalize_transcript": 0.0002947000000004252,
+        "seconds_gates": 7.0694041,
+        "seconds_initialization": 0.077214,
+        "seconds_release": 0.011035800000000151,
+        "seconds_tally": 7.0807346,
+        "stage_barriers": 6,
+        "transcript_bytes": 5265370
+      },
+      "verification_s": 3.4253433,
+      "verification_process_wall_s": 3.4409029,
+      "proving_s": 27.8360542
+    },
+    {
+      "n": 64,
+      "rep": 1,
+      "scheduler": "dataflow",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": true,
+      "gates": 1086,
+      "threshold": 4321,
+      "manifest": "exp2/n64/rep1/local-dataflow/public/manifest.json",
+      "manifest_sha256": "8f47eb9d294d093dab51d7f9f9cbccac7bbab47bd5b6d5455704f91b7cd8f6fd",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "f4e62420849bea396fca67198e51c03461c22e7bcbfa6d25bac803e20dd710b2"
+        },
+        "ledger.bin": {
+          "bytes": 53625,
+          "sha256": "c008e30ac71120fe399cf9a0c200993c6fb824876af5bb88e7a49d647a6a7890"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "5f62270a2c896224f936fc272347160361abc0d4f9c793b76757e56da78ad6f3"
+        },
+        "transcript.bin": {
+          "bytes": 5098720,
+          "sha256": "b1cf8b9db63f7c5780dba32999d28931e746de537a5eaf4019b67a8eeaf36f8d"
+        },
+        "verify.json": {
+          "bytes": 584,
+          "sha256": "53f35bdea39cf23885e082a238c2700f4c2239a68ded4f98b13f13dd8f067e91"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 53556,
+          "sha256": "b3a5857ba7599df326b4f86c8ba92bb8dce9aaece0a84e3dda72ce27fa27e74c"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "5f62270a2c896224f936fc272347160361abc0d4f9c793b76757e56da78ad6f3"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 37,
+        "items": 16305,
+        "max_gate_batch": 256,
+        "messages": 570,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 37,
+        "scheduler_max_width": 256,
+        "seconds_finalize_transcript": 0.0002585000000001614,
+        "seconds_gates": 4.9108805,
+        "seconds_initialization": 0.0822745,
+        "seconds_release": 0.01132659999999941,
+        "seconds_tally": 4.9224656,
+        "stage_barriers": 0,
+        "transcript_bytes": 5098720
+      },
+      "verification_s": 1.8001802,
+      "verification_process_wall_s": 1.8152011,
+      "proving_s": 29.978504
+    },
+    {
+      "n": 64,
+      "rep": 1,
+      "scheduler": "reference",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": true,
+      "gates": 1086,
+      "threshold": 4321,
+      "manifest": "exp2/n64/rep1/local-reference/public/manifest.json",
+      "manifest_sha256": "b1e76613743a5537769139a4d1d68855f5cf1465f682c4c7a671d2208f3ddbbb",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "37434d194aff5b8d0d48a918094aa8142b4c2f28c8aaabf6f81f260c70104e9d"
+        },
+        "ledger.bin": {
+          "bytes": 53625,
+          "sha256": "220c5d7d725c0130daf1a64cf1d9034e1de497545dc80ea0de0132eb2df7ebf6"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "5f62270a2c896224f936fc272347160361abc0d4f9c793b76757e56da78ad6f3"
+        },
+        "transcript.bin": {
+          "bytes": 5265370,
+          "sha256": "6748225897f705d5aa472206751e74a23f44031d01d14be6c1ee68988105df74"
+        },
+        "verify.json": {
+          "bytes": 585,
+          "sha256": "eae821fdd8f04b4c5cf982c181bb3ee84329ce518942e33b1edf49f850763c93"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 53556,
+          "sha256": "b3a5857ba7599df326b4f86c8ba92bb8dce9aaece0a84e3dda72ce27fa27e74c"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "5f62270a2c896224f936fc272347160361abc0d4f9c793b76757e56da78ad6f3"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 147,
+        "items": 16305,
+        "max_gate_batch": 32,
+        "messages": 2220,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 147,
+        "scheduler_max_width": 32,
+        "seconds_finalize_transcript": 0.00026890000000001635,
+        "seconds_gates": 6.9566009,
+        "seconds_initialization": 0.0838564,
+        "seconds_release": 0.011185900000000082,
+        "seconds_tally": 6.9680557,
+        "stage_barriers": 6,
+        "transcript_bytes": 5265370
+      },
+      "verification_s": 3.4958347,
+      "verification_process_wall_s": 3.5091143000000002,
+      "proving_s": 29.978504
+    },
+    {
+      "n": 64,
+      "rep": 2,
+      "scheduler": "dataflow",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": true,
+      "gates": 1086,
+      "threshold": 4169,
+      "manifest": "exp2/n64/rep2/local-dataflow/public/manifest.json",
+      "manifest_sha256": "ff02137a237c6b8f0ef02d040f70ada808bd87218521243439592f3aa594a090",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "5c63c22079ebcd2ab05ada2ca5633b7ca73985b29b9fcd8f914d255766e4946a"
+        },
+        "ledger.bin": {
+          "bytes": 53625,
+          "sha256": "72566ee75cf144230ebd18a8867577f704956584855b34645223643f7a2393bb"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "1037f5c58f1829f8b1de61586e0d7bd13a96648433557c076f23961cc18e6ef8"
+        },
+        "transcript.bin": {
+          "bytes": 5098720,
+          "sha256": "463677d4a60e4e2db67d5a1ab86f5290dab65c313d3b0199f09971407143aa7c"
+        },
+        "verify.json": {
+          "bytes": 602,
+          "sha256": "49d156b981a99fedab6e16a2e5e516c1386fb122d2bf9a6ccbf57ca2dc26bfc2"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 53556,
+          "sha256": "a253414580927ef184a7f3c0666368c601bd5a801886cf6d8110d08424027659"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "1037f5c58f1829f8b1de61586e0d7bd13a96648433557c076f23961cc18e6ef8"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 37,
+        "items": 16305,
+        "max_gate_batch": 256,
+        "messages": 570,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 37,
+        "scheduler_max_width": 256,
+        "seconds_finalize_transcript": 0.0002570000000003958,
+        "seconds_gates": 4.8794319999999995,
+        "seconds_initialization": 0.0838251,
+        "seconds_release": 0.010918900000000065,
+        "seconds_tally": 4.8906079,
+        "stage_barriers": 0,
+        "transcript_bytes": 5098720
+      },
+      "verification_s": 1.7769288,
+      "verification_process_wall_s": 1.792437,
+      "proving_s": 30.2929263
+    },
+    {
+      "n": 64,
+      "rep": 2,
+      "scheduler": "reference",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": true,
+      "gates": 1086,
+      "threshold": 4169,
+      "manifest": "exp2/n64/rep2/local-reference/public/manifest.json",
+      "manifest_sha256": "a40316f6284e031659d60dd3d207d6e7ca32bfb25dc9240d40a1e70ecfa2c6a1",
+      "public_files": {
+        "claim.json": {
+          "bytes": 195,
+          "sha256": "77a06978d75631a57f35b52635f72292da30eb87a68ab7e2787d73bc6e4365cc"
+        },
+        "ledger.bin": {
+          "bytes": 53625,
+          "sha256": "7457ff165844c05a53238b63f9c378cbcc88489bd21a4b3628c0393ae50eb4eb"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "1037f5c58f1829f8b1de61586e0d7bd13a96648433557c076f23961cc18e6ef8"
+        },
+        "transcript.bin": {
+          "bytes": 5265370,
+          "sha256": "9971aa0c67c89052850a75f7993ea298c3e1f1b5ce499d90520a29f88439cbce"
+        },
+        "verify.json": {
+          "bytes": 584,
+          "sha256": "631dba74fdf5487fd3e1bddba79368bc911b8387f889e6d81a59c77d0d75f1db"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 53556,
+          "sha256": "a253414580927ef184a7f3c0666368c601bd5a801886cf6d8110d08424027659"
+        },
+        "setup.bin": {
+          "bytes": 4556,
+          "sha256": "1037f5c58f1829f8b1de61586e0d7bd13a96648433557c076f23961cc18e6ef8"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": true,
+        "gate_batches": 147,
+        "items": 16305,
+        "max_gate_batch": 32,
+        "messages": 2220,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 147,
+        "scheduler_max_width": 32,
+        "seconds_finalize_transcript": 0.0002924000000001925,
+        "seconds_gates": 6.8244328,
+        "seconds_initialization": 0.0809535,
+        "seconds_release": 0.010879699999999382,
+        "seconds_tally": 6.8356049,
+        "stage_barriers": 6,
+        "transcript_bytes": 5265370
+      },
+      "verification_s": 3.3924528,
+      "verification_process_wall_s": 3.4074456,
+      "proving_s": 30.2929263
+    },
+    {
+      "n": 256,
+      "rep": 0,
+      "scheduler": "dataflow",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": false,
+      "gates": 4350,
+      "threshold": 16441,
+      "manifest": "exp3/n256/rep0/local-dataflow/public/manifest.json",
+      "manifest_sha256": "950a8abab5d110954f3f3841e0127c29b1433bac092c19471faa21b93ebff26b",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "22ab108924004f96c2f3cf59538080b578f39250713ff980a0ae7c78235d7af7"
+        },
+        "ledger.bin": {
+          "bytes": 214137,
+          "sha256": "02cd4a9795d6946cd6bc5215e0ef6a0529d323f7c0289449c28a6a294e69e8fd"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "716bc9772210c6194c88c46965296d00b969b781bca558a3e1728cea80661bdd"
+        },
+        "transcript.bin": {
+          "bytes": 20255800,
+          "sha256": "db66338415d0e8445e9130e06aa555059bc689f1107ffcfe0edc9cf5261e099d"
+        },
+        "verify.json": {
+          "bytes": 587,
+          "sha256": "36c721649443924edd4d143337586ae18982390fca7168e7e9ab3bbb76dca06d"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 214068,
+          "sha256": "c6a98ce1e48688c2a7f32c351bd3846fb175108bcea8ddd42f2c327c40eab4b5"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "716bc9772210c6194c88c46965296d00b969b781bca558a3e1728cea80661bdd"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 45,
+        "items": 65265,
+        "max_gate_batch": 1024,
+        "messages": 690,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 45,
+        "scheduler_max_width": 1024,
+        "seconds_finalize_transcript": 0.0002592000000021244,
+        "seconds_gates": 17.2089281,
+        "seconds_initialization": 0.0873534,
+        "seconds_release": 0.011138199999997767,
+        "seconds_tally": 17.2203255,
+        "stage_barriers": 0,
+        "transcript_bytes": 20255800
+      },
+      "verification_s": 8.5939926,
+      "verification_process_wall_s": 8.6086502,
+      "proving_s": 115.964104
+    },
+    {
+      "n": 256,
+      "rep": 0,
+      "scheduler": "reference",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": false,
+      "gates": 4350,
+      "threshold": 16441,
+      "manifest": "exp3/n256/rep0/local-reference/public/manifest.json",
+      "manifest_sha256": "dd281fd9deb962ddc4702d49c0e322b6f820df29927fa06319f6bc9ccc10f39c",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "2155cfb79be7d321ff6e08e72a88c41d30ac6c0b532e02377ea934525ec20af9"
+        },
+        "ledger.bin": {
+          "bytes": 214137,
+          "sha256": "57ec8dd6d9c00bdc89ba6b60090e94fe3770e93a9050c6bd2bd254843723aacf"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "716bc9772210c6194c88c46965296d00b969b781bca558a3e1728cea80661bdd"
+        },
+        "transcript.bin": {
+          "bytes": 20501230,
+          "sha256": "604aece64d76e6f4295eda938878589a9b983260de48f67549996e1cce461d31"
+        },
+        "verify.json": {
+          "bytes": 590,
+          "sha256": "26fd4e81a531912e7b392f7e918dc4e06eb22bc96eca88acf8b2c3b584d63ba0"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 214068,
+          "sha256": "c6a98ce1e48688c2a7f32c351bd3846fb175108bcea8ddd42f2c327c40eab4b5"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "716bc9772210c6194c88c46965296d00b969b781bca558a3e1728cea80661bdd"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 207,
+        "items": 65265,
+        "max_gate_batch": 128,
+        "messages": 3120,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 207,
+        "scheduler_max_width": 128,
+        "seconds_finalize_transcript": 0.00028700000000014825,
+        "seconds_gates": 19.9371842,
+        "seconds_initialization": 0.0887518,
+        "seconds_release": 0.010803700000000305,
+        "seconds_tally": 19.9482749,
+        "stage_barriers": 8,
+        "transcript_bytes": 20501230
+      },
+      "verification_s": 11.0769979,
+      "verification_process_wall_s": 11.0913374,
+      "proving_s": 115.964104
+    },
+    {
+      "n": 256,
+      "rep": 1,
+      "scheduler": "dataflow",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": false,
+      "gates": 4350,
+      "threshold": 16559,
+      "manifest": "exp3/n256/rep1/local-dataflow/public/manifest.json",
+      "manifest_sha256": "ff0f8f49e77080b151db9eb267c1aa8b1c61d2705f7df48a70502ca4e0478245",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "0dde22a974c187072eaafa81f1ad7be8d9bbf7a3d2ac03f3c02bc3c10f9e39a1"
+        },
+        "ledger.bin": {
+          "bytes": 214137,
+          "sha256": "32e532ae1e923459c3dc299e37a6588c3fe0b4970c7906ed1c5a24cae45fb0dc"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "410fc3290c9a2dcaa69576e29d982c3c9f4a6c994050f572708de2afb18fb996"
+        },
+        "transcript.bin": {
+          "bytes": 20255800,
+          "sha256": "db00f8a027a7882076cdbd1502f3476220a15522b26c0703271f2379b3dc622f"
+        },
+        "verify.json": {
+          "bytes": 587,
+          "sha256": "3f9a89d55c63a1765b0551aa0522a77f65ecb2fbd3f4c677322f4f91f10483aa"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 214068,
+          "sha256": "220575599b6ebf7a8a70941e9525de779aa742a8d83f9a8dd64b4ebe6f1b494a"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "410fc3290c9a2dcaa69576e29d982c3c9f4a6c994050f572708de2afb18fb996"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 45,
+        "items": 65265,
+        "max_gate_batch": 1024,
+        "messages": 690,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 45,
+        "scheduler_max_width": 1024,
+        "seconds_finalize_transcript": 0.0003072999999993442,
+        "seconds_gates": 17.1349889,
+        "seconds_initialization": 0.0891798,
+        "seconds_release": 0.010872400000000226,
+        "seconds_tally": 17.1461686,
+        "stage_barriers": 0,
+        "transcript_bytes": 20255800
+      },
+      "verification_s": 8.7509677,
+      "verification_process_wall_s": 8.7715633,
+      "proving_s": 118.4017552
+    },
+    {
+      "n": 256,
+      "rep": 1,
+      "scheduler": "reference",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": false,
+      "gates": 4350,
+      "threshold": 16559,
+      "manifest": "exp3/n256/rep1/local-reference/public/manifest.json",
+      "manifest_sha256": "171aab0b94a708f9292d9e42d59db207759b9007166f974454a059ac311d0db4",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "5239ea26d7f19e6dfa3c84403c5d979950fa1d1eafdb19fba110f6ef7152bbf2"
+        },
+        "ledger.bin": {
+          "bytes": 214137,
+          "sha256": "96c8cdb9c0a434d719bb83526ac9d1fd327d2627986a943d2266bc79d76b2502"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "410fc3290c9a2dcaa69576e29d982c3c9f4a6c994050f572708de2afb18fb996"
+        },
+        "transcript.bin": {
+          "bytes": 20501230,
+          "sha256": "e06bc0e5fe13a7a868a3fc63d71bf76afb0c809c90a0d686656ebd17988775ff"
+        },
+        "verify.json": {
+          "bytes": 590,
+          "sha256": "f6b0f81f3b70b636dca1a99b8b16d0a54a33cc7fbf6714de4b860c251f5f555b"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 214068,
+          "sha256": "220575599b6ebf7a8a70941e9525de779aa742a8d83f9a8dd64b4ebe6f1b494a"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "410fc3290c9a2dcaa69576e29d982c3c9f4a6c994050f572708de2afb18fb996"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 207,
+        "items": 65265,
+        "max_gate_batch": 128,
+        "messages": 3120,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 207,
+        "scheduler_max_width": 128,
+        "seconds_finalize_transcript": 0.000271200000000249,
+        "seconds_gates": 19.8778584,
+        "seconds_initialization": 0.0874241,
+        "seconds_release": 0.010727599999999171,
+        "seconds_tally": 19.8888572,
+        "stage_barriers": 8,
+        "transcript_bytes": 20501230
+      },
+      "verification_s": 10.6965976,
+      "verification_process_wall_s": 10.7127594,
+      "proving_s": 118.4017552
+    },
+    {
+      "n": 256,
+      "rep": 2,
+      "scheduler": "dataflow",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": false,
+      "gates": 4350,
+      "threshold": 16403,
+      "manifest": "exp3/n256/rep2/local-dataflow/public/manifest.json",
+      "manifest_sha256": "396367a79f09da54590927af0fc9805fc2f3ae48d113014f274aec26c65bf468",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "c54db9e504e2e75c815e47834140437a51174ccc37af378e677fe2269700bdff"
+        },
+        "ledger.bin": {
+          "bytes": 214137,
+          "sha256": "5a4d34040a7855242f8cd4b7384ed0db36474c9c8502c44e2a90581adcf84b05"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "d67cee94e873526b7c872ba4c86984f4b7a28088e8ebd04025c608bbf1f1bfc8"
+        },
+        "transcript.bin": {
+          "bytes": 20255800,
+          "sha256": "31c073297aa9a5f3f9b21a12137c9750795914ef6d9f3c8d677143eadc09782b"
+        },
+        "verify.json": {
+          "bytes": 587,
+          "sha256": "1d58c1378658616c7ff2a6bd0014100da9c40105c2accbf2bbad8ce5a447e95b"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 214068,
+          "sha256": "8917ed55cb818946dde004481b0ef11971dec706af793288e31ca1594755469d"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "d67cee94e873526b7c872ba4c86984f4b7a28088e8ebd04025c608bbf1f1bfc8"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 45,
+        "items": 65265,
+        "max_gate_batch": 1024,
+        "messages": 690,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 45,
+        "scheduler_max_width": 1024,
+        "seconds_finalize_transcript": 0.0002825000000008515,
+        "seconds_gates": 17.0915897,
+        "seconds_initialization": 0.0884456,
+        "seconds_release": 0.011020500000000766,
+        "seconds_tally": 17.1028927,
+        "stage_barriers": 0,
+        "transcript_bytes": 20255800
+      },
+      "verification_s": 8.6676396,
+      "verification_process_wall_s": 8.6818861,
+      "proving_s": 119.1600353
+    },
+    {
+      "n": 256,
+      "rep": 2,
+      "scheduler": "reference",
+      "order": [
+        "reference",
+        "dataflow"
+      ],
+      "decision": false,
+      "gates": 4350,
+      "threshold": 16403,
+      "manifest": "exp3/n256/rep2/local-reference/public/manifest.json",
+      "manifest_sha256": "62b5cf22d2ce50ef4659ca8acc7a4865a5b08728a1e7e7bc3de4afe515bcab1f",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "881324261c500557bb547653effb8af8642bec9a5c884ffaf2aa10e924258c5e"
+        },
+        "ledger.bin": {
+          "bytes": 214137,
+          "sha256": "1e319c32fe16a999bf8d23fe1165de76d9ce76a8ff4018d7855fa06771678988"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "d67cee94e873526b7c872ba4c86984f4b7a28088e8ebd04025c608bbf1f1bfc8"
+        },
+        "transcript.bin": {
+          "bytes": 20501230,
+          "sha256": "8bff863813ad0a0c1b6dec3c8a2e4833bcec5dd6e8839b13057605c6a63da37c"
+        },
+        "verify.json": {
+          "bytes": 598,
+          "sha256": "6d34f19a4f2f0889eee1b496516d07e46219ec40dbd58ac851ddcf51dfece306"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 214068,
+          "sha256": "8917ed55cb818946dde004481b0ef11971dec706af793288e31ca1594755469d"
+        },
+        "setup.bin": {
+          "bytes": 12236,
+          "sha256": "d67cee94e873526b7c872ba4c86984f4b7a28088e8ebd04025c608bbf1f1bfc8"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 207,
+        "items": 65265,
+        "max_gate_batch": 128,
+        "messages": 3120,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 207,
+        "scheduler_max_width": 128,
+        "seconds_finalize_transcript": 0.0002817999999997767,
+        "seconds_gates": 19.9590717,
+        "seconds_initialization": 0.0916083,
+        "seconds_release": 0.011214500000001237,
+        "seconds_tally": 19.970568,
+        "stage_barriers": 8,
+        "transcript_bytes": 20501230
+      },
+      "verification_s": 10.8139414,
+      "verification_process_wall_s": 10.8344316,
+      "proving_s": 119.1600353
+    },
+    {
+      "n": 1024,
+      "rep": 0,
+      "scheduler": "dataflow",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": false,
+      "gates": 17406,
+      "threshold": 65282,
+      "manifest": "exp4/n1024/rep0/local-dataflow/public/manifest.json",
+      "manifest_sha256": "952446cbb49ed4d9540d11371485284fe48ae463ac4336080439be3dbf67b0a2",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "365dee09593a6abf057701576609b908292db3534b4a6fa86eae3cda98756e05"
+        },
+        "ledger.bin": {
+          "bytes": 856185,
+          "sha256": "2b8bcfaaac428248a86ff8de625bda6a2ccbe91e0778a9e7078bd81aa2a335ce"
+        },
+        "setup.bin": {
+          "bytes": 42956,
+          "sha256": "3e6b68295078a84e9778bf3b43b5ad81953a22d5e5133731885bfd193af214cb"
+        },
+        "transcript.bin": {
+          "bytes": 80847760,
+          "sha256": "424fba364bc0b59f569a49b92f8ec6b35f457e8418e8128745cbd4271bff54e0"
+        },
+        "verify.json": {
+          "bytes": 593,
+          "sha256": "7aab1215fe1cdd4dd52c454a9ce593797f2755b2b89b8981f80e523b70a20993"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 856116,
+          "sha256": "284745ae5aeca261aaf6b0a24f74897246d3c86a88bc2db91bde1d8810b706fe"
+        },
+        "setup.bin": {
+          "bytes": 42956,
+          "sha256": "3e6b68295078a84e9778bf3b43b5ad81953a22d5e5133731885bfd193af214cb"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 53,
+        "items": 261105,
+        "max_gate_batch": 4096,
+        "messages": 810,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "dataflow",
+        "scheduler_depth": 53,
+        "scheduler_max_width": 4096,
+        "seconds_finalize_transcript": 0.00028179999999622396,
+        "seconds_gates": 65.5555921,
+        "seconds_initialization": 0.1106825,
+        "seconds_release": 0.010829000000001088,
+        "seconds_tally": 65.5667029,
+        "stage_barriers": 0,
+        "transcript_bytes": 80847760
+      },
+      "verification_s": 44.1679804,
+      "verification_process_wall_s": 44.1897489,
+      "proving_s": 467.3766037
+    },
+    {
+      "n": 1024,
+      "rep": 0,
+      "scheduler": "reference",
+      "order": [
+        "dataflow",
+        "reference"
+      ],
+      "decision": false,
+      "gates": 17406,
+      "threshold": 65282,
+      "manifest": "exp4/n1024/rep0/local-reference/public/manifest.json",
+      "manifest_sha256": "3dd67e640674d1880a374f7da53ff13ec3937029cd513b553f46e515ea0b871c",
+      "public_files": {
+        "claim.json": {
+          "bytes": 196,
+          "sha256": "6291302e97ae3a5a3f7b6f85be1de0d416347d697040b755d3eae2247cefbd55"
+        },
+        "ledger.bin": {
+          "bytes": 856185,
+          "sha256": "d5c97c002423dc31b5993edf7f36ea7b127b0a03634f15f983eb54d166287f77"
+        },
+        "setup.bin": {
+          "bytes": 42956,
+          "sha256": "3e6b68295078a84e9778bf3b43b5ad81953a22d5e5133731885bfd193af214cb"
+        },
+        "transcript.bin": {
+          "bytes": 81184090,
+          "sha256": "9bbef0589f5ed387d7390c913fc178f6c09e21f2ea0e78731955fadb02f02c14"
+        },
+        "verify.json": {
+          "bytes": 594,
+          "sha256": "838ae1c78c0ad6908fda93199293b4d783e06097dc4d6f3f44cd40aa15995c00"
+        }
+      },
+      "paired_input_files": {
+        "ledger.bin": {
+          "bytes": 856116,
+          "sha256": "284745ae5aeca261aaf6b0a24f74897246d3c86a88bc2db91bde1d8810b706fe"
+        },
+        "setup.bin": {
+          "bytes": 42956,
+          "sha256": "3e6b68295078a84e9778bf3b43b5ad81953a22d5e5133731885bfd193af214cb"
+        }
+      },
+      "verified": true,
+      "oracle_agrees": true,
+      "tally": {
+        "board": null,
+        "decision": false,
+        "gate_batches": 275,
+        "items": 261105,
+        "max_gate_batch": 512,
+        "messages": 4140,
+        "mode": "local",
+        "rtt_ms": 0,
+        "scheduler": "reference",
+        "scheduler_depth": 275,
+        "scheduler_max_width": 512,
+        "seconds_finalize_transcript": 0.0002863999999931366,
+        "seconds_gates": 69.4277646,
+        "seconds_initialization": 0.1051227,
+        "seconds_release": 0.011192899999997508,
+        "seconds_tally": 69.4392439,
+        "stage_barriers": 10,
+        "transcript_bytes": 81184090
+      },
+      "verification_s": 46.6712885,
+      "verification_process_wall_s": 46.6890174,
+      "proving_s": 467.3766037
+    }
+  ],
+  "audited_public_files": 140,
+  "batch_manifest_sha256": "7f8fe468fca8d9539333e45731121b7c6734e1d76e8c3d3130ff00b38f866f4d",
+  "release_binary_sha256": "25a857fd817a462956e4f211387036ea5f2f93474dcd9248f99e54c93b14cc43",
+  "schema_version": 1,
+  "run_id": "20261122-204215-407-c6804f3e",
+  "source_commit": "c6804f3ef6ae6eaf7d33f5741745885cbf1fedfb",
+  "source_dirty": false,
+  "machine": {
+    "cpu": "Intel(R) Core(TM) i7-14650HX",
+    "physical_cores": 16,
+    "logical_processors": 24,
+    "max_clock_mhz": 2200,
+    "os": "Microsoft Windows 11 专业版 10.0.26200 build 26200",
+    "memory_gb": 31.8,
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+    "powershell": "5.1.26100.9818",
+    "rayon_threads_environment": "24",
+    "active_power_scheme": "电源方案 GUID: 31a5c92e-ffe3-4740-a117-1ce4e7b05599  (FC Benchmark Max Performance)"
+  },
+  "rayon_threads_actual": 24,
+  "cargo_lock_sha256": "ad1182690831da538c71fcd23e50e6afdf691d5c2ea6adb9015060f3357d864a",
+  "timing_scope": "Single-process five-trustee encrypted tally with full message verification; setup, ballot proving, admission, claim publication and independent replay excluded.",
+  "artifact_scope": "Public metadata and hashes only. No trustee shares, voter witnesses or oracle plaintexts."
+}
