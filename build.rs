@@ -2,6 +2,15 @@
 // C++ so its arithmetic can be tested against arkworks without a GPU.
 // Without that feature this script does nothing.
 fn main() {
+    // NVRTC compilation overflows the Windows executable's default stack.
+    // Reserve virtual address space only; default CPU builds are unchanged.
+    if std::env::var("TARGET")
+        .unwrap_or_default()
+        .ends_with("windows-msvc")
+        && std::env::var_os("CARGO_FEATURE_GPU").is_some()
+    {
+        println!("cargo:rustc-link-arg=/STACK:16777216");
+    }
     println!("cargo:rerun-if-changed=src/gpu/bjj.cu");
     println!("cargo:rerun-if-changed=build.rs");
     #[cfg(feature = "cuda-emu")]

@@ -384,6 +384,7 @@ pub fn check_vectors(
         })
         .collect::<anyhow::Result<_>>()?;
     let r = backend.run(&jobs)?;
+    anyhow::ensure!(r.len() == jobs.len(), "backend result count mismatch");
     Ok(vectors
         .iter()
         .zip(&r)
