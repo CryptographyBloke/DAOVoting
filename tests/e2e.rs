@@ -344,3 +344,57 @@ fn eight_voter_election_local_and_distributed() {
         std::thread::sleep(Duration::from_millis(20));
     }
 }
+
+/// T005: the full protocol with message-level batched verification (CPU
+/// backend, and the CUDA kernel source compiled for the host when the
+/// `cuda-emu` feature is enabled) in the co-located tally, the five TCP
+/// trustee processes and the separate public verifier; every run must be
+/// accepted and agree with the oracle, and record its backend.
+#[test]
+fn batched_verification_backends_end_to_end() {
+    let mut specs = vec!["cpu"];
+    if cfg!(feature = "cuda-emu") {
+        specs.push("emu");
+    }
+    for spec in specs {
+        let out = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("batched-{spec}"));
+        if out.exists() {
+            std::fs::remove_dir_all(&out).unwrap();
+        }
+        let output = wod()
+            .args([
+                "--verify-backend",
+                spec,
+                "experiment",
+                "--n",
+                "8",
+                "--modes",
+                "local,dist",
+                "--reps",
+                "1",
+                "--out",
+            ])
+            .arg(&out)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let result = json(&out.join("n8/results.json"));
+        let runs = result["runs"].as_array().unwrap();
+        assert_eq!(runs.len(), 2);
+        for r in runs {
+            assert_eq!(r["verification"]["accept"], true);
+            assert_eq!(r["oracle_agrees"], true);
+            let vb = r["verification"]["verify_backend"].as_str().unwrap();
+            assert!(vb.starts_with(spec), "{vb}");
+            assert!(r["verification"]["engine_prof"]["jobs"].as_u64().unwrap() > 1000);
+        }
+        let dist = runs.iter().find(|r| r["mode"] == "dist").unwrap();
+        for t in dist["tally"]["board"]["trustees"].as_array().unwrap() {
+            assert!(t["verify_backend"].as_str().unwrap().starts_with(spec));
+        }
+    }
+}

@@ -132,6 +132,9 @@ pub struct TallyStats {
     pub stage_barriers: usize,
     pub seconds_initialization: f64,
     pub seconds_finalize_transcript: f64,
+    /// verification backend of the tally engine (`inline` = original path)
+    pub verify_backend: String,
+    pub engine_prof: crate::tally::Prof,
 }
 
 /// Stage 4a: co-located tally (one process, all five trustees, one verifying
@@ -194,6 +197,8 @@ pub fn stage_tally_local(p: &Paths, scheduler: Scheduler) -> Result<TallyStats> 
         stage_barriers: eng.completed_stages.saturating_sub(1),
         seconds_initialization: initialization,
         seconds_finalize_transcript: total - decision_complete,
+        verify_backend: crate::batch::default_name(),
+        engine_prof: eng.prof.clone(),
         ..Default::default()
     })
 }

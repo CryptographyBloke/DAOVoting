@@ -1,0 +1,29 @@
+{
+  "device": {
+    "error": "NVIDIA driver library (nvcuda.dll / libcuda.so) not found: no usable GPU on this machine",
+    "ok": false
+  },
+  "nvrtc": {
+    "arch": "compute_89",
+    "ok": true,
+    "ptx_bytes": 1565167
+  },
+  "provenance": {
+    "features": {
+      "cuda12": true,
+      "cuda13": false,
+      "cuda_emu": true,
+      "gpu": true
+    },
+    "rayon_threads": 4,
+    "source_commit": "889282291a7412bf79b82534d62d2a2341cf6f3d",
+    "source_dirty": true,
+    "verify_backend_default": "inline"
+  },
+  "sass": {
+    "arch": "sm_89",
+    "cubin_bytes": 504296,
+    "ok": true,
+    "ptxas_log": "ptxas info    : 0 bytes gmem, 96 bytes cmem[3]\nptxas info    : Compiling entry function 'bjj_mul' for 'sm_89'\nptxas info    : Function properties for bjj_mul\nptxas         .     2048 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads\nptxas info    : Used 146 registers, used 0 barriers, 2048 bytes cumulative stack size, 380 bytes cmem[0]\nptxas info    : Compile time = 3059.128 ms\n"
+  }
+}

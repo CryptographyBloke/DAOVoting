@@ -78,6 +78,25 @@ fields state the boundaries. Claim publication, public replay, oracle, setup and
 ballot proving are outside tally timing. This is a same-circuit execution benchmark,
 not a comparison with CGY's independently implemented voting systems.
 
+## GPU research branch (T005)
+
+Branch `research/gpu-exploration` adds an optional, off-by-default GPU path for
+the public verification arithmetic of the encrypted tally; the CPU path above
+remains the reference. Default builds and commands are unchanged.
+
+- `--verify-backend cpu|cuda[:DEV]|auto:MIN[:DEV]|emu` (any command; inherited
+  by trustee/verifier subprocesses) verifies each board message in one batch of
+  BabyJubjub scalar multiplications. Only public transcript data is batched.
+- `cargo build --release --features cuda` (CUDA 12.x NVRTC) or `cuda13`;
+  no CUDA toolkit is needed to *build*, the NVRTC/driver libraries are loaded at
+  run time. `cuda-emu` compiles the same kernel source as host C++ for tests.
+- `wod profile`, `wod gpu-check`, `wod gpu-bench`, `wod gpu-vectors`,
+  `wod gpu-summary`; the complete local RTX workflow is
+  `powershell -NoProfile -ExecutionPolicy Bypass -File .\reproduce_gpu.ps1`.
+
+Design, CPU profiling evidence, correctness status and the local GPU handoff
+are in [reports/T005.md](reports/T005.md).
+
 ## Optional EVM reproduction
 
 `contracts/WodAdmission.sol` and `tests/evm_local.cjs` support local EVM validation. `tests/evm_arbitrum.cjs` runs the separate Arbitrum Sepolia admission and receipt experiment. Setup, local validation, cost estimation, and the explicitly opt-in broadcast procedure are documented in [docs/ARBITRUM_SEPOLIA.md](docs/ARBITRUM_SEPOLIA.md).

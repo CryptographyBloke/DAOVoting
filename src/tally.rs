@@ -19,11 +19,12 @@
 //! `y' = σ(2y−1) ∈ {±1}`. The release slot uses `Commit`, `Reveal`, `Dec` on
 //! `C_b` and only accepts a decryption equal to the identity or `g`.
 
+use crate::batch::{Job, MulBackend, eval_all};
 use crate::circuit::{Circuit, Node, ReferenceSchedule, Scheduler};
 use crate::group::*;
 use crate::shamir;
 use crate::sigma::{Csz, CszStmt, Dleq, Zkp0};
-use anyhow::{Result, anyhow, bail, ensure};
+use anyhow::{Result, bail, ensure};
 use ark_ff::{Field, Zero};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand::{CryptoRng, Rng, RngCore, SeedableRng};
@@ -32,6 +33,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
+use std::time::Instant;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Item {
@@ -72,6 +74,16 @@ impl Item {
             Item::Commit { .. } => true,
             Item::Reveal { r, .. } => cts_ok(r),
             Item::Dec { w, .. } => in_subgroup(w),
+        }
+    }
+
+    /// The group elements carried by the item (all must lie in `G`).
+    pub fn points(&self) -> Vec<G> {
+        match self {
+            Item::Mask { x, y, e, .. } => vec![x.a, x.b, y.a, y.b, *e],
+            Item::Commit { .. } => vec![],
+            Item::Reveal { r, .. } => r.iter().flat_map(|c| [c.a, c.b]).collect(),
+            Item::Dec { w, .. } => vec![*w],
         }
     }
 
@@ -203,6 +215,33 @@ pub struct Engine {
     pub completed_stages: usize,
     pub gate_batches: usize,
     pub max_gate_batch: usize,
+    /// `None`: original per-item verification; `Some(b)`: message-level
+    /// batching of all public variable-base multiplications through `b`.
+    batch: Option<Arc<dyn MulBackend>>,
+    pending_finish: Vec<u32>,
+    pub prof: Prof,
+}
+
+/// Wall-clock breakdown of [`Engine::process`] (seconds, summed over messages).
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct Prof {
+    pub decode: f64,
+    pub signature: f64,
+    /// inline path: subgroup checks + proof verification
+    pub verify_inline: f64,
+    /// batched path: state checks and job collection
+    pub batch_build: f64,
+    /// batched path: time inside the backend
+    pub batch_run: f64,
+    /// batched path: fixed-base parts, hashing and comparisons
+    pub batch_check: f64,
+    /// applying items, including inline gate finishing
+    pub apply: f64,
+    /// batched gate finishing (share combination and halving)
+    pub finish: f64,
+    pub jobs: u64,
+    pub batches: u64,
+    pub max_batch: u64,
 }
 
 fn inv2() -> F {
@@ -257,6 +296,9 @@ impl Engine {
             completed_stages: 0,
             gate_batches: 0,
             max_gate_batch: 0,
+            batch: crate::batch::default_backend(),
+            pending_finish: Vec::new(),
+            prof: Prof::default(),
             pp,
             circ,
         };
@@ -290,6 +332,11 @@ impl Engine {
             .map(|p| p.stage_gates.clone())
             .unwrap_or_default();
         Ok(())
+    }
+
+    /// Verify through message-level batches on `backend` (public data only).
+    pub fn set_batch_backend(&mut self, backend: Option<Arc<dyn MulBackend>>) {
+        self.batch = backend;
     }
 
     pub fn release_slot(&self) -> u32 {
@@ -388,36 +435,33 @@ impl Engine {
 
     /// Verifies one item from trustee `from` against the current state.
     pub fn check(&self, from: usize, it: &Item) -> Result<()> {
+        self.validate(from, it)?;
+        self.proof_ok(from, it, &eval_all(&self.proof_jobs(from, it)))
+    }
+
+    /// Statement inputs of a mask item: the previous `(X_{i-1}, Y_{i-1})`.
+    fn mask_prev(&self, sid: u32, from: usize) -> (&Ct, &Ct) {
+        let s = &self.slots[sid as usize];
+        if from == 0 {
+            (s.x.as_ref().unwrap(), s.y0.as_ref().unwrap())
+        } else {
+            let p = &s.chain[from - 1];
+            (&p.0, &p.1)
+        }
+    }
+
+    /// Ordering, state and commitment checks (no proof arithmetic).
+    pub fn validate(&self, from: usize, it: &Item) -> Result<()> {
         let pp = &*self.pp;
         let sid = it.slot();
         ensure!((sid as usize) < self.slots.len(), "bad slot");
         let s = &self.slots[sid as usize];
         ensure!(!s.done, "slot already closed");
-        let label = Public::label(sid, from);
         match it {
-            Item::Mask { x, y, e, proof, .. } => {
+            Item::Mask { .. } => {
                 ensure!(!self.is_release(sid), "mask on release slot");
                 ensure!(s.chain.len() == from, "mask out of order");
-                let (x0, y0) = if from == 0 {
-                    (
-                        s.x.as_ref().ok_or(anyhow!("gate not ready"))?,
-                        s.y0.as_ref().unwrap(),
-                    )
-                } else {
-                    let p = &s.chain[from - 1];
-                    (&p.0, &p.1)
-                };
-                let st = CszStmt {
-                    x0,
-                    y0,
-                    x1: x,
-                    y1: y,
-                    e,
-                };
-                ensure!(
-                    proof.verify(&pp.key, &pp.tht, &pp.ctx, label, &st),
-                    "PoK-CSZ rejected"
-                );
+                ensure!(from > 0 || s.x.is_some(), "gate not ready");
             }
             Item::Commit { .. } => {
                 ensure!(self.is_release(sid) && s.x.is_some(), "commit not allowed");
@@ -439,20 +483,73 @@ impl Engine {
                     commit_hash(&pp.ctx, sid, from, r, proof, salt) == s.commits[from].unwrap(),
                     "reveal does not match commitment"
                 );
-                ensure!(proof.verify(&pp.key, &pp.ctx, label, r), "ZKP0 rejected");
+            }
+            Item::Dec { .. } => {
+                ensure!(s.dct.is_some(), "nothing to decrypt");
+                ensure!(s.dec[from].is_none(), "duplicate share");
+            }
+        }
+        Ok(())
+    }
+
+    /// Public variable-base multiplications of the item's proof (validated item).
+    pub fn proof_jobs(&self, from: usize, it: &Item) -> Vec<Job> {
+        match it {
+            Item::Mask { x, y, e, proof, .. } => {
+                let (x0, y0) = self.mask_prev(it.slot(), from);
+                proof.jobs(&CszStmt {
+                    x0,
+                    y0,
+                    x1: x,
+                    y1: y,
+                    e,
+                })
+            }
+            Item::Commit { .. } => vec![],
+            Item::Reveal { r, proof, .. } => proof.jobs(r),
+            Item::Dec { w, proof, .. } => {
+                let d = self.slots[it.slot() as usize].dct.as_ref().unwrap();
+                proof.jobs(&d.a, w).to_vec()
+            }
+        }
+    }
+
+    /// Completes the proof check from the results of [`Self::proof_jobs`].
+    pub fn proof_ok(&self, from: usize, it: &Item, r: &[G]) -> Result<()> {
+        let pp = &*self.pp;
+        let sid = it.slot();
+        let label = Public::label(sid, from);
+        match it {
+            Item::Mask { x, y, e, proof, .. } => {
+                let (x0, y0) = self.mask_prev(sid, from);
+                let st = CszStmt {
+                    x0,
+                    y0,
+                    x1: x,
+                    y1: y,
+                    e,
+                };
+                ensure!(
+                    proof.check(&pp.key, &pp.tht, &pp.ctx, label, &st, r),
+                    "PoK-CSZ rejected"
+                );
+            }
+            Item::Commit { .. } => {}
+            Item::Reveal { r: rr, proof, .. } => {
+                ensure!(proof.check(&pp.key, &pp.ctx, label, rr, r), "ZKP0 rejected");
             }
             Item::Dec { w, proof, .. } => {
-                let d = s.dct.as_ref().ok_or(anyhow!("nothing to decrypt"))?;
-                ensure!(s.dec[from].is_none(), "duplicate share");
+                let d = self.slots[sid as usize].dct.as_ref().unwrap();
                 ensure!(
-                    proof.verify(
+                    proof.check(
                         &pp.key.tg,
                         &pp.thi[from],
                         &pp.ctx,
                         label,
                         &pp.hi[from],
                         &d.a,
-                        w
+                        w,
+                        r
                     ),
                     "DLEQ rejected"
                 );
@@ -499,41 +596,72 @@ impl Engine {
                 s.dec[from] = Some(w);
                 s.n_dec += 1;
                 if s.n_dec == a {
-                    self.finish(sid)?;
+                    if self.batch.is_some() {
+                        self.pending_finish.push(sid);
+                    } else {
+                        self.finish(&[sid], &crate::batch::Inline)?;
+                    }
                 }
             }
         }
         Ok(())
     }
 
-    fn finish(&mut self, sid: u32) -> Result<()> {
+    /// Opens the decryptions of completed slots and computes the gate outputs
+    /// `Z = (X + y'X')/2`. Both multiplication rounds (`λ_i·w_i` and the
+    /// halving) are evaluated as one batch per round on `b`.
+    fn finish(&mut self, sids: &[u32], b: &dyn MulBackend) -> Result<()> {
         let pp = self.pp.clone();
-        let set: Vec<usize> = (1..=pp.a).collect();
-        let s = &mut self.slots[sid as usize];
-        let w: Vec<G> = s.dec.iter().map(|w| w.unwrap()).collect();
-        let m = shamir::combine(s.dct.as_ref().unwrap(), &set, &w, &pp.lam);
-        s.done = true;
-        self.active.remove(&sid);
-        if self.is_release(sid) {
-            self.result = Some(if m.is_zero() {
-                false
-            } else if m == g() {
-                true
-            } else {
-                bail!("release decrypted to neither identity nor g")
-            });
-        } else {
+        let (a, lam) = (pp.a, &pp.lam);
+        let jobs: Vec<Job> = sids
+            .iter()
+            .flat_map(|&sid| {
+                let s = &self.slots[sid as usize];
+                (0..a).map(move |i| Job::mul(s.dec[i].unwrap(), &lam[i]))
+            })
+            .collect();
+        let lw = b.run(&jobs)?;
+        let mut sums = Vec::new();
+        let mut halves = Vec::new();
+        for (k, &sid) in sids.iter().enumerate() {
             let s = &self.slots[sid as usize];
-            let xp = s.xp.unwrap();
-            let sum = if m == g() {
-                s.x.unwrap().add(&xp)
-            } else if m == -g() {
-                s.x.unwrap().sub(&xp)
+            // [m]g = b − Σ λ_i w_i
+            let m = lw[a * k..a * (k + 1)]
+                .iter()
+                .fold(s.dct.unwrap().b, |acc, x| acc - x);
+            if self.is_release(sid) {
+                ensure!(self.result.is_none(), "release opened twice");
+                self.result = Some(if m.is_zero() {
+                    false
+                } else if m == g() {
+                    true
+                } else {
+                    bail!("release decrypted to neither identity nor g")
+                });
             } else {
-                bail!("gate {sid}: opened value is not ±1");
-            };
-            // Z = (X · X'^{y'})^{1/2}
-            let z = sum.scale(&inv2());
+                let xp = s.xp.unwrap();
+                let sum = if m == g() {
+                    s.x.unwrap().add(&xp)
+                } else if m == -g() {
+                    s.x.unwrap().sub(&xp)
+                } else {
+                    bail!("gate {sid}: opened value is not ±1");
+                };
+                // Z = (X · X'^{y'})^{1/2}
+                halves.extend([Job::mul(sum.a, &inv2()), Job::mul(sum.b, &inv2())]);
+                sums.push(sid);
+            }
+        }
+        let z = if halves.is_empty() {
+            vec![]
+        } else {
+            b.run(&halves)?
+        };
+        for &sid in sids {
+            self.slots[sid as usize].done = true;
+            self.active.remove(&sid);
+        }
+        for (k, &sid) in sums.iter().enumerate() {
             self.gates_done += 1;
             if let Some(plan) = &self.reference {
                 let stage = plan.stage[sid as usize];
@@ -543,7 +671,13 @@ impl Engine {
                 }
             }
             let node = self.circ.gates[sid as usize];
-            self.set_wire(node, z);
+            self.set_wire(
+                node,
+                Ct {
+                    a: z[2 * k],
+                    b: z[2 * k + 1],
+                },
+            );
         }
         Ok(())
     }
@@ -558,12 +692,16 @@ impl Engine {
             msg.ctr == self.next_ctr[from],
             "replayed or reordered message"
         );
+        let t = Instant::now();
         msg.verify_sig(&self.pp.vks[from], &self.pp.ctx)?;
+        self.prof.signature += t.elapsed().as_secs_f64();
+        let t = Instant::now();
         let enc: Vec<Vec<u8>> = bincode::deserialize(&msg.body)?;
         let items: Vec<Item> = enc
             .par_iter()
             .map(|b| bincode::deserialize(b))
             .collect::<Result<_, _>>()?;
+        self.prof.decode += t.elapsed().as_secs_f64();
         let mut seen = HashSet::new();
         let mut starts = 0;
         for it in &items {
@@ -580,17 +718,84 @@ impl Engine {
             self.max_gate_batch = self.max_gate_batch.max(starts);
         }
         if verify {
-            items.par_iter().try_for_each(|it| {
-                ensure!(it.points_valid(), "point outside the prime-order subgroup");
-                self.check(from, it)
-            })?;
+            match self.batch.clone() {
+                None => {
+                    let t = Instant::now();
+                    items.par_iter().try_for_each(|it| {
+                        ensure!(it.points_valid(), "point outside the prime-order subgroup");
+                        self.check(from, it)
+                    })?;
+                    self.prof.verify_inline += t.elapsed().as_secs_f64();
+                }
+                Some(b) => self.verify_batched(from, &items, &*b)?,
+            }
         }
+        let t = Instant::now();
         for it in items {
             self.n_items += 1;
             self.apply(from, it)?;
         }
+        self.prof.apply += t.elapsed().as_secs_f64();
+        if !self.pending_finish.is_empty() {
+            let t = Instant::now();
+            let sids = std::mem::take(&mut self.pending_finish);
+            let b = self.batch.clone().unwrap();
+            self.finish(&sids, &*b)?;
+            self.prof.finish += t.elapsed().as_secs_f64();
+        }
         self.next_ctr[from] += 1;
         self.n_msgs += 1;
+        Ok(())
+    }
+
+    /// Message-level batched verification: state checks, then one backend
+    /// call for all subgroup checks and proof multiplications of the batch,
+    /// then the (parallel) completion of every check.
+    fn verify_batched(&mut self, from: usize, items: &[Item], b: &dyn MulBackend) -> Result<()> {
+        let t = Instant::now();
+        items
+            .par_iter()
+            .try_for_each(|it| self.validate(from, it))?;
+        let per: Vec<(usize, Vec<Job>)> = items
+            .par_iter()
+            .map(|it| {
+                let pts = it.points();
+                let mut v: Vec<Job> = pts.iter().map(|p| Job::subgroup(*p)).collect();
+                v.extend(self.proof_jobs(from, it));
+                (pts.len(), v)
+            })
+            .collect();
+        let mut offs = Vec::with_capacity(per.len() + 1);
+        offs.push(0);
+        let mut all = Vec::with_capacity(per.iter().map(|p| p.1.len()).sum());
+        for (_, v) in &per {
+            all.extend_from_slice(v);
+            offs.push(all.len());
+        }
+        self.prof.batch_build += t.elapsed().as_secs_f64();
+        let t = Instant::now();
+        let res = if all.is_empty() { vec![] } else { b.run(&all)? };
+        ensure!(
+            res.len() == all.len(),
+            "backend returned {} results for {} jobs",
+            res.len(),
+            all.len()
+        );
+        self.prof.batch_run += t.elapsed().as_secs_f64();
+        self.prof.jobs += all.len() as u64;
+        self.prof.batches += 1;
+        self.prof.max_batch = self.prof.max_batch.max(all.len() as u64);
+        let t = Instant::now();
+        items.par_iter().enumerate().try_for_each(|(i, it)| {
+            let r = &res[offs[i]..offs[i + 1]];
+            let np = per[i].0;
+            ensure!(
+                r[..np].iter().all(|z| z.is_zero()),
+                "point outside the prime-order subgroup"
+            );
+            self.proof_ok(from, it, &r[np..])
+        })?;
+        self.prof.batch_check += t.elapsed().as_secs_f64();
         Ok(())
     }
 
@@ -901,6 +1106,66 @@ mod tests {
         assert_eq!(eng.gates_done, circ.n_gates());
         assert_eq!(eng.result, Some(25 >= tau));
         assert_eq!(decrypt_small(&sk, &eng.output_ct().unwrap(), 2), Some(1));
+    }
+
+    #[test]
+    fn batched_verification_matches_inline_and_rejects_forgeries() {
+        use crate::batch::{Cpu, Inline, MulBackend, Recorder};
+        let mut rng = thread_rng();
+        let (sk, pp, mut ts) = committee(5);
+        let (w, v, tau) = ([3u64, 5, 200, 17], [1u64, 1, 0, 1], 25);
+        let circ = Arc::new(Circuit::build(4, 8, tau));
+        let inputs: Vec<Ct> = (0..4)
+            .flat_map(|i| (0..8).map(move |k| (v[i] * w[i] >> k) & 1))
+            .map(|b| pp.key.enc(&F::from(b), &rand_scalar(&mut rng)))
+            .collect();
+        // produce with a batched (CPU) verifier
+        let rec = Recorder::new(Arc::new(Cpu));
+        let mut eng = Engine::new(pp.clone(), circ.clone(), &inputs).unwrap();
+        eng.set_batch_backend(Some(rec.clone()));
+        let log = run_local(&mut eng, &mut ts, true).unwrap();
+        assert_eq!(eng.result, Some(true));
+        assert_eq!(decrypt_small(&sk, &eng.output_ct().unwrap(), 2), Some(1));
+        let batches = rec.take();
+        assert!(batches.iter().map(|b| b.jobs).max().unwrap() > 100);
+        // replays: inline, batched on CPU, batched on the sequential backend
+        let backends: [Option<Arc<dyn MulBackend>>; 3] =
+            [None, Some(Arc::new(Cpu)), Some(Arc::new(Inline))];
+        for b in backends {
+            let mut r = Engine::new(pp.clone(), circ.clone(), &inputs).unwrap();
+            r.set_batch_backend(b);
+            for m in &log {
+                r.process(m, true).unwrap();
+            }
+            assert_eq!(r.result, eng.result);
+            assert_eq!(r.output_ct(), eng.output_ct());
+            assert_eq!(r.gates_done, circ.n_gates());
+        }
+        // forged proof and small-order point are rejected by the batched path
+        let enc: Vec<Vec<u8>> = bincode::deserialize(&log[0].body).unwrap();
+        let items: Vec<Item> = enc
+            .iter()
+            .map(|b| bincode::deserialize(b).unwrap())
+            .collect();
+        let t2 = ark_ed_on_bn254::EdwardsAffine::new_unchecked(Fb::from(0u64), -Fb::from(1u64));
+        for (k, tamper) in [0, 1].into_iter().enumerate() {
+            let mut bad = items.clone();
+            if let Item::Mask { x, e, .. } = &mut bad[0] {
+                if tamper == 0 {
+                    *x = x.add(&Ct::trivial(1))
+                } else {
+                    *e += t2
+                }
+            }
+            let forged = Msg::sign(&ts[0].sk, &pp.ctx, 0, 0, &bad);
+            let mut r = Engine::new(pp.clone(), circ.clone(), &inputs).unwrap();
+            r.set_batch_backend(Some(Arc::new(Cpu)));
+            let err = r.process(&forged, true).unwrap_err().to_string();
+            assert!(
+                err.contains(if k == 0 { "PoK-CSZ" } else { "subgroup" }),
+                "{err}"
+            );
+        }
     }
 
     #[test]

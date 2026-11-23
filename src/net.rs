@@ -96,6 +96,10 @@ pub struct TrusteeStats {
     pub entries_received: u64,
     pub bytes_received: u64,
     pub peak_rss_bytes: Option<u64>,
+    #[serde(default)]
+    pub verify_backend: String,
+    #[serde(default)]
+    pub engine_prof: crate::tally::Prof,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -467,6 +471,8 @@ pub fn run_trustee(p: &Paths, id: usize, addr: &str, rtt_ms: u64) -> Result<Trus
     }
     st.seconds_total = t_start.elapsed().as_secs_f64();
     st.peak_rss_bytes = crate::experiment::peak_rss_bytes();
+    st.verify_backend = crate::batch::default_name();
+    st.engine_prof = eng.prof.clone();
     out_tx.send((
         Instant::now(),
         (K_STATS, Arc::new(serde_json::to_vec(&st)?)),
