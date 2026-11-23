@@ -235,6 +235,9 @@ pub fn stage_tally_dist(
         if let Some(t) = threads_per_trustee {
             c.env("RAYON_NUM_THREADS", t.to_string());
         }
+        // Their statistics already reach the board over TCP. Keep the CLI's
+        // stdout a single JSON value; retain stderr for diagnostic logs.
+        c.stdout(std::process::Stdio::null());
         kids.push(c.spawn().context("spawn trustee")?);
     }
     let b = net::run_board(p, listener, rtt_ms);

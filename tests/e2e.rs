@@ -396,5 +396,29 @@ fn batched_verification_backends_end_to_end() {
         for t in dist["tally"]["board"]["trustees"].as_array().unwrap() {
             assert!(t["verify_backend"].as_str().unwrap().starts_with(spec));
         }
+        let cli_dir = out.join("dist-json");
+        copy_dir(&out.join("n8/rep0/base"), &cli_dir);
+        let cli = wod()
+            .args(["--verify-backend", spec, "tally", "--mode", "dist", "--dir"])
+            .arg(&cli_dir)
+            .output()
+            .unwrap();
+        assert!(
+            cli.status.success(),
+            "{}",
+            String::from_utf8_lossy(&cli.stderr)
+        );
+        let stats: serde_json::Value = serde_json::from_slice(&cli.stdout).unwrap();
+        assert_eq!(stats["mode"], "dist");
+        assert_eq!(stats["decision"], runs[0]["decision"]);
+        assert!(
+            wod()
+                .args(["verify", "--dir"])
+                .arg(&cli_dir)
+                .output()
+                .unwrap()
+                .status
+                .success()
+        );
     }
 }
