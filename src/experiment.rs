@@ -117,6 +117,8 @@ pub struct TallyStats {
     pub mode: String,
     pub rtt_ms: u64,
     pub seconds_gates: f64,
+    pub seconds_produce: f64,
+    pub device_times: Option<serde_json::Value>,
     pub seconds_release: f64,
     pub seconds_tally: f64,
     pub messages: u64,
@@ -159,10 +161,14 @@ pub fn stage_tally_local(p: &Paths, scheduler: Scheduler) -> Result<TallyStats> 
     eng.select_scheduler(scheduler)?;
     let initialization = secs(t0);
     let mut t_gates = None;
+    let mut produce_seconds = 0.0;
     while !eng.finished() {
         let mut progressed = false;
         for t in ts.iter_mut() {
-            if let Some(m) = t.produce(&eng) {
+            let production = Instant::now();
+            let message = t.produce(&eng);
+            produce_seconds += secs(production);
+            if let Some(m) = message {
                 eng.process(&m, true)?;
                 tw.append(&m)?;
                 progressed = true;
@@ -183,6 +189,8 @@ pub fn stage_tally_local(p: &Paths, scheduler: Scheduler) -> Result<TallyStats> 
     Ok(TallyStats {
         mode: "local".into(),
         seconds_gates: g,
+        seconds_produce: produce_seconds,
+        device_times: crate::gpu::device_snapshot(),
         seconds_release: decision_complete - g,
         seconds_tally: total,
         messages,

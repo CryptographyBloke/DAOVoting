@@ -18,6 +18,17 @@ use crate::group::*;
 use ark_ff::{BigInt, Fp};
 use rayon::prelude::*;
 
+/// Per-process cumulative device timings. Kernel intervals include launch and
+/// host synchronization; they are not CUDA-event-only device durations.
+pub fn device_snapshot() -> Option<serde_json::Value> {
+    #[cfg(feature = "gpu")]
+    if let Some(c) = last_cuda() {
+        return Some(serde_json::json!({"device": c.device,
+            "compile_seconds": c.compile_seconds, "times": *c.times.lock().unwrap()}));
+    }
+    None
+}
+
 pub const KERNEL_SRC: &str = include_str!("gpu/bjj.cu");
 /// u32 words per point (X, Y, T, Z) and per scalar.
 pub const PT_WORDS: usize = 32;
@@ -494,6 +505,44 @@ mod tests {
         assert!(check_vectors(&crate::batch::Cpu, &file).unwrap().is_empty());
         #[cfg(feature = "cuda-emu")]
         assert!(check_vectors(&Emu, &file).unwrap().is_empty());
+    }
+
+    #[test]
+    fn truncated_vector_backend_is_rejected() {
+        struct Empty;
+        impl crate::batch::MulBackend for Empty {
+            fn name(&self) -> String {
+                "test-empty".into()
+            }
+            fn run(&self, _: &[Job]) -> anyhow::Result<Vec<G>> {
+                Ok(vec![])
+            }
+        }
+        assert!(check_vectors(&Empty, &make_vectors(7, 0)).is_err());
+    }
+
+    #[cfg(feature = "gpu")]
+    #[test]
+    #[ignore = "requires a real CUDA device and NVRTC"]
+    fn actual_cuda_vectors_and_randomized_equivalence() {
+        std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                let b = Cuda::new(0).unwrap();
+                let committed: Vec<Vector> =
+                    serde_json::from_str(include_str!("../tests/vectors/bjj_mul_v1.json")).unwrap();
+                assert!(check_vectors(&b, &committed).unwrap().is_empty());
+                for seed in [41, 42, 43] {
+                    assert!(
+                        check_vectors(&b, &make_vectors(seed, 1024))
+                            .unwrap()
+                            .is_empty()
+                    );
+                }
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
 
     #[test]

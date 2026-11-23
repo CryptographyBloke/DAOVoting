@@ -179,6 +179,47 @@ pub fn default_name() -> String {
 
 /// Backend from a CLI spec: `cpu`, `cuda[:DEVICE]`, `emu`, or
 /// `auto:MIN_BATCH[:DEVICE]` (CUDA for batches >= MIN_BATCH, CPU otherwise).
+#[cfg(feature = "gpu")]
+struct LazyCuda {
+    device: usize,
+    inner: OnceLock<std::result::Result<Arc<crate::gpu::Cuda>, String>>,
+}
+
+#[cfg(feature = "gpu")]
+impl MulBackend for LazyCuda {
+    fn name(&self) -> String {
+        match self.inner.get() {
+            Some(Ok(b)) => b.name(),
+            _ => format!("lazy-cuda(device {})", self.device),
+        }
+    }
+    fn run(&self, jobs: &[Job]) -> Result<Vec<G>> {
+        let b = self.inner.get_or_init(|| {
+            crate::gpu::Cuda::new(self.device)
+                .map(Arc::new)
+                .map_err(|e| format!("{e:#}"))
+        });
+        match b {
+            Ok(b) => b.run(jobs),
+            Err(e) => bail!("CUDA initialization: {e}"),
+        }
+    }
+}
+
+fn adaptive_cuda(device: usize) -> Result<Arc<dyn MulBackend>> {
+    #[cfg(feature = "gpu")]
+    {
+        Ok(Arc::new(LazyCuda {
+            device,
+            inner: OnceLock::new(),
+        }))
+    }
+    #[cfg(not(feature = "gpu"))]
+    {
+        cuda(device)
+    }
+}
+
 pub fn backend(spec: &str) -> Result<Arc<dyn MulBackend>> {
     let parts: Vec<&str> = spec.split(':').collect();
     let dev = |i: usize| parts.get(i).map(|d| d.parse::<usize>()).transpose();
@@ -191,7 +232,7 @@ pub fn backend(spec: &str) -> Result<Arc<dyn MulBackend>> {
                 .ok_or_else(|| anyhow::anyhow!("auto:MIN_BATCH"))?
                 .parse()?;
             Arc::new(Adaptive {
-                big: cuda(dev(2)?.unwrap_or(0))?,
+                big: adaptive_cuda(dev(2)?.unwrap_or(0))?,
                 min_batch,
             })
         }
@@ -225,6 +266,15 @@ mod tests {
     use super::*;
     use ark_ff::Zero;
     use rand::thread_rng;
+
+    #[cfg(feature = "gpu")]
+    #[test]
+    fn adaptive_small_batch_does_not_initialize_cuda() {
+        let b = backend(&format!("auto:{}:{}", usize::MAX, usize::MAX)).unwrap();
+        let jobs = [Job::mul(g(), &F::from(2u64))];
+        assert_eq!(b.run(&jobs).unwrap(), Cpu.run(&jobs).unwrap());
+        assert!(b.name().contains("lazy-cuda"));
+    }
 
     #[test]
     fn cpu_backend_matches_reference_ops() {

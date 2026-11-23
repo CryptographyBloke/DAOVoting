@@ -97,6 +97,22 @@ remains the reference. Default builds and commands are unchanged.
 Design, CPU profiling evidence, correctness status and the local GPU handoff
 are in [reports/T005.md](reports/T005.md).
 
+Stage B (`research/gpu-stage-b`) records actual RTX 4050 validation in
+[reports/T006.md](reports/T006.md). Windows CUDA builds reserve a larger compiler
+stack; adaptive dispatch initializes CUDA only when a batch reaches its threshold.
+`gpu-bench` includes the original inline verifier and retains raw samples.
+For paired full-protocol trials, `reproduce_gpu.ps1 -ProtocolOnly -SkipBuild
+-SkipTests -PreparedInputs DIR -MinBatch 4096 -TallyN 8,64,256,1024` reads genuine
+pre-claim elections at `DIR/**/nN/rep0/base/`, copies them to fresh outputs, rotates
+backend order, and requires public-only CPU replay and oracle agreement.
+It uses three repetitions at n=8/64 and one at n=256/1024 by default.
+`wod tally --mode dist` reuses the existing five-process TCP runner.
+
+GPU jobs contain public values. Correct arithmetic is still an integrity
+assumption: sampling or public inputs alone do not make a malicious GPU safe.
+Independent CPU replay protects the final experimental acceptance decision;
+it cannot retroactively undo online trustee actions after faulty verification.
+
 ## Optional EVM reproduction
 
 `contracts/WodAdmission.sol` and `tests/evm_local.cjs` support local EVM validation. `tests/evm_arbitrum.cjs` runs the separate Arbitrum Sepolia admission and receipt experiment. Setup, local validation, cost estimation, and the explicitly opt-in broadcast procedure are documented in [docs/ARBITRUM_SEPOLIA.md](docs/ARBITRUM_SEPOLIA.md).

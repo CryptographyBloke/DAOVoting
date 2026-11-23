@@ -43,6 +43,7 @@ pub struct Report {
     /// verification backend (`inline` = original path) and its phase profile
     pub verify_backend: String,
     pub engine_prof: crate::tally::Prof,
+    pub device_times: Option<serde_json::Value>,
     pub error: Option<String>,
 }
 
@@ -140,6 +141,7 @@ fn run(p: &Paths, r: &mut Report, supplied: Option<&[Event]>) -> Result<()> {
     r.seconds_backend = t.elapsed().as_secs_f64();
     r.verify_backend = crate::batch::default_name();
     r.engine_prof = eng.prof.clone();
+    r.device_times = crate::gpu::device_snapshot();
     ensure!(r.backend, "tally incomplete");
     r.decision = eng.result;
 

@@ -14,7 +14,7 @@ Pipeline (one poll in DIR):
   wod setup   --dir DIR --n N [--tau T] [--poll P]   test-only dealer + Groth16 CRS
   wod vote    --dir DIR                              prove all ballots
   wod admit   --dir DIR                              admission contract, seal board
-  wod tally   --dir DIR [--scheduler dataflow|reference] co-located tally (5 trustees, 1 process)
+  wod tally   --dir DIR [--mode local|dist] [--scheduler dataflow|reference]
   wod board   --dir DIR --addr HOST:PORT [--rtt-ms R]   public coordinator (TCP board)
   wod trustee --dir DIR --id I --addr HOST:PORT [--rtt-ms R]   one trustee process
   wod verify  --dir DIR                              independent public verifier
@@ -111,13 +111,29 @@ fn main() -> Result<()> {
         )?),
         "vote" => print(&experiment::stage_vote(&a.dir()?)?),
         "admit" => print(&experiment::stage_admit(&a.dir()?)?),
-        "tally" => print(&serde_json::to_value(experiment::stage_tally_local(
-            &a.dir()?,
-            a.get("--scheduler")
+        "tally" => {
+            let scheduler = a
+                .get("--scheduler")
                 .unwrap_or_else(|| "dataflow".into())
                 .parse::<Scheduler>()
-                .map_err(anyhow::Error::msg)?,
-        )?)?),
+                .map_err(anyhow::Error::msg)?;
+            let stats = match a.get("--mode").as_deref().unwrap_or("local") {
+                "local" => experiment::stage_tally_local(&a.dir()?, scheduler)?,
+                "dist" => {
+                    ensure!(
+                        scheduler == Scheduler::Dataflow,
+                        "TCP mode requires dataflow"
+                    );
+                    experiment::stage_tally_dist(
+                        &a.dir()?,
+                        a.num("--rtt-ms", 0)?,
+                        Some(a.num("--threads-per-trustee", 4)?),
+                    )?
+                }
+                mode => anyhow::bail!("unknown tally mode {mode}"),
+            };
+            print(&serde_json::to_value(stats)?);
+        }
         "board" => {
             let l = std::net::TcpListener::bind(a.req("--addr")?)?;
             print(&serde_json::to_value(net::run_board(

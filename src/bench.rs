@@ -303,11 +303,12 @@ pub fn run(iters: usize, groth_iters: usize) -> Value {
 use crate::batch::{BatchRecord, Cpu, MulBackend, Recorder};
 
 fn med(mut v: Vec<f64>) -> Value {
+    let raw = v.clone();
     v.sort_by(|a, b| a.partial_cmp(b).unwrap());
     if v.is_empty() {
         return Value::Null;
     }
-    json!({"median": v[v.len() / 2], "min": v[0], "max": v[v.len() - 1], "runs": v.len()})
+    json!({"median": v[v.len() / 2], "min": v[0], "max": v[v.len() - 1], "runs": v.len(), "raw": raw})
 }
 
 /// Encrypted inputs of a random weighted election with `τ = ⌊Σw/2⌋`.
@@ -491,22 +492,31 @@ pub fn gpu_bench(target: Arc<dyn MulBackend>, sizes: &[usize], reps: usize, ns: 
             .collect();
         let want = cpu.run(&jobs).unwrap();
         let got = target.run(&jobs).unwrap();
-        let equal = want.iter().zip(&got).all(|(a, b)| a == b);
+        let equal = want.len() == got.len() && want.iter().zip(&got).all(|(a, b)| a == b);
         assert!(equal, "backend result mismatch at batch size {n}");
-        let tc: Vec<f64> = (0..reps)
-            .map(|_| {
+        let mut tc = Vec::new();
+        let mut tg = Vec::new();
+        let before = device_times(&target);
+        let mut execution_order = Vec::new();
+        for r in 0..reps {
+            let order = if r % 2 == 0 {
+                ["cpu", "target"]
+            } else {
+                ["target", "cpu"]
+            };
+            execution_order.push(order);
+            for label in order {
                 let t = Instant::now();
-                cpu.run(&jobs).unwrap();
-                t.elapsed().as_secs_f64()
-            })
-            .collect();
-        let tg: Vec<f64> = (0..reps)
-            .map(|_| {
-                let t = Instant::now();
-                target.run(&jobs).unwrap();
-                t.elapsed().as_secs_f64()
-            })
-            .collect();
+                if label == "cpu" {
+                    cpu.run(&jobs).unwrap();
+                    tc.push(t.elapsed().as_secs_f64());
+                } else {
+                    target.run(&jobs).unwrap();
+                    tg.push(t.elapsed().as_secs_f64());
+                }
+            }
+        }
+        let after = device_times(&target);
         let (mc, mg) = (med(tc), med(tg));
         let s = mc["median"].as_f64().unwrap() / mg["median"].as_f64().unwrap();
         eprintln!(
@@ -516,7 +526,8 @@ pub fn gpu_bench(target: Arc<dyn MulBackend>, sizes: &[usize], reps: usize, ns: 
         );
         sweep.push(
             json!({"jobs": n, "equal": equal, "cpu_s": mc, "target_s": mg, "speedup": s,
-                          "target_jobs_per_s": n as f64 / mg["median"].as_f64().unwrap()}),
+                          "target_jobs_per_s": n as f64 / mg["median"].as_f64().unwrap(),
+                          "execution_order": execution_order, "device_before": before, "device_after": after}),
         );
     }
     let (pp, keys) = committee();
@@ -526,16 +537,21 @@ pub fn gpu_bench(target: Arc<dyn MulBackend>, sizes: &[usize], reps: usize, ns: 
         let mut runs = Vec::new();
         for r in 0..reps.min(3).max(1) {
             // alternate order to reduce order bias
-            let order: [(&str, Arc<dyn MulBackend>); 2] = if r % 2 == 0 {
-                [("cpu", cpu.clone()), ("target", target.clone())]
-            } else {
-                [("target", target.clone()), ("cpu", cpu.clone())]
-            };
+            let mut order: Vec<(&str, Option<Arc<dyn MulBackend>>)> = vec![
+                ("inline", None),
+                ("cpu", Some(cpu.clone())),
+                ("target", Some(target.clone())),
+            ];
+            order.rotate_left(r % 3);
             let mut row = serde_json::Map::new();
             let mut log0 = None;
+            row.insert(
+                "execution_order".into(),
+                json!(order.iter().map(|(n, _)| *n).collect::<Vec<_>>()),
+            );
             for (name, b) in order {
                 eprintln!("e2e n={n} rep={r}: tally {name}");
-                let (log, t) = tally_once(&pp, &keys, &circ, &inputs, Some(b.clone()));
+                let (log, t) = tally_once(&pp, &keys, &circ, &inputs, b);
                 assert_eq!(t["decision"], json!(want));
                 row.insert(format!("tally_{name}"), t);
                 log0.get_or_insert(log);
@@ -548,6 +564,9 @@ pub fn gpu_bench(target: Arc<dyn MulBackend>, sizes: &[usize], reps: usize, ns: 
                     && rt["accepted"] == json!(true)
                     && rc["output"] == rt["output"]
             );
+            let ri = replay(&pp, &circ, &inputs, &log, None);
+            assert!(ri["accepted"] == json!(true) && ri["output"] == rc["output"]);
+            row.insert("replay_inline".into(), ri);
             row.insert("replay_cpu".into(), rc);
             row.insert("replay_target".into(), rt);
             runs.push(Value::Object(row));
@@ -610,7 +629,7 @@ pub fn gpu_check(arch: Option<String>, device: usize) -> Value {
                 let vecs: Vec<crate::gpu::Vector> =
                     serde_json::from_str(include_str!("../tests/vectors/bjj_mul_v1.json")).unwrap();
                 let bad = crate::gpu::check_vectors(&*b, &vecs);
-                json!({"ok": true, "backend": b.name(), "vectors": vecs.len(),
+                json!({"ok": bad.as_ref().is_ok_and(|b| b.is_empty()), "backend": b.name(), "vectors": vecs.len(),
                        "vector_mismatches": bad.as_ref().map(|b| b.len()).map_err(|e| format!("{e:#}")).ok(),
                        "times": device_times(&b)})
             }
