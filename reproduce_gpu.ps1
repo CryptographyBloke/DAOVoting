@@ -141,6 +141,15 @@ Native $wod @("gpu-vectors", "--check", "tests\vectors\bjj_mul_v1.json", "--back
 # GPU utilization / memory monitor (background, 200 ms)
 $mon = Join-Path $Out "gpu_monitor.csv"
 $monJob = Start-Job -ScriptBlock { param($f) nvidia-smi --query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,clocks.sm,power.draw,temperature.gpu --format=csv -lms 200 | Out-File -Encoding ascii $f } -ArgumentList $mon
+$cpuJob = Start-Job -ScriptBlock {
+    param($exe, $file)
+    while ($true) {
+        Get-Process -Name 'wod-gpu' -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $exe } | ForEach-Object {
+            [pscustomobject]@{utc=[DateTimeOffset]::UtcNow.ToString('o');pid=$_.Id;cpu_seconds=$_.CPU;rss_bytes=$_.WorkingSet64}
+        } | Export-Csv -NoTypeInformation -Append -Encoding UTF8 $file
+        Start-Sleep -Milliseconds 500
+    }
+} -ArgumentList $wod, (Join-Path $Out 'cpu_monitor.csv')
 try {
     if (-not $ProtocolOnly) {
     # 5. Batch-size sweep and end-to-end engine comparison ------------------------
@@ -231,6 +240,7 @@ try {
     }
 } finally {
     Stop-Job $monJob -ErrorAction SilentlyContinue; Remove-Job $monJob -Force -ErrorAction SilentlyContinue
+    Stop-Job $cpuJob -ErrorAction SilentlyContinue; Remove-Job $cpuJob -Force -ErrorAction SilentlyContinue
 }
 
 # 8. Summary -------------------------------------------------------------------------
