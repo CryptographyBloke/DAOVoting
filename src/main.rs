@@ -32,6 +32,18 @@ Experiments:
                  [--reps 3] [--tau T] [--threads-per-trustee K] [--out results]
                  [--scheduler dataflow|reference|both] [--order-offset K] [--machine-json FILE]
                  reference/both require --modes local; both alternates paired order
+
+GPU research (T005; see reports/T005.md):
+  --verify-backend SPEC   on any command: verify trustee messages in message-level
+                          batches on cpu | cuda[:DEV] | auto:MIN_BATCH[:DEV] | emu
+                          (default: original inline verification)
+  wod profile    [--n 8,64,256,1024] [--groth-reps 5] [--out DIR]   CPU hotspot profile
+  wod gpu-check  [--arch compute_89] [--device 0]    build features, NVRTC compile, device info,
+                                                     vectors on the device
+  wod gpu-bench  --backend SPEC [--sizes 1,16,...] [--reps 5] [--n 8,64] [--out DIR]
+                                                     batch sweep + end-to-end CPU vs SPEC
+  wod gpu-vectors --check FILE --backend SPEC | --write FILE   deterministic [k]P vectors
+  wod gpu-summary --dir DIR                           summary.md for a reproduce_gpu.ps1 run
 ";
 
 struct Args(Vec<String>);
@@ -70,9 +82,22 @@ fn print(v: &Value) {
 }
 
 fn main() -> Result<()> {
-    let argv: Vec<String> = std::env::args().skip(1).collect();
+    let mut argv: Vec<String> = std::env::args().skip(1).collect();
+    // global option, accepted before or after the command
+    let backend = argv.iter().position(|x| x == "--verify-backend").map(|i| {
+        let v = argv.get(i + 1).cloned().unwrap_or_default();
+        argv.drain(i..(i + 2).min(argv.len()));
+        v
+    });
     let cmd = argv.first().cloned().unwrap_or_else(|| "help".into());
     let a = Args(argv);
+    if let Some(spec) = backend {
+        // validated here; exported so trustee/verifier subprocesses inherit it
+        if spec != "inline" {
+            wod::batch::backend(&spec)?;
+        }
+        unsafe { std::env::set_var("WOD_VERIFY_BACKEND", &spec) };
+    }
     ensure!(
         a.get("--scheduler").is_none() || matches!(cmd.as_str(), "tally" | "experiment"),
         "--scheduler is supported by tally and experiment only; TCP commands retain dataflow"
@@ -159,9 +184,88 @@ fn main() -> Result<()> {
             &a.req("--source-commit")?,
         )?),
         "experiment" => run_experiments(&a)?,
+        "profile" => {
+            let out = fresh_out(&a, "profile.json")?;
+            let ns: Vec<usize> = a
+                .list("--n", "8,64,256,1024")
+                .iter()
+                .map(|n| n.parse())
+                .collect::<Result<_, _>>()?;
+            let v = bench::profile(&ns, a.num("--groth-reps", 5)?);
+            write_json(
+                &out,
+                &json!({"machine": experiment::machine(), "provenance": bench::provenance(), "profile": v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "gpu-check" => print(&bench::gpu_check(
+            a.get("--arch"),
+            a.num("--device", 0usize)?,
+        )),
+        "gpu-bench" => {
+            let out = fresh_out(&a, "gpu_bench.json")?;
+            let target = wod::batch::backend(&a.req("--backend")?)?;
+            let sizes: Vec<usize> = a
+                .list("--sizes", "1,4,16,64,256,1024,4096,16384,65536")
+                .iter()
+                .map(|n| n.parse())
+                .collect::<Result<_, _>>()?;
+            let ns: Vec<usize> = a
+                .list("--n", "8,64")
+                .iter()
+                .map(|n| n.parse())
+                .collect::<Result<_, _>>()?;
+            let v = bench::gpu_bench(target.clone(), &sizes, a.num("--reps", 5)?, &ns);
+            let dev = bench::device_times(&target);
+            write_json(
+                &out,
+                &json!({"machine": experiment::machine(), "provenance": bench::provenance(), "device_times": dev, "gpu_bench": v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "gpu-summary" => print!("{}", bench::gpu_summary(&PathBuf::from(a.req("--dir")?))?),
+        "gpu-vectors" => {
+            if let Some(f) = a.get("--write") {
+                let v = wod::gpu::make_vectors(20261123, 64);
+                std::fs::write(&f, serde_json::to_string_pretty(&v)? + "\n")?;
+                println!("wrote {} vectors to {f}", v.len());
+            } else {
+                let f = a.req("--check")?;
+                let v: Vec<wod::gpu::Vector> = serde_json::from_slice(&std::fs::read(&f)?)?;
+                let b = wod::batch::backend(&a.req("--backend")?)?;
+                let bad = wod::gpu::check_vectors(&*b, &v)?;
+                println!(
+                    "{}: {} vectors, {} mismatches on {}",
+                    f,
+                    v.len(),
+                    bad.len(),
+                    b.name()
+                );
+                for i in &bad {
+                    println!("  mismatch #{i}: {}", v[*i].note);
+                }
+                ensure!(bad.is_empty(), "vector check failed");
+            }
+        }
         _ => print!("{HELP}"),
     }
     Ok(())
+}
+
+/// `--out DIR` (default `results/local/t005-<unix time>`) joined with `file`,
+/// refusing to overwrite existing results.
+fn fresh_out(a: &Args, file: &str) -> Result<PathBuf> {
+    let dir = PathBuf::from(a.get("--out").unwrap_or_else(|| {
+        let t = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        format!("results/local/t005-{t}")
+    }));
+    let out = dir.join(file);
+    ensure!(!out.exists(), "refusing to overwrite {}", out.display());
+    std::fs::create_dir_all(&dir)?;
+    Ok(out)
 }
 
 /// Single conditional gate: real five-trustee CGY gate, independent replay,

@@ -249,6 +249,130 @@ pub fn cast<R: RngCore + CryptoRng>(
     v: bool,
     rng: &mut R,
 ) -> Ballot {
+    let (circ, cts, nullifier) = ballot_circuit(key, reg, poll, voter, v, rng);
+    let proof = Groth16::<Bn254>::prove(pk, circ, rng).expect("prove");
+    Ballot {
+        cts,
+        nullifier,
+        proof,
+    }
+}
+
+/// Per-stage wall-clock times of one Groth16 proof (seconds) and MSM sizes.
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct ProveTimes {
+    pub synthesis: f64,
+    pub finalize: f64,
+    pub witness_map_fft: f64,
+    pub msm_h_g1: f64,
+    pub msm_l_g1: f64,
+    pub msm_a_g1: f64,
+    pub msm_b_g1: f64,
+    pub msm_b_g2: f64,
+    pub assemble: f64,
+    pub total: f64,
+    /// sizes of the H, L, A, B(G1), B(G2) multi-scalar multiplications
+    pub msm_sizes: [usize; 5],
+    pub constraints: usize,
+}
+
+/// Groth16 proving split into its stages, for profiling. It reproduces
+/// `ark-groth16 0.5`'s `create_proof_with_reduction` step by step (libsnark
+/// QAP reduction, same MSMs and blinding), so it yields ordinary proofs that
+/// the unchanged verifier accepts. The MSM calls are the natural hook for a
+/// GPU MSM backend (e.g. ICICLE BN254 G1/G2).
+pub fn prove_staged<R: RngCore + CryptoRng>(
+    pk: &ProvingKey<Bn254>,
+    circ: BallotCircuit,
+    rng: &mut R,
+) -> Result<(Proof<Bn254>, ProveTimes)> {
+    use ark_ec::{VariableBaseMSM, pairing::Pairing};
+    use ark_ff::UniformRand;
+    use ark_groth16::r1cs_to_qap::{LibsnarkReduction, R1CSToQAP};
+    use ark_poly::GeneralEvaluationDomain;
+    use ark_relations::r1cs::OptimizationGoal;
+    use std::time::Instant;
+    type G1 = <Bn254 as Pairing>::G1;
+    type G2 = <Bn254 as Pairing>::G2;
+    let t0 = Instant::now();
+    let mut tm = ProveTimes::default();
+    let (r, s) = (Fb::rand(rng), Fb::rand(rng));
+    let cs = ConstraintSystem::<Fb>::new_ref();
+    cs.set_optimization_goal(OptimizationGoal::Constraints);
+    let t = Instant::now();
+    circ.generate_constraints(cs.clone())?;
+    tm.synthesis = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    cs.finalize();
+    tm.finalize = t.elapsed().as_secs_f64();
+    tm.constraints = cs.num_constraints();
+    let t = Instant::now();
+    let h = LibsnarkReduction::witness_map::<Fb, GeneralEvaluationDomain<Fb>>(cs.clone())?;
+    tm.witness_map_fft = t.elapsed().as_secs_f64();
+    let prover = cs.borrow().unwrap();
+    let input: Vec<_> = prover.instance_assignment[1..]
+        .iter()
+        .map(|x| x.into_bigint())
+        .collect();
+    let aux: Vec<_> = prover
+        .witness_assignment
+        .iter()
+        .map(|x| x.into_bigint())
+        .collect();
+    let hb: Vec<_> = h.iter().map(|x| x.into_bigint()).collect();
+    let assignment = [&input[..], &aux[..]].concat();
+    let t = Instant::now();
+    let h_acc = G1::msm_bigint(&pk.h_query, &hb);
+    tm.msm_h_g1 = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    let l_acc = G1::msm_bigint(&pk.l_query, &aux);
+    tm.msm_l_g1 = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    let g_a = pk.delta_g1 * r
+        + pk.a_query[0]
+        + G1::msm_bigint(&pk.a_query[1..], &assignment)
+        + pk.vk.alpha_g1;
+    tm.msm_a_g1 = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    let g1_b = pk.delta_g1 * s
+        + pk.b_g1_query[0]
+        + G1::msm_bigint(&pk.b_g1_query[1..], &assignment)
+        + pk.beta_g1;
+    tm.msm_b_g1 = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    let g2_b = pk.vk.delta_g2 * s
+        + pk.b_g2_query[0]
+        + G2::msm_bigint(&pk.b_g2_query[1..], &assignment)
+        + pk.vk.beta_g2;
+    tm.msm_b_g2 = t.elapsed().as_secs_f64();
+    let t = Instant::now();
+    let g_c = g_a * s + g1_b * r - pk.delta_g1 * (r * s) + l_acc + h_acc;
+    let proof = Proof {
+        a: g_a.into_affine(),
+        b: g2_b.into_affine(),
+        c: g_c.into_affine(),
+    };
+    tm.assemble = t.elapsed().as_secs_f64();
+    tm.msm_sizes = [
+        hb.len(),
+        aux.len(),
+        assignment.len(),
+        assignment.len(),
+        assignment.len(),
+    ];
+    tm.total = t0.elapsed().as_secs_f64();
+    Ok((proof, tm))
+}
+
+/// Ballot witness and statement for [`prove_staged`] (same as [`cast`]).
+pub fn ballot_circuit<R: RngCore + CryptoRng>(
+    key: &Key,
+    reg: &Registry,
+    poll: u64,
+    voter: &Voter,
+    v: bool,
+    rng: &mut R,
+) -> (BallotCircuit, Vec<Ct>, Fb) {
     let x = if v { voter.w } else { 0 };
     let r: Vec<F> = (0..L_VOTE).map(|_| rand_scalar(rng)).collect();
     let cts: Vec<Ct> = (0..L_VOTE)
@@ -264,21 +388,19 @@ pub fn cast<R: RngCore + CryptoRng>(
     }
     .public_inputs();
     let (sib, dir) = reg.path(voter.index);
-    let circ = BallotCircuit {
-        public,
-        s: voter.s,
-        w: voter.w,
-        v,
-        sib,
-        dir,
-        r,
-    };
-    let proof = Groth16::<Bn254>::prove(pk, circ, rng).expect("prove");
-    Ballot {
+    (
+        BallotCircuit {
+            public,
+            s: voter.s,
+            w: voter.w,
+            v,
+            sib,
+            dir,
+            r,
+        },
         cts,
-        nullifier: nul,
-        proof,
-    }
+        nul,
+    )
 }
 
 pub fn verify(
@@ -427,5 +549,37 @@ mod tests {
         let mut b2 = b.clone();
         b2.cts.swap(0, 1);
         assert!(verify(&pvk, &b2, reg.root(), 4, key.h).is_err());
+    }
+
+    #[test]
+    fn staged_prover_proofs_verify() {
+        let mut rng = thread_rng();
+        let key = Key::new(g() * rand_scalar(&mut rng));
+        let s = Fb::from(5u64);
+        let reg = Registry::new(&[(poseidon(&[s]), 200)]);
+        let (pk, vk) = crs(key.h, &mut rng);
+        let pvk = ark_groth16::prepare_verifying_key(&vk);
+        let voter = Voter {
+            index: 0,
+            s,
+            w: 200,
+        };
+        for v in [true, false] {
+            let (circ, cts, nullifier) = ballot_circuit(&key, &reg, 9, &voter, v, &mut rng);
+            let (proof, tm) = prove_staged(&pk, circ, &mut rng).unwrap();
+            assert!(tm.total > 0.0 && tm.msm_sizes[0] > tm.constraints);
+            verify(
+                &pvk,
+                &Ballot {
+                    cts,
+                    nullifier,
+                    proof,
+                },
+                reg.root(),
+                9,
+                key.h,
+            )
+            .unwrap();
+        }
     }
 }

@@ -11,6 +11,7 @@ ark-ec = { version = "0.5", features = ["parallel"] }
 ark-ed-on-bn254 = { version = "0.5", features = ["r1cs"] }
 ark-ff = { version = "0.5", features = ["parallel"] }
 ark-groth16 = { version = "0.5", features = ["parallel"] }
+ark-poly = "0.5"
 ark-r1cs-std = "0.5"
 ark-relations = "0.5"
 ark-serialize = "0.5"
@@ -26,7 +27,23 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sha2 = "0.10"
 sha3 = "0.10"
+cudarc = { version = "0.19.10", optional = true, default-features = false, features = ["std", "driver", "nvrtc", "dynamic-loading"] }
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "net", "io-util", "macros", "sync", "time"] }
+
+[build-dependencies]
+cc = { version = "1", optional = true }
+
+[features]
+# GPU verification backend (CUDA driver + NVRTC, loaded at run time; no CUDA
+# toolkit needed to build). Pick the feature matching the installed toolkit's
+# NVRTC library: `cuda` (CUDA 12.x, nvrtc64_120_0.dll / libnvrtc.so.12) or
+# `cuda13` (CUDA 13.x).
+gpu = ["dep:cudarc"]
+cuda = ["gpu", "cudarc/cuda-12060"]
+cuda13 = ["gpu", "cudarc/cuda-13000"]
+# Compiles the CUDA kernel source as host C++ (needs a C++ compiler) to test
+# its arithmetic bit-for-bit against arkworks without a GPU.
+cuda-emu = ["dep:cc"]
 
 [profile.release]
 opt-level = 3

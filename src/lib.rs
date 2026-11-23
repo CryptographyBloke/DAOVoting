@@ -17,10 +17,12 @@
 //! * [`experiment`], [`bench`] experiment runner and micro-benchmarks
 
 pub mod ballot;
+pub mod batch;
 pub mod bench;
 pub mod circuit;
 pub mod evm;
 pub mod experiment;
+pub mod gpu;
 pub mod group;
 pub mod ledger;
 pub mod net;

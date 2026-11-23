@@ -6,6 +6,7 @@
 //! Every hash binds a domain string, the session context (setup + sealed
 //! board), the slot (gate) id, the trustee index and the full statement.
 
+use crate::batch::{Job, eval_all};
 use crate::group::*;
 use rand::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -44,13 +45,24 @@ impl Zkp0 {
         Zkp0 { d, z }
     }
     pub fn verify(&self, k: &Key, ctx: &[u8; 32], label: u64, a: &[Ct]) -> bool {
-        if self.z.len() != a.len() {
+        self.check(k, ctx, label, a, &eval_all(&self.jobs(a)))
+    }
+    /// Variable-base multiplications of verification: `[d]A_k` (2 per ciphertext).
+    pub fn jobs(&self, a: &[Ct]) -> Vec<Job> {
+        a.iter()
+            .flat_map(|c| [Job::mul(c.a, &self.d), Job::mul(c.b, &self.d)])
+            .collect()
+    }
+    /// Completes verification from the results `r` of [`Self::jobs`].
+    pub fn check(&self, k: &Key, ctx: &[u8; 32], label: u64, a: &[Ct], r: &[G]) -> bool {
+        if self.z.len() != a.len() || r.len() != 2 * a.len() {
             return false;
         }
-        let e: Vec<Ct> = a
+        let e: Vec<Ct> = self
+            .z
             .iter()
-            .zip(&self.z)
-            .map(|(a, z)| k.enc0(z).sub(&a.scale(&self.d)))
+            .zip(r.chunks(2))
+            .map(|(z, da)| k.enc0(z).sub(&Ct { a: da[0], b: da[1] }))
             .collect();
         zkp0_hash(ctx, label, a, &e) == self.d
     }
@@ -101,8 +113,30 @@ impl Dleq {
         u: &G,
         w: &G,
     ) -> bool {
+        self.check(tg, thi, ctx, label, hi, u, w, &eval_all(&self.jobs(u, w)))
+    }
+    /// Variable-base multiplications of verification: `[z]u`, `[d]w`.
+    pub fn jobs(&self, u: &G, w: &G) -> [Job; 2] {
+        [Job::mul(*u, &self.z), Job::mul(*w, &self.d)]
+    }
+    /// Completes verification from the results `r` of [`Self::jobs`].
+    #[allow(clippy::too_many_arguments)]
+    pub fn check(
+        &self,
+        tg: &FixedBase,
+        thi: &FixedBase,
+        ctx: &[u8; 32],
+        label: u64,
+        hi: &G,
+        u: &G,
+        w: &G,
+        r: &[G],
+    ) -> bool {
+        if r.len() != 2 {
+            return false;
+        }
         let e1 = tg.mul(&self.z) - thi.mul(&self.d);
-        let e2 = vmul(u, &self.z) - vmul(w, &self.d);
+        let e2 = r[0] - r[1];
         dleq_hash(ctx, label, hi, u, w, &e1, &e2) == self.d
     }
 }
@@ -201,19 +235,49 @@ impl Csz {
         label: u64,
         st: &CszStmt,
     ) -> bool {
+        self.check(k, tht, ctx, label, st, &eval_all(&self.jobs(st)))
+    }
+
+    /// Variable-base multiplications of verification, branch σ = 1 then −1:
+    /// `[d_σ]D^σ_X` (2), `[d_σ]D^σ_Y` (2), `[d_σ]e` (1) — 10 jobs.
+    pub fn jobs(&self, st: &CszStmt) -> Vec<Job> {
+        let mut v = Vec::with_capacity(10);
+        for (j, sigma) in [1i64, -1].into_iter().enumerate() {
+            let (dx, dy) = branch_diffs(st, sigma);
+            let d = &self.d[j];
+            v.extend([
+                Job::mul(dx.a, d),
+                Job::mul(dx.b, d),
+                Job::mul(dy.a, d),
+                Job::mul(dy.b, d),
+                Job::mul(*st.e, d),
+            ]);
+        }
+        v
+    }
+
+    /// Completes verification from the results `r` of [`Self::jobs`].
+    pub fn check(
+        &self,
+        k: &Key,
+        tht: &FixedBase,
+        ctx: &[u8; 32],
+        label: u64,
+        st: &CszStmt,
+        r: &[G],
+    ) -> bool {
         use ark_ff::Zero;
         // CGY Alg. 10 line 1: reject X_i of the form (1_G, *)
-        if st.x1.a.is_zero() {
+        if st.x1.a.is_zero() || r.len() != 10 {
             return false;
         }
         let mut c = [Ct::zero(); 4];
         let mut ce = [G::default(); 2];
-        for (j, sigma) in [1i64, -1].into_iter().enumerate() {
-            let (dx, dy) = branch_diffs(st, sigma);
-            let (d, ax, ay) = (&self.d[j], &self.a[2 * j], &self.a[2 * j + 1]);
-            c[2 * j] = k.enc0(ax).sub(&dx.scale(d));
-            c[2 * j + 1] = k.enc0(ay).sub(&dy.scale(d));
-            ce[j] = tht.mul(ax) - vmul(st.e, d);
+        for j in 0..2 {
+            let (ax, ay, q) = (&self.a[2 * j], &self.a[2 * j + 1], &r[5 * j..5 * j + 5]);
+            c[2 * j] = k.enc0(ax).sub(&Ct { a: q[0], b: q[1] });
+            c[2 * j + 1] = k.enc0(ay).sub(&Ct { a: q[2], b: q[3] });
+            ce[j] = tht.mul(ax) - q[4];
         }
         csz_hash(ctx, label, k, st, &c, &ce) == self.d[0] + self.d[1]
     }
