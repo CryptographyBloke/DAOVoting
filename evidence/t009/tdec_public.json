@@ -1,0 +1,2077 @@
+{
+  "machine": {
+    "arch": "x86_64",
+    "cargo_lock_sha256": "f4a9b50efcae2cf903fa0dbed7ae8ff44e6c560a6fcb2134cf7032e13ef2f7bb",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "crates": {
+      "ark-bn254": "0.5.0",
+      "ark-crypto-primitives": "0.5.0",
+      "ark-ed-on-bn254": "0.5.0",
+      "ark-groth16": "0.5.0",
+      "ark-r1cs-std": "0.5.0",
+      "ed25519-dalek": "2.2.0",
+      "rayon": "1.12.0",
+      "sha2": "0.10.9",
+      "sha3": "0.10.9",
+      "tokio": "1.54.1"
+    },
+    "kernel": "Linux version 6.18.44-fc-v819 (builder@sandboxing) (gcc (GCC) 15.3.0, GNU ld (GNU Binutils) 2.46) #1 SMP PREEMPT_DYNAMIC @0",
+    "logical_cores": 4,
+    "memory": "MemTotal:       16473316 kB",
+    "os": "linux",
+    "profile": "release",
+    "rayon_threads": 4,
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)"
+  },
+  "provenance": {
+    "features": {
+      "cuda12": false,
+      "cuda13": false,
+      "cuda_emu": false,
+      "gpu": false
+    },
+    "rayon_threads": 4,
+    "source_commit": "b2ab5fc79bceefd0a64a9c93b50e6a6816435a52",
+    "source_dirty": false,
+    "verify_backend_default": "inline"
+  },
+  "tdec": {
+    "n": 5,
+    "reps": 3,
+    "rows": [
+      {
+        "k": 1,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.000892807,
+            "public_decode_validate_seconds": 0.001548159,
+            "public_total_seconds": 0.002602346,
+            "public_verify_seconds": 0.001050824,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.000719628,
+            "wire_bytes_measured": 352,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 12
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.00114839,
+            "public_decode_validate_seconds": 0.000184789,
+            "public_total_seconds": 0.001419996,
+            "public_verify_seconds": 0.001232663,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.000786826,
+            "wire_bytes_measured": 448,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "coef_seconds": 0.000369579,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003864464,
+            "public_decode_validate_seconds": 0.000149593,
+            "public_total_seconds": 0.002621181,
+            "public_verify_seconds": 0.002468926,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.002662563,
+            "wire_bytes_measured": 352,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "coef_seconds": 0.000105722,
+            "info": {
+              "msm_or_vmul_terms": 13
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002126937,
+            "public_decode_validate_seconds": 0.000246556,
+            "public_total_seconds": 0.001552287,
+            "public_verify_seconds": 0.001302959,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.001374447,
+            "wire_bytes_measured": 448,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 480,
+            "bytes_public": 128,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 5
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002222793,
+            "public_decode_validate_seconds": 0.000154239,
+            "public_total_seconds": 0.000891353,
+            "public_verify_seconds": 0.000735877,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.000862996,
+            "wire_bytes_measured": 192,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 12
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001186772,
+            "public_decode_validate_seconds": 0.000227882,
+            "public_total_seconds": 0.001416525,
+            "public_verify_seconds": 0.001186162,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.000906835,
+            "wire_bytes_measured": 448,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "coef_seconds": 0.000345247,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.00264813,
+            "public_decode_validate_seconds": 0.000237084,
+            "public_total_seconds": 0.003356927,
+            "public_verify_seconds": 0.003118053,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.003164394,
+            "wire_bytes_measured": 352,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "coef_seconds": 0.000101704,
+            "info": {
+              "msm_or_vmul_terms": 13
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002063345,
+            "public_decode_validate_seconds": 0.000199952,
+            "public_total_seconds": 0.001344313,
+            "public_verify_seconds": 0.00114201,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.00114577,
+            "wire_bytes_measured": 448,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 480,
+            "bytes_public": 128,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 5
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002579006,
+            "public_decode_validate_seconds": 0.000229203,
+            "public_total_seconds": 0.000845984,
+            "public_verify_seconds": 0.000615595,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.000767665,
+            "wire_bytes_measured": 192,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.000914023,
+            "public_decode_validate_seconds": 0.000165508,
+            "public_total_seconds": 0.001232161,
+            "public_verify_seconds": 0.001064468,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.001058341,
+            "wire_bytes_measured": 352,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "coef_seconds": 0.00034608,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002662582,
+            "public_decode_validate_seconds": 0.000158708,
+            "public_total_seconds": 0.003655502,
+            "public_verify_seconds": 0.003494464,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.002944969,
+            "wire_bytes_measured": 352,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "coef_seconds": 0.000108206,
+            "info": {
+              "msm_or_vmul_terms": 13
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.00216394,
+            "public_decode_validate_seconds": 0.000393398,
+            "public_total_seconds": 0.001475932,
+            "public_verify_seconds": 0.001080411,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.00116398,
+            "wire_bytes_measured": 448,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 480,
+            "bytes_public": 128,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 5
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002240334,
+            "public_decode_validate_seconds": 0.00018108,
+            "public_total_seconds": 0.000781146,
+            "public_verify_seconds": 0.000598883,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.000845374,
+            "wire_bytes_measured": 192,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.000836815,
+            "public_decode_validate_seconds": 0.000107732,
+            "public_total_seconds": 0.001055704,
+            "public_verify_seconds": 0.000946005,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.001126091,
+            "wire_bytes_measured": 352,
+            "wire_ciphertext_bytes": 64
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 12
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001220487,
+            "public_decode_validate_seconds": 0.000306376,
+            "public_total_seconds": 0.001321404,
+            "public_verify_seconds": 0.001012868,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.001102051,
+            "wire_bytes_measured": 448,
+            "wire_ciphertext_bytes": 64
+          }
+        ]
+      },
+      {
+        "k": 16,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4608,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.004188348,
+            "public_decode_validate_seconds": 0.001071517,
+            "public_total_seconds": 0.005391754,
+            "public_verify_seconds": 0.004310808,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.00402164,
+            "wire_bytes_measured": 5632,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6144,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 192
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.00637247,
+            "public_decode_validate_seconds": 0.002078394,
+            "public_total_seconds": 0.005277945,
+            "public_verify_seconds": 0.003116869,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.003450075,
+            "wire_bytes_measured": 7168,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1728,
+            "coef_seconds": 0.000377138,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.004779836,
+            "public_decode_validate_seconds": 0.001215941,
+            "public_total_seconds": 0.006224867,
+            "public_verify_seconds": 0.005005368,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.005556837,
+            "wire_bytes_measured": 2752,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1824,
+            "coef_seconds": 0.000521747,
+            "info": {
+              "msm_or_vmul_terms": 73
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003712541,
+            "public_decode_validate_seconds": 0.000959503,
+            "public_total_seconds": 0.002554897,
+            "public_verify_seconds": 0.001591069,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.002181169,
+            "wire_bytes_measured": 2848,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 1920,
+            "bytes_public": 608,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 35
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.005335697,
+            "public_decode_validate_seconds": 0.00089806,
+            "public_total_seconds": 0.002424768,
+            "public_verify_seconds": 0.001523523,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.001572709,
+            "wire_bytes_measured": 1632,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6144,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 192
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.005725315,
+            "public_decode_validate_seconds": 0.001766209,
+            "public_total_seconds": 0.004518614,
+            "public_verify_seconds": 0.002716659,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.002987553,
+            "wire_bytes_measured": 7168,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1728,
+            "coef_seconds": 0.000402208,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.004901584,
+            "public_decode_validate_seconds": 0.001018934,
+            "public_total_seconds": 0.00495645,
+            "public_verify_seconds": 0.003933199,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.00620524,
+            "wire_bytes_measured": 2752,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1824,
+            "coef_seconds": 0.000396635,
+            "info": {
+              "msm_or_vmul_terms": 73
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.0044085,
+            "public_decode_validate_seconds": 0.001046897,
+            "public_total_seconds": 0.002780638,
+            "public_verify_seconds": 0.001729828,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.001962188,
+            "wire_bytes_measured": 2848,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 1920,
+            "bytes_public": 608,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 35
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.005671035,
+            "public_decode_validate_seconds": 0.000727635,
+            "public_total_seconds": 0.002297062,
+            "public_verify_seconds": 0.001566571,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.001882147,
+            "wire_bytes_measured": 1632,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4608,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.006862787,
+            "public_decode_validate_seconds": 0.00097596,
+            "public_total_seconds": 0.004487296,
+            "public_verify_seconds": 0.00350681,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.003577443,
+            "wire_bytes_measured": 5632,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1728,
+            "coef_seconds": 0.000387281,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.004260696,
+            "public_decode_validate_seconds": 0.001334858,
+            "public_total_seconds": 0.006709702,
+            "public_verify_seconds": 0.005370596,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.004603718,
+            "wire_bytes_measured": 2752,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1824,
+            "coef_seconds": 0.000331988,
+            "info": {
+              "msm_or_vmul_terms": 73
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003726527,
+            "public_decode_validate_seconds": 0.000907955,
+            "public_total_seconds": 0.002452072,
+            "public_verify_seconds": 0.001540304,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.001769266,
+            "wire_bytes_measured": 2848,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 1920,
+            "bytes_public": 608,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 35
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003989727,
+            "public_decode_validate_seconds": 0.000555193,
+            "public_total_seconds": 0.001563967,
+            "public_verify_seconds": 0.001005314,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.00104878,
+            "wire_bytes_measured": 1632,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4608,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003039597,
+            "public_decode_validate_seconds": 0.000904313,
+            "public_total_seconds": 0.004099019,
+            "public_verify_seconds": 0.003189901,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.003659126,
+            "wire_bytes_measured": 5632,
+            "wire_ciphertext_bytes": 1024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6144,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 192
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.006315401,
+            "public_decode_validate_seconds": 0.002090253,
+            "public_total_seconds": 0.004841817,
+            "public_verify_seconds": 0.002740713,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.003610065,
+            "wire_bytes_measured": 7168,
+            "wire_ciphertext_bytes": 1024
+          }
+        ]
+      },
+      {
+        "k": 64,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 18432,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.013367735,
+            "public_decode_validate_seconds": 0.003367485,
+            "public_total_seconds": 0.017329014,
+            "public_verify_seconds": 0.013926657,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.012837602,
+            "wire_bytes_measured": 22528,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24576,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 768
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.019112812,
+            "public_decode_validate_seconds": 0.007727586,
+            "public_total_seconds": 0.015213856,
+            "public_verify_seconds": 0.007436207,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.007275632,
+            "wire_bytes_measured": 28672,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6336,
+            "coef_seconds": 0.000988059,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.010644173,
+            "public_decode_validate_seconds": 0.003579855,
+            "public_total_seconds": 0.009897823,
+            "public_verify_seconds": 0.006309707,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.007110307,
+            "wire_bytes_measured": 10432,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6432,
+            "coef_seconds": 0.000584059,
+            "info": {
+              "msm_or_vmul_terms": 265
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.007841448,
+            "public_decode_validate_seconds": 0.004019224,
+            "public_total_seconds": 0.007518208,
+            "public_verify_seconds": 0.003491753,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.003031945,
+            "wire_bytes_measured": 10528,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 6528,
+            "bytes_public": 2144,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 131
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.008366097,
+            "public_decode_validate_seconds": 0.001702011,
+            "public_total_seconds": 0.00336384,
+            "public_verify_seconds": 0.001658755,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.001620743,
+            "wire_bytes_measured": 6240,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24576,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 768
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.014909723,
+            "public_decode_validate_seconds": 0.005895062,
+            "public_total_seconds": 0.012317302,
+            "public_verify_seconds": 0.006401987,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.006247075,
+            "wire_bytes_measured": 28672,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6336,
+            "coef_seconds": 0.00092347,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.008621035,
+            "public_decode_validate_seconds": 0.003880478,
+            "public_total_seconds": 0.012659217,
+            "public_verify_seconds": 0.008771285,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.008105237,
+            "wire_bytes_measured": 10432,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6432,
+            "coef_seconds": 0.000488453,
+            "info": {
+              "msm_or_vmul_terms": 265
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.008236071,
+            "public_decode_validate_seconds": 0.002831161,
+            "public_total_seconds": 0.005941501,
+            "public_verify_seconds": 0.003103512,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.003038773,
+            "wire_bytes_measured": 10528,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 6528,
+            "bytes_public": 2144,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 131
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.0081672,
+            "public_decode_validate_seconds": 0.001853976,
+            "public_total_seconds": 0.003695762,
+            "public_verify_seconds": 0.001832298,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.001723071,
+            "wire_bytes_measured": 6240,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 18432,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.011046981,
+            "public_decode_validate_seconds": 0.003105259,
+            "public_total_seconds": 0.013644505,
+            "public_verify_seconds": 0.010527081,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.011892288,
+            "wire_bytes_measured": 22528,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6336,
+            "coef_seconds": 0.00093281,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.007982455,
+            "public_decode_validate_seconds": 0.002850359,
+            "public_total_seconds": 0.009465918,
+            "public_verify_seconds": 0.006606894,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.006997387,
+            "wire_bytes_measured": 10432,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6432,
+            "coef_seconds": 0.000566703,
+            "info": {
+              "msm_or_vmul_terms": 265
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.007690443,
+            "public_decode_validate_seconds": 0.003023217,
+            "public_total_seconds": 0.006225479,
+            "public_verify_seconds": 0.003194951,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.00344151,
+            "wire_bytes_measured": 10528,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 6528,
+            "bytes_public": 2144,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 131
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.008902445,
+            "public_decode_validate_seconds": 0.001813722,
+            "public_total_seconds": 0.003608061,
+            "public_verify_seconds": 0.001790007,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.00178562,
+            "wire_bytes_measured": 6240,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 18432,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.010359466,
+            "public_decode_validate_seconds": 0.002855355,
+            "public_total_seconds": 0.013187059,
+            "public_verify_seconds": 0.010321062,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.010702432,
+            "wire_bytes_measured": 22528,
+            "wire_ciphertext_bytes": 4096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24576,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 768
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.014938454,
+            "public_decode_validate_seconds": 0.00618676,
+            "public_total_seconds": 0.01171774,
+            "public_verify_seconds": 0.005504897,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.006318661,
+            "wire_bytes_measured": 28672,
+            "wire_ciphertext_bytes": 4096
+          }
+        ]
+      },
+      {
+        "k": 256,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 73728,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.037925175,
+            "public_decode_validate_seconds": 0.01076282,
+            "public_total_seconds": 0.050637064,
+            "public_verify_seconds": 0.039783811,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.041939278,
+            "wire_bytes_measured": 90112,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98304,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 3072
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.061062754,
+            "public_decode_validate_seconds": 0.025572727,
+            "public_total_seconds": 0.043506092,
+            "public_verify_seconds": 0.017662586,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.020659032,
+            "wire_bytes_measured": 114688,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24768,
+            "coef_seconds": 0.003156794,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.025758054,
+            "public_decode_validate_seconds": 0.013319568,
+            "public_total_seconds": 0.026855324,
+            "public_verify_seconds": 0.013413023,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.01386035,
+            "wire_bytes_measured": 41152,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24864,
+            "coef_seconds": 0.00105256,
+            "info": {
+              "msm_or_vmul_terms": 1033
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.021133252,
+            "public_decode_validate_seconds": 0.011042625,
+            "public_total_seconds": 0.017441076,
+            "public_verify_seconds": 0.006363248,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.006004622,
+            "wire_bytes_measured": 41248,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 24960,
+            "bytes_public": 8288,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 515
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.021908201,
+            "public_decode_validate_seconds": 0.008493599,
+            "public_total_seconds": 0.012681904,
+            "public_verify_seconds": 0.00417627,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.003253711,
+            "wire_bytes_measured": 24672,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98304,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 3072
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.055630641,
+            "public_decode_validate_seconds": 0.023184286,
+            "public_total_seconds": 0.04060177,
+            "public_verify_seconds": 0.017158442,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.019482789,
+            "wire_bytes_measured": 114688,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24768,
+            "coef_seconds": 0.003345119,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.024757005,
+            "public_decode_validate_seconds": 0.013550736,
+            "public_total_seconds": 0.026235327,
+            "public_verify_seconds": 0.012621733,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.014902232,
+            "wire_bytes_measured": 41152,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24864,
+            "coef_seconds": 0.001009537,
+            "info": {
+              "msm_or_vmul_terms": 1033
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.020780122,
+            "public_decode_validate_seconds": 0.01085002,
+            "public_total_seconds": 0.016840564,
+            "public_verify_seconds": 0.005969068,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.006140869,
+            "wire_bytes_measured": 41248,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 24960,
+            "bytes_public": 8288,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 515
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.021944781,
+            "public_decode_validate_seconds": 0.00726202,
+            "public_total_seconds": 0.011854751,
+            "public_verify_seconds": 0.004575965,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.00406497,
+            "wire_bytes_measured": 24672,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 73728,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.041076247,
+            "public_decode_validate_seconds": 0.010952155,
+            "public_total_seconds": 0.050576398,
+            "public_verify_seconds": 0.039594446,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.044461952,
+            "wire_bytes_measured": 90112,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24768,
+            "coef_seconds": 0.003453644,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.027403382,
+            "public_decode_validate_seconds": 0.013986178,
+            "public_total_seconds": 0.029819284,
+            "public_verify_seconds": 0.01580366,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.016354669,
+            "wire_bytes_measured": 41152,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24864,
+            "coef_seconds": 0.000973344,
+            "info": {
+              "msm_or_vmul_terms": 1033
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.02762268,
+            "public_decode_validate_seconds": 0.011353088,
+            "public_total_seconds": 0.018310855,
+            "public_verify_seconds": 0.006934209,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.006680095,
+            "wire_bytes_measured": 41248,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 24960,
+            "bytes_public": 8288,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 515
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.0221409,
+            "public_decode_validate_seconds": 0.006836074,
+            "public_total_seconds": 0.01050362,
+            "public_verify_seconds": 0.003654106,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.003807466,
+            "wire_bytes_measured": 24672,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 73728,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.038863618,
+            "public_decode_validate_seconds": 0.015607444,
+            "public_total_seconds": 0.06634188,
+            "public_verify_seconds": 0.050699539,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.04162433,
+            "wire_bytes_measured": 90112,
+            "wire_ciphertext_bytes": 16384
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98304,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 3072
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.064475918,
+            "public_decode_validate_seconds": 0.023433761,
+            "public_total_seconds": 0.040919716,
+            "public_verify_seconds": 0.017220025,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.022642729,
+            "wire_bytes_measured": 114688,
+            "wire_ciphertext_bytes": 16384
+          }
+        ]
+      },
+      {
+        "k": 1024,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 294912,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.154854193,
+            "public_decode_validate_seconds": 0.044700352,
+            "public_total_seconds": 0.216184054,
+            "public_verify_seconds": 0.171028635,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.175890435,
+            "wire_bytes_measured": 360448,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393216,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 12288
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.240623013,
+            "public_decode_validate_seconds": 0.110500884,
+            "public_total_seconds": 0.178855433,
+            "public_verify_seconds": 0.06704303,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.080211542,
+            "wire_bytes_measured": 458752,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98496,
+            "coef_seconds": 0.01302116,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.106933802,
+            "public_decode_validate_seconds": 0.046748993,
+            "public_total_seconds": 0.084885643,
+            "public_verify_seconds": 0.037772741,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.048246778,
+            "wire_bytes_measured": 164032,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98592,
+            "coef_seconds": 0.002122104,
+            "info": {
+              "msm_or_vmul_terms": 4105
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.081807713,
+            "public_decode_validate_seconds": 0.045694221,
+            "public_total_seconds": 0.064256869,
+            "public_verify_seconds": 0.018437115,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.019640662,
+            "wire_bytes_measured": 164128,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 98688,
+            "bytes_public": 32864,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 2051
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.091560995,
+            "public_decode_validate_seconds": 0.033057496,
+            "public_total_seconds": 0.044079987,
+            "public_verify_seconds": 0.010966486,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.015436016,
+            "wire_bytes_measured": 98400,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393216,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 12288
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.230547528,
+            "public_decode_validate_seconds": 0.110169411,
+            "public_total_seconds": 0.168819231,
+            "public_verify_seconds": 0.057562614,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.06990783,
+            "wire_bytes_measured": 458752,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98496,
+            "coef_seconds": 0.011830724,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.090646572,
+            "public_decode_validate_seconds": 0.045015953,
+            "public_total_seconds": 0.081916132,
+            "public_verify_seconds": 0.036521795,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.045720527,
+            "wire_bytes_measured": 164032,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98592,
+            "coef_seconds": 0.002394901,
+            "info": {
+              "msm_or_vmul_terms": 4105
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.083127642,
+            "public_decode_validate_seconds": 0.048104541,
+            "public_total_seconds": 0.068044774,
+            "public_verify_seconds": 0.019841264,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.019453596,
+            "wire_bytes_measured": 164128,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 98688,
+            "bytes_public": 32864,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 2051
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.081010926,
+            "public_decode_validate_seconds": 0.02703386,
+            "public_total_seconds": 0.04003439,
+            "public_verify_seconds": 0.012928274,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.011747311,
+            "wire_bytes_measured": 98400,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 294912,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.167825089,
+            "public_decode_validate_seconds": 0.050048276,
+            "public_total_seconds": 0.231285749,
+            "public_verify_seconds": 0.180891662,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.189508975,
+            "wire_bytes_measured": 360448,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98496,
+            "coef_seconds": 0.012833311,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.086923537,
+            "public_decode_validate_seconds": 0.0440112,
+            "public_total_seconds": 0.079188431,
+            "public_verify_seconds": 0.035063056,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.039841989,
+            "wire_bytes_measured": 164032,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98592,
+            "coef_seconds": 0.002206127,
+            "info": {
+              "msm_or_vmul_terms": 4105
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.084510441,
+            "public_decode_validate_seconds": 0.048886596,
+            "public_total_seconds": 0.070546428,
+            "public_verify_seconds": 0.021564535,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.020624304,
+            "wire_bytes_measured": 164128,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 98688,
+            "bytes_public": 32864,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 2051
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.084640457,
+            "public_decode_validate_seconds": 0.028891454,
+            "public_total_seconds": 0.042389638,
+            "public_verify_seconds": 0.013443185,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.010419602,
+            "wire_bytes_measured": 98400,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 294912,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.156853779,
+            "public_decode_validate_seconds": 0.044752692,
+            "public_total_seconds": 0.206563385,
+            "public_verify_seconds": 0.161510994,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.182233569,
+            "wire_bytes_measured": 360448,
+            "wire_ciphertext_bytes": 65536
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393216,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 12288
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.239277134,
+            "public_decode_validate_seconds": 0.096268441,
+            "public_total_seconds": 0.158951577,
+            "public_verify_seconds": 0.06147824,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.064891063,
+            "wire_bytes_measured": 458752,
+            "wire_ciphertext_bytes": 65536
+          }
+        ]
+      },
+      {
+        "k": 4096,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1179648,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.680618747,
+            "public_decode_validate_seconds": 0.178379501,
+            "public_total_seconds": 0.896160056,
+            "public_verify_seconds": 0.716131761,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.745033268,
+            "wire_bytes_measured": 1441792,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1572864,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 49152
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.902795481,
+            "public_decode_validate_seconds": 0.393627443,
+            "public_total_seconds": 0.63938815,
+            "public_verify_seconds": 0.241100181,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.262578679,
+            "wire_bytes_measured": 1835008,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393408,
+            "coef_seconds": 0.050681661,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.393352331,
+            "public_decode_validate_seconds": 0.176552235,
+            "public_total_seconds": 0.290600738,
+            "public_verify_seconds": 0.112659423,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.131058144,
+            "wire_bytes_measured": 655552,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393504,
+            "coef_seconds": 0.010553391,
+            "info": {
+              "msm_or_vmul_terms": 16393
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.32796263,
+            "public_decode_validate_seconds": 0.208721186,
+            "public_total_seconds": 0.270397032,
+            "public_verify_seconds": 0.061230583,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.071236415,
+            "wire_bytes_measured": 655648,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 393600,
+            "bytes_public": 131168,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 8195
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.314727182,
+            "public_decode_validate_seconds": 0.125157814,
+            "public_total_seconds": 0.156312969,
+            "public_verify_seconds": 0.03080302,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.033013349,
+            "wire_bytes_measured": 393312,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1572864,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 49152
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.955940253,
+            "public_decode_validate_seconds": 0.419755416,
+            "public_total_seconds": 0.670506353,
+            "public_verify_seconds": 0.244891937,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.308799027,
+            "wire_bytes_measured": 1835008,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393408,
+            "coef_seconds": 0.052348892,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.381878887,
+            "public_decode_validate_seconds": 0.17195984,
+            "public_total_seconds": 0.299659791,
+            "public_verify_seconds": 0.126416472,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.142386268,
+            "wire_bytes_measured": 655552,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393504,
+            "coef_seconds": 0.00791109,
+            "info": {
+              "msm_or_vmul_terms": 16393
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.312586927,
+            "public_decode_validate_seconds": 0.191637811,
+            "public_total_seconds": 0.252617652,
+            "public_verify_seconds": 0.060556076,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.083468824,
+            "wire_bytes_measured": 655648,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 393600,
+            "bytes_public": 131168,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 8195
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.289041175,
+            "public_decode_validate_seconds": 0.100080513,
+            "public_total_seconds": 0.132601014,
+            "public_verify_seconds": 0.032244446,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.027877786,
+            "wire_bytes_measured": 393312,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1179648,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.708566103,
+            "public_decode_validate_seconds": 0.189256012,
+            "public_total_seconds": 0.95551974,
+            "public_verify_seconds": 0.765685913,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.766245228,
+            "wire_bytes_measured": 1441792,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393408,
+            "coef_seconds": 0.046363188,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.333422845,
+            "public_decode_validate_seconds": 0.1794486,
+            "public_total_seconds": 0.292891588,
+            "public_verify_seconds": 0.112965855,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.130307132,
+            "wire_bytes_measured": 655552,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393504,
+            "coef_seconds": 0.00971234,
+            "info": {
+              "msm_or_vmul_terms": 16393
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.281488894,
+            "public_decode_validate_seconds": 0.175599195,
+            "public_total_seconds": 0.244734423,
+            "public_verify_seconds": 0.068648518,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.066792932,
+            "wire_bytes_measured": 655648,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 393600,
+            "bytes_public": 131168,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 8195
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.344979524,
+            "public_decode_validate_seconds": 0.126645847,
+            "public_total_seconds": 0.158402928,
+            "public_verify_seconds": 0.031510302,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.034149428,
+            "wire_bytes_measured": 393312,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1179648,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.72121721,
+            "public_decode_validate_seconds": 0.242857771,
+            "public_total_seconds": 1.0269279,
+            "public_verify_seconds": 0.783332234,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.722900292,
+            "wire_bytes_measured": 1441792,
+            "wire_ciphertext_bytes": 262144
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1572864,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 49152
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.122027911,
+            "public_decode_validate_seconds": 0.39408122,
+            "public_total_seconds": 0.628361326,
+            "public_verify_seconds": 0.229303257,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.278294015,
+            "wire_bytes_measured": 1835008,
+            "wire_ciphertext_bytes": 262144
+          }
+        ]
+      },
+      {
+        "k": 16384,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4718592,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 2.904627003,
+            "public_decode_validate_seconds": 0.759942039,
+            "public_total_seconds": 3.769772537,
+            "public_verify_seconds": 3.00117892,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 2.801776329,
+            "wire_bytes_measured": 5767168,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6291456,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 196608
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 3.771427961,
+            "public_decode_validate_seconds": 1.561503891,
+            "public_total_seconds": 2.417981584,
+            "public_verify_seconds": 0.834786531,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 1.08913603,
+            "wire_bytes_measured": 7340032,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573056,
+            "coef_seconds": 0.193141285,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.3665982589999999,
+            "public_decode_validate_seconds": 0.718847787,
+            "public_total_seconds": 1.122898547,
+            "public_verify_seconds": 0.397947504,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.4680798,
+            "wire_bytes_measured": 2621632,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573152,
+            "coef_seconds": 0.02863972,
+            "info": {
+              "msm_or_vmul_terms": 65545
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.086044831,
+            "public_decode_validate_seconds": 0.660590566,
+            "public_total_seconds": 0.863521521,
+            "public_verify_seconds": 0.201092277,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.266713105,
+            "wire_bytes_measured": 2621728,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 1573248,
+            "bytes_public": 524384,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 32771
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.077481629,
+            "public_decode_validate_seconds": 0.447979515,
+            "public_total_seconds": 0.577498494,
+            "public_verify_seconds": 0.127743212,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.125526914,
+            "wire_bytes_measured": 1572960,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6291456,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 196608
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 4.187979688,
+            "public_decode_validate_seconds": 1.545656244,
+            "public_total_seconds": 2.329596936,
+            "public_verify_seconds": 0.762436066,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 1.09527728,
+            "wire_bytes_measured": 7340032,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573056,
+            "coef_seconds": 0.233129846,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.519958591,
+            "public_decode_validate_seconds": 0.846720427,
+            "public_total_seconds": 1.275729782,
+            "public_verify_seconds": 0.423406836,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.502925918,
+            "wire_bytes_measured": 2621632,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573152,
+            "coef_seconds": 0.034822002,
+            "info": {
+              "msm_or_vmul_terms": 65545
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.3979209510000001,
+            "public_decode_validate_seconds": 0.744988565,
+            "public_total_seconds": 0.97306483,
+            "public_verify_seconds": 0.225479985,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.233973957,
+            "wire_bytes_measured": 2621728,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 1573248,
+            "bytes_public": 524384,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 32771
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.234212909,
+            "public_decode_validate_seconds": 0.480273669,
+            "public_total_seconds": 0.599810594,
+            "public_verify_seconds": 0.118232494,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.132979063,
+            "wire_bytes_measured": 1572960,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4718592,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 2.689159237,
+            "public_decode_validate_seconds": 0.779279475,
+            "public_total_seconds": 3.5881013470000003,
+            "public_verify_seconds": 2.802163772,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 3.050845694,
+            "wire_bytes_measured": 5767168,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573056,
+            "coef_seconds": 0.217853019,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.395775733,
+            "public_decode_validate_seconds": 0.755642245,
+            "public_total_seconds": 1.147230011,
+            "public_verify_seconds": 0.389078045,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.481411197,
+            "wire_bytes_measured": 2621632,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573152,
+            "coef_seconds": 0.031179757,
+            "info": {
+              "msm_or_vmul_terms": 65545
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.134942992,
+            "public_decode_validate_seconds": 0.716540144,
+            "public_total_seconds": 0.966886118,
+            "public_verify_seconds": 0.248183795,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.249064773,
+            "wire_bytes_measured": 2621728,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 1573248,
+            "bytes_public": 524384,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 32771
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.235687925,
+            "public_decode_validate_seconds": 0.454259941,
+            "public_total_seconds": 0.567257237,
+            "public_verify_seconds": 0.111379278,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.114476501,
+            "wire_bytes_measured": 1572960,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4718592,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 2.845821296,
+            "public_decode_validate_seconds": 0.788612052,
+            "public_total_seconds": 3.521700393,
+            "public_verify_seconds": 2.7273650480000002,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 2.8817273329999997,
+            "wire_bytes_measured": 5767168,
+            "wire_ciphertext_bytes": 1048576
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6291456,
+            "coef_seconds": null,
+            "info": {
+              "msm_or_vmul_terms": 196608
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 3.721797494,
+            "public_decode_validate_seconds": 1.859125674,
+            "public_total_seconds": 2.706919881,
+            "public_verify_seconds": 0.826841871,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 1.012731175,
+            "wire_bytes_measured": 7340032,
+            "wire_ciphertext_bytes": 1048576
+          }
+        ]
+      }
+    ],
+    "scope": "Threshold ElGamal decryption (pre-weighted shares, fixed decryption set). prove = all trustees' shares and proofs (joint: all rounds incl. aggregator blame checks); verify = trusted in-memory public verification incl. reconstruction; public_* = from wire bytes: decompression + exact Tate subgroup validation of every point (ciphertexts included) + canonical scalars + verification + reconstruction. bytes_public is analytical (shares+proofs); wire_bytes_measured is the encoded length including the 64k ciphertext bytes. coef_seconds = Fiat-Shamir coefficient derivation alone. Same setup and ciphertexts for all methods; method order rotates per repetition.",
+    "seed": 20261124009,
+    "t": 3
+  }
+}

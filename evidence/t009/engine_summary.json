@@ -1,0 +1,2390 @@
+{
+ "8|v1-cpu": {
+  "reps": 3,
+  "tally": 1.276093489,
+  "tally_r": "[1.132, 1.622]",
+  "replay": 0.860047017,
+  "replay_r": "[0.760, 0.867]",
+  "prod": 0.437985815,
+  "bytes": 661630,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.11130908300000007,
+  "cof": 0.0,
+  "sub": 0.0,
+  "run": 0.5217420059999998,
+  "build": 0.03539599700000007,
+  "check": 0.14046922400000017,
+  "inline": 0.0,
+  "apply": 0.0024554259999999997,
+  "finish": 0.025684621999999997,
+  "sig": 0.02031199100000001,
+  "jobs": 17455,
+  "batches": 390,
+  "maxb": 480,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 300160,
+     "items": 670,
+     "points": 3350
+    },
+    "reveal+ZKP0": {
+     "bytes": 220840,
+     "items": 675,
+     "points": 2690
+    },
+    "share+DLEQ": {
+     "bytes": 86400,
+     "items": 675,
+     "points": 675
+    }
+   },
+   "framing_and_signature_bytes": 54030
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v1-tate": {
+  "reps": 3,
+  "tally": 1.120049148,
+  "tally_r": "[0.966, 1.123]",
+  "replay": 0.719678762,
+  "replay_r": "[0.691, 0.746]",
+  "prod": 0.407865353,
+  "bytes": 661630,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.107214145,
+  "cof": 0.0,
+  "sub": 0.05368089299999996,
+  "run": 0.3236127999999999,
+  "build": 0.09717064399999997,
+  "check": 0.13014100500000012,
+  "inline": 0.0,
+  "apply": 0.0022514679999999974,
+  "finish": 0.024766385000000002,
+  "sig": 0.020649105000000008,
+  "jobs": 10740,
+  "batches": 390,
+  "maxb": 320,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 300160,
+     "items": 670,
+     "points": 3350
+    },
+    "reveal+ZKP0": {
+     "bytes": 220840,
+     "items": 675,
+     "points": 2690
+    },
+    "share+DLEQ": {
+     "bytes": 86400,
+     "items": 675,
+     "points": 675
+    }
+   },
+   "framing_and_signature_bytes": 54030
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v3-cpu": {
+  "reps": 3,
+  "tally": 1.315368355,
+  "tally_r": "[1.242, 1.379]",
+  "replay": 0.806761955,
+  "replay_r": "[0.802, 0.814]",
+  "prod": 0.5269241939999998,
+  "bytes": 1015830,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.23655554500000006,
+  "cof": 0.020382033000000015,
+  "sub": 0.0,
+  "run": 0.39308209100000013,
+  "build": 0.10602765499999996,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.002595773000000001,
+  "finish": 0.013018288,
+  "sig": 0.022218577000000007,
+  "jobs": 21480,
+  "batches": 390,
+  "maxb": 640,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 541360,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal+ZKP0": {
+     "bytes": 306840,
+     "items": 675,
+     "points": 5380
+    },
+    "share+DLEQ": {
+     "bytes": 113400,
+     "items": 675,
+     "points": 2025
+    }
+   },
+   "framing_and_signature_bytes": 54030
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v3-individual": {
+  "reps": 3,
+  "tally": 1.342338524,
+  "tally_r": "[1.311, 1.439]",
+  "replay": 0.879488676,
+  "replay_r": "[0.784, 0.916]",
+  "prod": 0.5103881769999999,
+  "bytes": 1015830,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.2526464240000001,
+  "cof": 0.02169855500000001,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 0.06061827099999995,
+  "check": 0.0,
+  "inline": 0.5005442830000003,
+  "apply": 0.003048149000000005,
+  "finish": 0.013631749000000004,
+  "sig": 0.022327849999999996,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 541360,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal+ZKP0": {
+     "bytes": 306840,
+     "items": 675,
+     "points": 5380
+    },
+    "share+DLEQ": {
+     "bytes": 113400,
+     "items": 675,
+     "points": 2025
+    }
+   },
+   "framing_and_signature_bytes": 54030
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v4-cpu": {
+  "reps": 3,
+  "tally": 1.22471261,
+  "tally_r": "[0.988, 1.314]",
+  "replay": 0.663912774,
+  "replay_r": "[0.551, 0.700]",
+  "prod": 0.5565785429999993,
+  "bytes": 1574390,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.057689446000000026,
+  "cof": 0.01894755200000003,
+  "sub": 0.0,
+  "run": 0.41977492699999935,
+  "build": 0.11160775799999997,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.0027540860000000054,
+  "finish": 0.013699833,
+  "sig": 0.022976491999999994,
+  "jobs": 21480,
+  "batches": 390,
+  "maxb": 640,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 862960,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal+ZKP0": {
+     "bytes": 479000,
+     "items": 675,
+     "points": 5380
+    },
+    "share+DLEQ": {
+     "bytes": 178200,
+     "items": 675,
+     "points": 2025
+    }
+   },
+   "framing_and_signature_bytes": 54030
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v5-cpu": {
+  "reps": 3,
+  "tally": 1.389495707,
+  "tally_r": "[1.313, 1.422]",
+  "replay": 0.783254319,
+  "replay_r": "[0.726, 0.793]",
+  "prod": 0.5811700189999996,
+  "bytes": 804390,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.219235257,
+  "cof": 0.025772474999999996,
+  "sub": 0.0,
+  "run": 0.361496601,
+  "build": 0.1340066629999999,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.002522434000000002,
+  "finish": 0.013094749999999999,
+  "sig": 0.021259108999999984,
+  "jobs": 17960,
+  "batches": 390,
+  "maxb": 640,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 34320,
+     "items": 260,
+     "points": 520
+    },
+    "mask+CSZ": {
+     "bytes": 541360,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal (batched)": {
+     "bytes": 140000,
+     "items": 675,
+     "points": 2690
+    },
+    "share (batched)": {
+     "bytes": 32400,
+     "items": 675,
+     "points": 675
+    }
+   },
+   "framing_and_signature_bytes": 56110
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v5-individual": {
+  "reps": 3,
+  "tally": 1.816442714,
+  "tally_r": "[1.781, 1.993]",
+  "replay": 1.211707605,
+  "replay_r": "[1.170, 1.236]",
+  "prod": 0.6147756739999996,
+  "bytes": 804390,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.25414777499999996,
+  "cof": 0.02998048399999997,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 0.09928847699999996,
+  "check": 0.0,
+  "inline": 0.7762636609999993,
+  "apply": 0.0034696129999999994,
+  "finish": 0.014266542,
+  "sig": 0.022999262999999992,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 34320,
+     "items": 260,
+     "points": 520
+    },
+    "mask+CSZ": {
+     "bytes": 541360,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal (batched)": {
+     "bytes": 140000,
+     "items": 675,
+     "points": 2690
+    },
+    "share (batched)": {
+     "bytes": 32400,
+     "items": 675,
+     "points": 675
+    }
+   },
+   "framing_and_signature_bytes": 56110
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v6-cpu": {
+  "reps": 3,
+  "tally": 1.136113877,
+  "tally_r": "[1.127, 1.290]",
+  "replay": 0.596265466,
+  "replay_r": "[0.567, 0.658]",
+  "prod": 0.5325210840000003,
+  "bytes": 1250310,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.056848495999999984,
+  "cof": 0.018353361999999977,
+  "sub": 0.0,
+  "run": 0.338655725,
+  "build": 0.13984991599999994,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.002554152,
+  "finish": 0.011889153999999997,
+  "sig": 0.021973162999999997,
+  "jobs": 17960,
+  "batches": 390,
+  "maxb": 640,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 50960,
+     "items": 260,
+     "points": 520
+    },
+    "mask+CSZ": {
+     "bytes": 862960,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal (batched)": {
+     "bytes": 226080,
+     "items": 675,
+     "points": 2690
+    },
+    "share (batched)": {
+     "bytes": 54000,
+     "items": 675,
+     "points": 675
+    }
+   },
+   "framing_and_signature_bytes": 56110
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v7-cpu": {
+  "reps": 3,
+  "tally": 1.402405467,
+  "tally_r": "[1.300, 1.420]",
+  "replay": 0.886721206,
+  "replay_r": "[0.823, 1.001]",
+  "prod": 0.5105532830000001,
+  "bytes": 1015830,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.32987555100000004,
+  "cof": 0.0,
+  "sub": 0.109671753,
+  "run": 0.396689356,
+  "build": 0.0954225490000001,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.0023590869999999993,
+  "finish": 0.011838484999999998,
+  "sig": 0.021652975999999997,
+  "jobs": 21480,
+  "batches": 390,
+  "maxb": 640,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 541360,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal+ZKP0": {
+     "bytes": 306840,
+     "items": 675,
+     "points": 5380
+    },
+    "share+DLEQ": {
+     "bytes": 113400,
+     "items": 675,
+     "points": 2025
+    }
+   },
+   "framing_and_signature_bytes": 54030
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v8-cpu": {
+  "reps": 3,
+  "tally": 1.429729623,
+  "tally_r": "[1.385, 1.493]",
+  "replay": 0.954680861,
+  "replay_r": "[0.938, 0.992]",
+  "prod": 0.5509901010000007,
+  "bytes": 804390,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.333897191,
+  "cof": 0.0,
+  "sub": 0.11445150299999995,
+  "run": 0.3979989850000006,
+  "build": 0.147303312,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.002872776999999999,
+  "finish": 0.014368511999999998,
+  "sig": 0.02335331800000002,
+  "jobs": 17960,
+  "batches": 390,
+  "maxb": 640,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 34320,
+     "items": 260,
+     "points": 520
+    },
+    "mask+CSZ": {
+     "bytes": 541360,
+     "items": 670,
+     "points": 10050
+    },
+    "reveal (batched)": {
+     "bytes": 140000,
+     "items": 675,
+     "points": 2690
+    },
+    "share (batched)": {
+     "bytes": 32400,
+     "items": 675,
+     "points": 675
+    }
+   },
+   "framing_and_signature_bytes": 56110
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "8|v9-cpu": {
+  "reps": 3,
+  "tally": 1.309286889,
+  "tally_r": "[1.269, 1.487]",
+  "replay": 0.886738714,
+  "replay_r": "[0.789, 0.897]",
+  "prod": 0.5003167740000001,
+  "bytes": 563190,
+  "msgs": 390,
+  "gates": 134,
+  "decode": 0.21372338999999985,
+  "cof": 0.0,
+  "sub": 0.07013848,
+  "run": 0.41483644300000005,
+  "build": 0.14672629300000026,
+  "check": 0.06825582300000003,
+  "inline": 0.0,
+  "apply": 0.0025176300000000007,
+  "finish": 0.014170696,
+  "sig": 0.022260537999999996,
+  "jobs": 11260,
+  "batches": 390,
+  "maxb": 130,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 34320,
+     "items": 260,
+     "points": 520
+    },
+    "mask+CSZ": {
+     "bytes": 300160,
+     "items": 670,
+     "points": 3350
+    },
+    "reveal (batched)": {
+     "bytes": 140000,
+     "items": 675,
+     "points": 2690
+    },
+    "share (batched)": {
+     "bytes": 32400,
+     "items": 675,
+     "points": 675
+    }
+   },
+   "framing_and_signature_bytes": 56110
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v1-cpu": {
+  "reps": 3,
+  "tally": 7.863477654,
+  "tally_r": "[7.128, 8.263]",
+  "replay": 5.443730725,
+  "replay_r": "[5.038, 5.929]",
+  "prod": 2.3873899109999996,
+  "bytes": 5096370,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 0.5431349850000006,
+  "cof": 0.0,
+  "sub": 0.0,
+  "run": 3.934785873999995,
+  "build": 0.09043043099999994,
+  "check": 0.6526800189999985,
+  "inline": 0.0,
+  "apply": 0.021158678999999982,
+  "finish": 0.15406141000000004,
+  "sig": 0.036490518000000007,
+  "jobs": 141215,
+  "batches": 570,
+  "maxb": 3840,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 2432640,
+     "items": 5430,
+     "points": 27150
+    },
+    "reveal+ZKP0": {
+     "bytes": 1782120,
+     "items": 5435,
+     "points": 21730
+    },
+    "share+DLEQ": {
+     "bytes": 695680,
+     "items": 5435,
+     "points": 5435
+    }
+   },
+   "framing_and_signature_bytes": 185730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v1-tate": {
+  "reps": 3,
+  "tally": 6.163773168,
+  "tally_r": "[5.932, 6.954]",
+  "replay": 3.789856376,
+  "replay_r": "[3.409, 3.855]",
+  "prod": 2.210673904000003,
+  "bytes": 5096370,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 0.5002506290000005,
+  "cof": 0.0,
+  "sub": 0.22433492399999994,
+  "run": 2.183196375999999,
+  "build": 0.3214330139999999,
+  "check": 0.5890143410000009,
+  "inline": 0.0,
+  "apply": 0.017469030000000014,
+  "finish": 0.13357781,
+  "sig": 0.03559139799999999,
+  "jobs": 86900,
+  "batches": 570,
+  "maxb": 2560,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 2432640,
+     "items": 5430,
+     "points": 27150
+    },
+    "reveal+ZKP0": {
+     "bytes": 1782120,
+     "items": 5435,
+     "points": 21730
+    },
+    "share+DLEQ": {
+     "bytes": 695680,
+     "items": 5435,
+     "points": 5435
+    }
+   },
+   "framing_and_signature_bytes": 185730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v3-cpu": {
+  "reps": 3,
+  "tally": 5.731965382,
+  "tally_r": "[5.528, 6.479]",
+  "replay": 3.184568946,
+  "replay_r": "[2.998, 3.363]",
+  "prod": 2.6682352850000015,
+  "bytes": 7963850,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 1.2366780439999976,
+  "cof": 0.06776147300000014,
+  "sub": 0.0,
+  "run": 1.332062041000002,
+  "build": 0.36364541300000003,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.020859379999999973,
+  "finish": 0.08515347200000002,
+  "sig": 0.04011141000000003,
+  "jobs": 173800,
+  "batches": 570,
+  "maxb": 5120,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 4387440,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal+ZKP0": {
+     "bytes": 2477400,
+     "items": 5435,
+     "points": 43460
+    },
+    "share+DLEQ": {
+     "bytes": 913080,
+     "items": 5435,
+     "points": 16305
+    }
+   },
+   "framing_and_signature_bytes": 185730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v3-individual": {
+  "reps": 3,
+  "tally": 7.661888214,
+  "tally_r": "[7.010, 8.166]",
+  "replay": 4.850445535,
+  "replay_r": "[4.460, 5.150]",
+  "prod": 2.9438400660000075,
+  "bytes": 7963850,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 1.3283707239999971,
+  "cof": 0.070435955,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 0.27715375699999983,
+  "check": 0.0,
+  "inline": 2.9766032099999964,
+  "apply": 0.023432981000000012,
+  "finish": 0.08796857599999999,
+  "sig": 0.04270354500000001,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 4387440,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal+ZKP0": {
+     "bytes": 2477400,
+     "items": 5435,
+     "points": 43460
+    },
+    "share+DLEQ": {
+     "bytes": 913080,
+     "items": 5435,
+     "points": 16305
+    }
+   },
+   "framing_and_signature_bytes": 185730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v4-cpu": {
+  "reps": 3,
+  "tally": 5.065056673,
+  "tally_r": "[5.052, 5.142]",
+  "replay": 2.163818496,
+  "replay_r": "[2.080, 2.360]",
+  "prod": 2.8924896000000015,
+  "bytes": 12482730,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 0.1806007890000002,
+  "cof": 0.06478560999999995,
+  "sub": 0.0,
+  "run": 1.352863694999999,
+  "build": 0.37800462400000034,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.019707772999999977,
+  "finish": 0.078063177,
+  "sig": 0.04311579999999998,
+  "jobs": 173800,
+  "batches": 570,
+  "maxb": 5120,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 6993840,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal+ZKP0": {
+     "bytes": 3868120,
+     "items": 5435,
+     "points": 43460
+    },
+    "share+DLEQ": {
+     "bytes": 1434840,
+     "items": 5435,
+     "points": 16305
+    }
+   },
+   "framing_and_signature_bytes": 185730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v5-cpu": {
+  "reps": 3,
+  "tally": 5.283573865,
+  "tally_r": "[5.182, 6.159]",
+  "replay": 2.726159493,
+  "replay_r": "[2.608, 3.183]",
+  "prod": 2.5574132160000023,
+  "bytes": 6017530,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 1.0033657489999996,
+  "cof": 0.07096920399999987,
+  "sub": 0.0,
+  "run": 1.1323455640000006,
+  "build": 0.35472299499999993,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.020251003999999972,
+  "finish": 0.081765421,
+  "sig": 0.03718714899999998,
+  "jobs": 141960,
+  "batches": 570,
+  "maxb": 5120,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 50160,
+     "items": 380,
+     "points": 760
+    },
+    "mask+CSZ": {
+     "bytes": 4387440,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal (batched)": {
+     "bytes": 1130080,
+     "items": 5435,
+     "points": 21730
+    },
+    "share (batched)": {
+     "bytes": 260880,
+     "items": 5435,
+     "points": 5435
+    }
+   },
+   "framing_and_signature_bytes": 188770
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v5-individual": {
+  "reps": 3,
+  "tally": 9.822273832,
+  "tally_r": "[8.733, 9.994]",
+  "replay": 6.521283858,
+  "replay_r": "[6.083, 7.024]",
+  "prod": 2.829121203000002,
+  "bytes": 6017530,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 1.0633966289999996,
+  "cof": 0.07276381999999994,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 0.24093930099999994,
+  "check": 0.0,
+  "inline": 4.960907111999997,
+  "apply": 0.02268982000000005,
+  "finish": 0.08685110300000001,
+  "sig": 0.040080662000000065,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 50160,
+     "items": 380,
+     "points": 760
+    },
+    "mask+CSZ": {
+     "bytes": 4387440,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal (batched)": {
+     "bytes": 1130080,
+     "items": 5435,
+     "points": 21730
+    },
+    "share (batched)": {
+     "bytes": 260880,
+     "items": 5435,
+     "points": 5435
+    }
+   },
+   "framing_and_signature_bytes": 188770
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v6-cpu": {
+  "reps": 3,
+  "tally": 4.503462108,
+  "tally_r": "[4.437, 5.331]",
+  "replay": 2.050281006,
+  "replay_r": "[1.967, 2.241]",
+  "prod": 2.5622450899999993,
+  "bytes": 9517530,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 0.17180080699999983,
+  "cof": 0.06149097799999994,
+  "sub": 0.0,
+  "run": 1.2614636849999987,
+  "build": 0.3671638819999995,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.020593451000000026,
+  "finish": 0.08902395400000002,
+  "sig": 0.040562361999999984,
+  "jobs": 141960,
+  "batches": 570,
+  "maxb": 5120,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 74480,
+     "items": 380,
+     "points": 760
+    },
+    "mask+CSZ": {
+     "bytes": 6993840,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal (batched)": {
+     "bytes": 1825440,
+     "items": 5435,
+     "points": 21730
+    },
+    "share (batched)": {
+     "bytes": 434800,
+     "items": 5435,
+     "points": 5435
+    }
+   },
+   "framing_and_signature_bytes": 188770
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v7-cpu": {
+  "reps": 3,
+  "tally": 6.813118616,
+  "tally_r": "[6.165, 7.471]",
+  "replay": 3.784592447,
+  "replay_r": "[3.523, 4.337]",
+  "prod": 2.942700321,
+  "bytes": 7963850,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 1.8259360500000021,
+  "cof": 0.0,
+  "sub": 0.5909737780000002,
+  "run": 1.384815694,
+  "build": 0.32484136000000047,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.020989116,
+  "finish": 0.09051233299999999,
+  "sig": 0.04031513899999995,
+  "jobs": 173800,
+  "batches": 570,
+  "maxb": 5120,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 4387440,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal+ZKP0": {
+     "bytes": 2477400,
+     "items": 5435,
+     "points": 43460
+    },
+    "share+DLEQ": {
+     "bytes": 913080,
+     "items": 5435,
+     "points": 16305
+    }
+   },
+   "framing_and_signature_bytes": 185730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v8-cpu": {
+  "reps": 3,
+  "tally": 6.440909325,
+  "tally_r": "[5.738, 6.814]",
+  "replay": 3.109486011,
+  "replay_r": "[3.103, 3.533]",
+  "prod": 2.822269024000003,
+  "bytes": 6017530,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 1.4146310529999993,
+  "cof": 0.0,
+  "sub": 0.4608611310000004,
+  "run": 1.1593088810000007,
+  "build": 0.31639967499999977,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.018544447000000013,
+  "finish": 0.08673607700000004,
+  "sig": 0.038691354999999976,
+  "jobs": 141960,
+  "batches": 570,
+  "maxb": 5120,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 50160,
+     "items": 380,
+     "points": 760
+    },
+    "mask+CSZ": {
+     "bytes": 4387440,
+     "items": 5430,
+     "points": 81450
+    },
+    "reveal (batched)": {
+     "bytes": 1130080,
+     "items": 5435,
+     "points": 21730
+    },
+    "share (batched)": {
+     "bytes": 260880,
+     "items": 5435,
+     "points": 5435
+    }
+   },
+   "framing_and_signature_bytes": 188770
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "64|v9-cpu": {
+  "reps": 3,
+  "tally": 6.216550247,
+  "tally_r": "[5.841, 6.303]",
+  "replay": 3.709796744,
+  "replay_r": "[3.577, 3.743]",
+  "prod": 2.363298398000002,
+  "bytes": 4062730,
+  "msgs": 570,
+  "gates": 1086,
+  "decode": 0.8466238309999996,
+  "cof": 0.0,
+  "sub": 0.2734715389999999,
+  "run": 2.0461814720000016,
+  "build": 0.2883592940000003,
+  "check": 0.3584750379999998,
+  "inline": 0.0,
+  "apply": 0.01829948599999999,
+  "finish": 0.085545204,
+  "sig": 0.03743119699999996,
+  "jobs": 87660,
+  "batches": 570,
+  "maxb": 1026,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 50160,
+     "items": 380,
+     "points": 760
+    },
+    "mask+CSZ": {
+     "bytes": 2432640,
+     "items": 5430,
+     "points": 27150
+    },
+    "reveal (batched)": {
+     "bytes": 1130080,
+     "items": 5435,
+     "points": 21730
+    },
+    "share (batched)": {
+     "bytes": 260880,
+     "items": 5435,
+     "points": 5435
+    }
+   },
+   "framing_and_signature_bytes": 188770
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v1-cpu": {
+  "reps": 3,
+  "tally": 25.998592628,
+  "tally_r": "[24.149, 27.790]",
+  "replay": 18.246257235,
+  "replay_r": "[16.901, 18.797]",
+  "prod": 7.68442539399999,
+  "bytes": 20252970,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 1.783914157,
+  "cof": 0.0,
+  "sub": 0.0,
+  "run": 13.467426414000007,
+  "build": 0.21225277299999964,
+  "check": 2.053078283999997,
+  "inline": 0.0,
+  "apply": 0.07950716800000007,
+  "finish": 0.5139569150000002,
+  "sig": 0.06051556999999995,
+  "jobs": 565535,
+  "batches": 690,
+  "maxb": 15360,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 9744000,
+     "items": 21750,
+     "points": 108750
+    },
+    "reveal+ZKP0": {
+     "bytes": 7135080,
+     "items": 21755,
+     "points": 87010
+    },
+    "share+DLEQ": {
+     "bytes": 2784640,
+     "items": 21755,
+     "points": 21755
+    }
+   },
+   "framing_and_signature_bytes": 589050
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v1-tate": {
+  "reps": 3,
+  "tally": 22.299753363,
+  "tally_r": "[21.559, 26.079]",
+  "replay": 15.222802526,
+  "replay_r": "[13.844, 17.995]",
+  "prod": 7.909833074,
+  "bytes": 20252970,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 1.849926261000001,
+  "cof": 0.0,
+  "sub": 0.8294866750000018,
+  "run": 9.408120145999995,
+  "build": 1.0621017499999992,
+  "check": 2.1667478169999983,
+  "inline": 0.0,
+  "apply": 0.0770145269999999,
+  "finish": 0.5657464720000001,
+  "sig": 0.060283064000000004,
+  "jobs": 348020,
+  "batches": 690,
+  "maxb": 10240,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 9744000,
+     "items": 21750,
+     "points": 108750
+    },
+    "reveal+ZKP0": {
+     "bytes": 7135080,
+     "items": 21755,
+     "points": 87010
+    },
+    "share+DLEQ": {
+     "bytes": 2784640,
+     "items": 21755,
+     "points": 21755
+    }
+   },
+   "framing_and_signature_bytes": 589050
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v3-cpu": {
+  "reps": 3,
+  "tally": 21.560059957,
+  "tally_r": "[18.901, 21.995]",
+  "replay": 10.310989345,
+  "replay_r": "[9.645, 10.348]",
+  "prod": 11.018916107000015,
+  "bytes": 31737410,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 4.6018341699999965,
+  "cof": 0.19308994999999998,
+  "sub": 0.0,
+  "run": 3.6365512540000005,
+  "build": 1.1850112579999983,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.0938016909999998,
+  "finish": 0.3213645029999999,
+  "sig": 0.06941517200000001,
+  "jobs": 696040,
+  "batches": 690,
+  "maxb": 20480,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 17574000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal+ZKP0": {
+     "bytes": 9919320,
+     "items": 21755,
+     "points": 174020
+    },
+    "share+DLEQ": {
+     "bytes": 3654840,
+     "items": 21755,
+     "points": 65265
+    }
+   },
+   "framing_and_signature_bytes": 589050
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v3-individual": {
+  "reps": 3,
+  "tally": 28.088801494,
+  "tally_r": "[27.254, 29.509]",
+  "replay": 18.01995169,
+  "replay_r": "[16.858, 19.444]",
+  "prod": 10.77574961099998,
+  "bytes": 31737410,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 4.828204720999999,
+  "cof": 0.21184910100000026,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 0.9654612020000002,
+  "check": 0.0,
+  "inline": 11.322129460999985,
+  "apply": 0.10053314599999996,
+  "finish": 0.350746196,
+  "sig": 0.07536350399999998,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 17574000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal+ZKP0": {
+     "bytes": 9919320,
+     "items": 21755,
+     "points": 174020
+    },
+    "share+DLEQ": {
+     "bytes": 3654840,
+     "items": 21755,
+     "points": 65265
+    }
+   },
+   "framing_and_signature_bytes": 589050
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v4-cpu": {
+  "reps": 3,
+  "tally": 16.81965526,
+  "tally_r": "[16.652, 18.393]",
+  "replay": 6.075339735,
+  "replay_r": "[5.906, 6.509]",
+  "prod": 10.654100884999997,
+  "bytes": 49834530,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 0.5406586849999997,
+  "cof": 0.1974705959999999,
+  "sub": 0.0,
+  "run": 3.560401124000002,
+  "build": 1.156761646000003,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.08950269400000006,
+  "finish": 0.30455923100000004,
+  "sig": 0.085308826,
+  "jobs": 696040,
+  "batches": 690,
+  "maxb": 20480,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 28014000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal+ZKP0": {
+     "bytes": 15487960,
+     "items": 21755,
+     "points": 174020
+    },
+    "share+DLEQ": {
+     "bytes": 5743320,
+     "items": 21755,
+     "points": 65265
+    }
+   },
+   "framing_and_signature_bytes": 589050
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v5-cpu": {
+  "reps": 3,
+  "tally": 17.183143845,
+  "tally_r": "[16.446, 19.112]",
+  "replay": 8.100938035,
+  "replay_r": "[7.648, 8.568]",
+  "prod": 9.001065560999997,
+  "bytes": 23796530,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 3.6051303360000033,
+  "cof": 0.16281827900000004,
+  "sub": 0.0,
+  "run": 2.9622232939999966,
+  "build": 0.789408776999999,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.076283215,
+  "finish": 0.31444035999999986,
+  "sig": 0.06091119700000004,
+  "jobs": 566440,
+  "batches": 690,
+  "maxb": 20480,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 60720,
+     "items": 460,
+     "points": 920
+    },
+    "mask+CSZ": {
+     "bytes": 17574000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal (batched)": {
+     "bytes": 4524640,
+     "items": 21755,
+     "points": 87010
+    },
+    "share (batched)": {
+     "bytes": 1044240,
+     "items": 21755,
+     "points": 21755
+    }
+   },
+   "framing_and_signature_bytes": 592730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v5-individual": {
+  "reps": 3,
+  "tally": 33.236060285,
+  "tally_r": "[32.036, 33.731]",
+  "replay": 22.755578278,
+  "replay_r": "[22.575, 22.835]",
+  "prod": 9.033118191,
+  "bytes": 23796530,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 3.4331447859999984,
+  "cof": 0.16661176899999988,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 0.5609331809999992,
+  "check": 0.0,
+  "inline": 18.033452349999983,
+  "apply": 0.08163035799999986,
+  "finish": 0.3051684769999998,
+  "sig": 0.06366400199999998,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 60720,
+     "items": 460,
+     "points": 920
+    },
+    "mask+CSZ": {
+     "bytes": 17574000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal (batched)": {
+     "bytes": 4524640,
+     "items": 21755,
+     "points": 87010
+    },
+    "share (batched)": {
+     "bytes": 1044240,
+     "items": 21755,
+     "points": 21755
+    }
+   },
+   "framing_and_signature_bytes": 592730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v6-cpu": {
+  "reps": 3,
+  "tally": 13.641651654,
+  "tally_r": "[12.505, 15.154]",
+  "replay": 5.189822865,
+  "replay_r": "[4.493, 5.209]",
+  "prod": 8.737017195999991,
+  "bytes": 37746450,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 0.4435209430000001,
+  "cof": 0.16123672499999991,
+  "sub": 0.0,
+  "run": 3.0789655400000018,
+  "build": 0.836665922,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.08182519999999988,
+  "finish": 0.32050003000000016,
+  "sig": 0.07296345599999993,
+  "jobs": 566440,
+  "batches": 690,
+  "maxb": 20480,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 90160,
+     "items": 460,
+     "points": 920
+    },
+    "mask+CSZ": {
+     "bytes": 28014000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal (batched)": {
+     "bytes": 7308960,
+     "items": 21755,
+     "points": 87010
+    },
+    "share (batched)": {
+     "bytes": 1740400,
+     "items": 21755,
+     "points": 21755
+    }
+   },
+   "framing_and_signature_bytes": 592730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v7-cpu": {
+  "reps": 3,
+  "tally": 21.951650172,
+  "tally_r": "[18.964, 23.597]",
+  "replay": 12.154927745,
+  "replay_r": "[10.814, 12.417]",
+  "prod": 10.18875114299999,
+  "bytes": 31737410,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 6.698776857000001,
+  "cof": 0.0,
+  "sub": 2.150518547999998,
+  "run": 3.720940062000007,
+  "build": 0.9294340049999994,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.09113059799999997,
+  "finish": 0.34029386799999994,
+  "sig": 0.07455131100000001,
+  "jobs": 696040,
+  "batches": 690,
+  "maxb": 20480,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 17574000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal+ZKP0": {
+     "bytes": 9919320,
+     "items": 21755,
+     "points": 174020
+    },
+    "share+DLEQ": {
+     "bytes": 3654840,
+     "items": 21755,
+     "points": 65265
+    }
+   },
+   "framing_and_signature_bytes": 589050
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v8-cpu": {
+  "reps": 3,
+  "tally": 17.687663364,
+  "tally_r": "[16.036, 18.618]",
+  "replay": 9.43948933,
+  "replay_r": "[9.373, 11.114]",
+  "prod": 8.34891108599999,
+  "bytes": 23796530,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 5.071653162000002,
+  "cof": 0.0,
+  "sub": 1.6230353689999997,
+  "run": 2.9931545440000016,
+  "build": 0.7161750810000004,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.07591777300000001,
+  "finish": 0.30675487100000004,
+  "sig": 0.06440222999999996,
+  "jobs": 566440,
+  "batches": 690,
+  "maxb": 20480,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 60720,
+     "items": 460,
+     "points": 920
+    },
+    "mask+CSZ": {
+     "bytes": 17574000,
+     "items": 21750,
+     "points": 326250
+    },
+    "reveal (batched)": {
+     "bytes": 4524640,
+     "items": 21755,
+     "points": 87010
+    },
+    "share (batched)": {
+     "bytes": 1044240,
+     "items": 21755,
+     "points": 21755
+    }
+   },
+   "framing_and_signature_bytes": 592730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "256|v9-cpu": {
+  "reps": 3,
+  "tally": 21.162940286,
+  "tally_r": "[17.704, 24.927]",
+  "replay": 12.682951006,
+  "replay_r": "[10.526, 15.343]",
+  "prod": 8.196625263999998,
+  "bytes": 15966530,
+  "msgs": 690,
+  "gates": 4350,
+  "decode": 2.9204078010000036,
+  "cof": 0.0,
+  "sub": 0.9468767840000005,
+  "run": 7.374708573000003,
+  "build": 0.5162313270000005,
+  "check": 1.2511598600000007,
+  "inline": 0.0,
+  "apply": 0.0806176590000001,
+  "finish": 0.33611542700000013,
+  "sig": 0.05795172500000003,
+  "jobs": 348940,
+  "batches": 690,
+  "maxb": 4098,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 60720,
+     "items": 460,
+     "points": 920
+    },
+    "mask+CSZ": {
+     "bytes": 9744000,
+     "items": 21750,
+     "points": 108750
+    },
+    "reveal (batched)": {
+     "bytes": 4524640,
+     "items": 21755,
+     "points": 87010
+    },
+    "share (batched)": {
+     "bytes": 1044240,
+     "items": 21755,
+     "points": 21755
+    }
+   },
+   "framing_and_signature_bytes": 592730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v1-cpu": {
+  "reps": 1,
+  "tally": 101.223803844,
+  "tally_r": "",
+  "replay": 66.277844568,
+  "replay_r": "",
+  "prod": 30.110910786000005,
+  "bytes": 80844450,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 6.306198774000006,
+  "cof": 0.0,
+  "sub": 0.0,
+  "run": 49.80394550699994,
+  "build": 0.661332929000001,
+  "check": 6.979815093999988,
+  "inline": 0.0,
+  "apply": 0.29449993399999963,
+  "finish": 2.0243855339999985,
+  "sig": 0.115395687,
+  "jobs": 2262815,
+  "batches": 810,
+  "maxb": 61440,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 38989440,
+     "items": 87030,
+     "points": 435150
+    },
+    "reveal+ZKP0": {
+     "bytes": 28546920,
+     "items": 87035,
+     "points": 348130
+    },
+    "share+DLEQ": {
+     "bytes": 11140480,
+     "items": 87035,
+     "points": 87035
+    }
+   },
+   "framing_and_signature_bytes": 2167410
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v1-tate": {
+  "reps": 1,
+  "tally": 74.052876955,
+  "tally_r": "",
+  "replay": 48.215702104,
+  "replay_r": "",
+  "prod": 26.37512074799998,
+  "bytes": 80844450,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 6.053222516999996,
+  "cof": 0.0,
+  "sub": 2.613813033000009,
+  "run": 29.95638885600003,
+  "build": 3.214769377999998,
+  "check": 6.6698190030000095,
+  "inline": 0.0,
+  "apply": 0.2789560199999994,
+  "finish": 1.8411340969999999,
+  "sig": 0.11433276000000002,
+  "jobs": 1392500,
+  "batches": 810,
+  "maxb": 40960,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 38989440,
+     "items": 87030,
+     "points": 435150
+    },
+    "reveal+ZKP0": {
+     "bytes": 28546920,
+     "items": 87035,
+     "points": 348130
+    },
+    "share+DLEQ": {
+     "bytes": 11140480,
+     "items": 87035,
+     "points": 87035
+    }
+   },
+   "framing_and_signature_bytes": 2167410
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v3-cpu": {
+  "reps": 1,
+  "tally": 68.156312009,
+  "tally_r": "",
+  "replay": 28.698554282,
+  "replay_r": "",
+  "prod": 36.42251312400003,
+  "bytes": 126796730,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 14.606033327999974,
+  "cof": 0.523263269,
+  "sub": 0.0,
+  "run": 8.135340357999997,
+  "build": 3.4749961999999925,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.3346709709999996,
+  "finish": 0.9446725029999999,
+  "sig": 0.15035662399999977,
+  "jobs": 2785000,
+  "batches": 810,
+  "maxb": 81920,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 70320240,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal+ZKP0": {
+     "bytes": 39687000,
+     "items": 87035,
+     "points": 696260
+    },
+    "share+DLEQ": {
+     "bytes": 14621880,
+     "items": 87035,
+     "points": 261105
+    }
+   },
+   "framing_and_signature_bytes": 2167410
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v3-individual": {
+  "reps": 1,
+  "tally": 87.161632078,
+  "tally_r": "",
+  "replay": 53.940122305,
+  "replay_r": "",
+  "prod": 33.35266090800001,
+  "bytes": 126796730,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 14.839067836999993,
+  "cof": 0.5298862459999993,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 2.8376749520000013,
+  "check": 0.0,
+  "inline": 33.723595639,
+  "apply": 0.33447753599999924,
+  "finish": 0.9634120450000001,
+  "sig": 0.15375025400000006,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 70320240,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal+ZKP0": {
+     "bytes": 39687000,
+     "items": 87035,
+     "points": 696260
+    },
+    "share+DLEQ": {
+     "bytes": 14621880,
+     "items": 87035,
+     "points": 261105
+    }
+   },
+   "framing_and_signature_bytes": 2167410
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v4-cpu": {
+  "reps": 1,
+  "tally": 49.61740309,
+  "tally_r": "",
+  "replay": 16.903244012000002,
+  "replay_r": "",
+  "prod": 33.491772109999985,
+  "bytes": 199206810,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 1.605720976000001,
+  "cof": 0.5606572099999994,
+  "sub": 0.0,
+  "run": 8.90822485300001,
+  "build": 3.696161681999998,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.3319240320000002,
+  "finish": 1.0164013269999999,
+  "sig": 0.21563761300000014,
+  "jobs": 2785000,
+  "batches": 810,
+  "maxb": 81920,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 112094640,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal+ZKP0": {
+     "bytes": 61967320,
+     "items": 87035,
+     "points": 696260
+    },
+    "share+DLEQ": {
+     "bytes": 22977240,
+     "items": 87035,
+     "points": 261105
+    }
+   },
+   "framing_and_signature_bytes": 2167410
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v5-cpu": {
+  "reps": 1,
+  "tally": 50.136294747,
+  "tally_r": "",
+  "replay": 24.826020828,
+  "replay_r": "",
+  "prod": 27.43861051199999,
+  "bytes": 94844010,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 12.161481643000018,
+  "cof": 0.4531374060000003,
+  "sub": 0.0,
+  "run": 7.71609531700001,
+  "build": 2.419436342999998,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.3011856700000004,
+  "finish": 1.1125131540000002,
+  "sig": 0.128442766,
+  "jobs": 2263880,
+  "batches": 810,
+  "maxb": 81920,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 71280,
+     "items": 540,
+     "points": 1080
+    },
+    "mask+CSZ": {
+     "bytes": 70320240,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal (batched)": {
+     "bytes": 18102880,
+     "items": 87035,
+     "points": 348130
+    },
+    "share (batched)": {
+     "bytes": 4177680,
+     "items": 87035,
+     "points": 87035
+    }
+   },
+   "framing_and_signature_bytes": 2171730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v5-individual": {
+  "reps": 1,
+  "tally": 110.42879535,
+  "tally_r": "",
+  "replay": 83.039362847,
+  "replay_r": "",
+  "prod": 28.921381016999973,
+  "bytes": 94844010,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 12.109466358000006,
+  "cof": 0.468849667,
+  "sub": 0.0,
+  "run": 0.0,
+  "build": 1.670599616999999,
+  "check": 0.0,
+  "inline": 66.72840389999999,
+  "apply": 0.307454355,
+  "finish": 1.0933805309999995,
+  "sig": 0.134422512,
+  "jobs": 0,
+  "batches": 0,
+  "maxb": 0,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 71280,
+     "items": 540,
+     "points": 1080
+    },
+    "mask+CSZ": {
+     "bytes": 70320240,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal (batched)": {
+     "bytes": 18102880,
+     "items": 87035,
+     "points": 348130
+    },
+    "share (batched)": {
+     "bytes": 4177680,
+     "items": 87035,
+     "points": 87035
+    }
+   },
+   "framing_and_signature_bytes": 2171730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v6-cpu": {
+  "reps": 1,
+  "tally": 45.26027322,
+  "tally_r": "",
+  "replay": 14.186685122,
+  "replay_r": "",
+  "prod": 31.057536198999983,
+  "bytes": 150578250,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 1.340324639,
+  "cof": 0.47903309300000035,
+  "sub": 0.0,
+  "run": 7.933145151000012,
+  "build": 2.2414171119999975,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.30873001099999864,
+  "finish": 1.190237569,
+  "sig": 0.17637200300000017,
+  "jobs": 2263880,
+  "batches": 810,
+  "maxb": 81920,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 105840,
+     "items": 540,
+     "points": 1080
+    },
+    "mask+CSZ": {
+     "bytes": 112094640,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal (batched)": {
+     "bytes": 29243040,
+     "items": 87035,
+     "points": 348130
+    },
+    "share (batched)": {
+     "bytes": 6962800,
+     "items": 87035,
+     "points": 87035
+    }
+   },
+   "framing_and_signature_bytes": 2171730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v7-cpu": {
+  "reps": 1,
+  "tally": 73.899635005,
+  "tally_r": "",
+  "replay": 37.430100694,
+  "replay_r": "",
+  "prod": 36.31537422900005,
+  "bytes": 126796730,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 22.894195293000028,
+  "cof": 0.0,
+  "sub": 7.251417147999996,
+  "run": 9.453647716000004,
+  "build": 2.671183732999998,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.3438196869999999,
+  "finish": 1.108552175,
+  "sig": 0.1551073220000002,
+  "jobs": 2785000,
+  "batches": 810,
+  "maxb": 81920,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "mask+CSZ": {
+     "bytes": 70320240,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal+ZKP0": {
+     "bytes": 39687000,
+     "items": 87035,
+     "points": 696260
+    },
+    "share+DLEQ": {
+     "bytes": 14621880,
+     "items": 87035,
+     "points": 261105
+    }
+   },
+   "framing_and_signature_bytes": 2167410
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v8-cpu": {
+  "reps": 1,
+  "tally": 56.578759954,
+  "tally_r": "",
+  "replay": 26.821119679,
+  "replay_r": "",
+  "prod": 28.019936888999975,
+  "bytes": 94844010,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 16.044612142999984,
+  "cof": 0.0,
+  "sub": 4.970402659000007,
+  "run": 7.126333324000004,
+  "build": 1.6975904590000013,
+  "check": 0.0,
+  "inline": 0.0,
+  "apply": 0.2588872900000001,
+  "finish": 0.9803908430000003,
+  "sig": 0.12784522699999992,
+  "jobs": 2263880,
+  "batches": 810,
+  "maxb": 81920,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 71280,
+     "items": 540,
+     "points": 1080
+    },
+    "mask+CSZ": {
+     "bytes": 70320240,
+     "items": 87030,
+     "points": 1305450
+    },
+    "reveal (batched)": {
+     "bytes": 18102880,
+     "items": 87035,
+     "points": 348130
+    },
+    "share (batched)": {
+     "bytes": 4177680,
+     "items": 87035,
+     "points": 87035
+    }
+   },
+   "framing_and_signature_bytes": 2171730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ },
+ "1024|v9-cpu": {
+  "reps": 1,
+  "tally": 57.099043671,
+  "tally_r": "",
+  "replay": 34.30844597,
+  "replay_r": "",
+  "prod": 22.389609377000045,
+  "bytes": 63513210,
+  "msgs": 810,
+  "gates": 17406,
+  "decode": 8.262046537999975,
+  "cof": 0.0,
+  "sub": 2.528033208000002,
+  "run": 20.184599627000015,
+  "build": 1.1427675679999982,
+  "check": 3.334155347000002,
+  "inline": 0.0,
+  "apply": 0.24792309700000034,
+  "finish": 0.9624086020000001,
+  "sig": 0.09590296999999999,
+  "jobs": 1393580,
+  "batches": 810,
+  "maxb": 16386,
+  "stream": {
+   "families": {
+    "commit": {
+     "bytes": 200,
+     "items": 5,
+     "points": 0
+    },
+    "linear batch proof": {
+     "bytes": 71280,
+     "items": 540,
+     "points": 1080
+    },
+    "mask+CSZ": {
+     "bytes": 38989440,
+     "items": 87030,
+     "points": 435150
+    },
+    "reveal (batched)": {
+     "bytes": 18102880,
+     "items": 87035,
+     "points": 348130
+    },
+    "share (batched)": {
+     "bytes": 4177680,
+     "items": 87035,
+     "points": 87035
+    }
+   },
+   "framing_and_signature_bytes": 2171730
+  },
+  "indep_ok": true,
+  "replay_ok": true,
+  "dec_ok": true
+ }
+}

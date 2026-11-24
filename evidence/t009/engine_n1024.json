@@ -1,0 +1,1363 @@
+{
+  "machine": {
+    "arch": "x86_64",
+    "cargo_lock_sha256": "f4a9b50efcae2cf903fa0dbed7ae8ff44e6c560a6fcb2134cf7032e13ef2f7bb",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "crates": {
+      "ark-bn254": "0.5.0",
+      "ark-crypto-primitives": "0.5.0",
+      "ark-ed-on-bn254": "0.5.0",
+      "ark-groth16": "0.5.0",
+      "ark-r1cs-std": "0.5.0",
+      "ed25519-dalek": "2.2.0",
+      "rayon": "1.12.0",
+      "sha2": "0.10.9",
+      "sha3": "0.10.9",
+      "tokio": "1.54.1"
+    },
+    "kernel": "Linux version 6.18.44-fc-v819 (builder@sandboxing) (gcc (GCC) 15.3.0, GNU ld (GNU Binutils) 2.46) #1 SMP PREEMPT_DYNAMIC @0",
+    "logical_cores": 4,
+    "memory": "MemTotal:       16473316 kB",
+    "os": "linux",
+    "profile": "release",
+    "rayon_threads": 4,
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)"
+  },
+  "provenance": {
+    "features": {
+      "cuda12": false,
+      "cuda13": false,
+      "cuda_emu": false,
+      "gpu": false
+    },
+    "rayon_threads": 4,
+    "source_commit": "b2ab5fc79bceefd0a64a9c93b50e6a6816435a52",
+    "source_dirty": false,
+    "verify_backend_default": "inline"
+  },
+  "secure_bench": {
+    "reps": 1,
+    "results": [
+      {
+        "gates": 17406,
+        "n": 1024,
+        "runs": [
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v1-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 1,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((2211408042089981533327543078368164506769801715558312910253683040015835309210, 17751038271413708684546825555679531646258966043375598300029910613120345316160), (14111623022873800776833385899933793565684919828326809474665418354699860010818, 21401826041384257081487086289417128865146776888717162243184701274680619138583)))",
+              "prof": {
+                "apply": 6.351748649999996,
+                "batch_build": 0.0,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 6.136198219999995,
+                "finish": 0.0,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.11414539099999996,
+                "subgroup": 0.0,
+                "verify_inline": 57.22920904199993
+              },
+              "seconds_total": 69.897043555
+            },
+            "initialization_seconds": 2.595e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((2211408042089981533327543078368164506769801715558312910253683040015835309210, 17751038271413708684546825555679531646258966043375598300029910613120345316160), (14111623022873800776833385899933793565684919828326809474665418354699860010818, 21401826041384257081487086289417128865146776888717162243184701274680619138583)))",
+              "prof": {
+                "apply": 0.29449993399999963,
+                "batch_build": 0.661332929000001,
+                "batch_check": 6.979815093999988,
+                "batch_run": 49.80394550699994,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 6.306198774000006,
+                "finish": 2.0243855339999985,
+                "jobs": 2262815,
+                "max_batch": 61440,
+                "signature": 0.115395687,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 66.277844568
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261105,
+              "messages": 810,
+              "output": "Some(((2211408042089981533327543078368164506769801715558312910253683040015835309210, 17751038271413708684546825555679531646258966043375598300029910613120345316160), (14111623022873800776833385899933793565684919828326809474665418354699860010818, 21401826041384257081487086289417128865146776888717162243184701274680619138583)))",
+              "prof": {
+                "apply": 0.3110475330000001,
+                "batch_build": 0.6939512120000002,
+                "batch_check": 7.495474464999998,
+                "batch_run": 53.70447176400004,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 6.631778910999996,
+                "finish": 1.980960469,
+                "jobs": 2262815,
+                "max_batch": 61440,
+                "signature": 0.10935033800000005,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 70.99349306300017,
+              "seconds_produce": 30.110910786000005,
+              "seconds_total": 101.223803844,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "mask+CSZ": {
+                    "bytes": 38989440,
+                    "items": 87030,
+                    "points": 435150
+                  },
+                  "reveal+ZKP0": {
+                    "bytes": 28546920,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share+DLEQ": {
+                    "bytes": 11140480,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2167410
+              },
+              "transcript_message_bytes": 80844450
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v1-tate",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 1,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((21177633748523288774297914371453265345311785488945692244094771293771110089123, 14999232770595763259836226649061273752299650246755025985254558240496693648546), (16512856051063742980092276855544486917130864965393381835136234716147228837071, 1308170660500836809043063381133935660854752434631600972968655775354735517117)))",
+              "prof": {
+                "apply": 6.431231986000001,
+                "batch_build": 0.0,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 6.187672145000005,
+                "finish": 0.0,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.11499472499999999,
+                "subgroup": 0.0,
+                "verify_inline": 57.51029064500004
+              },
+              "seconds_total": 70.312431737
+            },
+            "initialization_seconds": 1.135e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((21177633748523288774297914371453265345311785488945692244094771293771110089123, 14999232770595763259836226649061273752299650246755025985254558240496693648546), (16512856051063742980092276855544486917130864965393381835136234716147228837071, 1308170660500836809043063381133935660854752434631600972968655775354735517117)))",
+              "prof": {
+                "apply": 0.2789560199999994,
+                "batch_build": 3.214769377999998,
+                "batch_check": 6.6698190030000095,
+                "batch_run": 29.95638885600003,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 6.053222516999996,
+                "finish": 1.8411340969999999,
+                "jobs": 1392500,
+                "max_batch": 40960,
+                "signature": 0.11433276000000002,
+                "subgroup": 2.613813033000009,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 48.215702104
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261105,
+              "messages": 810,
+              "output": "Some(((21177633748523288774297914371453265345311785488945692244094771293771110089123, 14999232770595763259836226649061273752299650246755025985254558240496693648546), (16512856051063742980092276855544486917130864965393381835136234716147228837071, 1308170660500836809043063381133935660854752434631600972968655775354735517117)))",
+              "prof": {
+                "apply": 0.2917529309999993,
+                "batch_build": 3.1614569859999984,
+                "batch_check": 6.550713447999996,
+                "batch_run": 29.582532896000014,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 5.983648791000009,
+                "finish": 1.8155190970000006,
+                "jobs": 1392500,
+                "max_batch": 40960,
+                "signature": 0.107088859,
+                "subgroup": 2.574498374000007,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 47.55530135199995,
+              "seconds_produce": 26.37512074799998,
+              "seconds_total": 74.052876955,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "mask+CSZ": {
+                    "bytes": 38989440,
+                    "items": 87030,
+                    "points": 435150
+                  },
+                  "reveal+ZKP0": {
+                    "bytes": 28546920,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share+DLEQ": {
+                    "bytes": 11140480,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2167410
+              },
+              "transcript_message_bytes": 80844450
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v3-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 3,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((9200918855281592474386864544233931352153348515800304504037416858466583249820, 15049615948138207349029672084947785505617046018647777871177116215908243017731), (2430162118022897143127186407344469379897874601975805894713178399184512886282, 12990733206449129990588002824293848961263079683083069490986946695894807449720)))",
+              "prof": {
+                "apply": 0.3198405209999999,
+                "batch_build": 2.7115971850000022,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.5021782659999996,
+                "decode": 14.312567550999994,
+                "finish": 0.9939321739999999,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.14958158399999977,
+                "subgroup": 0.0,
+                "verify_inline": 32.62896110700003
+              },
+              "seconds_total": 52.1376821
+            },
+            "initialization_seconds": 1.265e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((9200918855281592474386864544233931352153348515800304504037416858466583249820, 15049615948138207349029672084947785505617046018647777871177116215908243017731), (2430162118022897143127186407344469379897874601975805894713178399184512886282, 12990733206449129990588002824293848961263079683083069490986946695894807449720)))",
+              "prof": {
+                "apply": 0.3346709709999996,
+                "batch_build": 3.4749961999999925,
+                "batch_check": 0.0,
+                "batch_run": 8.135340357999997,
+                "batches": 810,
+                "cofactor_decode": 0.523263269,
+                "decode": 14.606033327999974,
+                "finish": 0.9446725029999999,
+                "jobs": 2785000,
+                "max_batch": 81920,
+                "signature": 0.15035662399999977,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 28.698554282
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261105,
+              "messages": 810,
+              "output": "Some(((9200918855281592474386864544233931352153348515800304504037416858466583249820, 15049615948138207349029672084947785505617046018647777871177116215908243017731), (2430162118022897143127186407344469379897874601975805894713178399184512886282, 12990733206449129990588002824293848961263079683083069490986946695894807449720)))",
+              "prof": {
+                "apply": 0.3629798699999992,
+                "batch_build": 3.720602076,
+                "batch_check": 0.0,
+                "batch_run": 9.248628632000015,
+                "batches": 810,
+                "cofactor_decode": 0.5870784089999991,
+                "decode": 15.838213928999997,
+                "finish": 1.127919795,
+                "jobs": 2785000,
+                "max_batch": 81920,
+                "signature": 0.14582863199999993,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 31.589790816,
+              "seconds_produce": 36.42251312400003,
+              "seconds_total": 68.156312009,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "mask+CSZ": {
+                    "bytes": 70320240,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal+ZKP0": {
+                    "bytes": 39687000,
+                    "items": 87035,
+                    "points": 696260
+                  },
+                  "share+DLEQ": {
+                    "bytes": 14621880,
+                    "items": 87035,
+                    "points": 261105
+                  }
+                },
+                "framing_and_signature_bytes": 2167410
+              },
+              "transcript_message_bytes": 126796730
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "inline",
+            "canonical_reference": false,
+            "configuration": "v3-individual",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 3,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((21608040132562952199851755267676231679763293202376494579401684062115166749453, 11939080396069845996067874026756003949610004439984536334335031618492943738648), (1944289294929171247512981416199814665817798489805772451352458895850386031765, 5469957725493295949021369238218388459690014981964131274615581869489817104275)))",
+              "prof": {
+                "apply": 0.3279065060000003,
+                "batch_build": 2.7340592829999886,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.5091665299999998,
+                "decode": 14.46394209300002,
+                "finish": 0.944543785,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.1531979260000003,
+                "subgroup": 0.0,
+                "verify_inline": 32.60995294300004
+              },
+              "seconds_total": 52.277594318
+            },
+            "initialization_seconds": 2.03e-7,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((21608040132562952199851755267676231679763293202376494579401684062115166749453, 11939080396069845996067874026756003949610004439984536334335031618492943738648), (1944289294929171247512981416199814665817798489805772451352458895850386031765, 5469957725493295949021369238218388459690014981964131274615581869489817104275)))",
+              "prof": {
+                "apply": 0.33447753599999924,
+                "batch_build": 2.8376749520000013,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.5298862459999993,
+                "decode": 14.839067836999993,
+                "finish": 0.9634120450000001,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.15375025400000006,
+                "subgroup": 0.0,
+                "verify_inline": 33.723595639
+              },
+              "seconds_total": 53.940122305
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261105,
+              "messages": 810,
+              "output": "Some(((21608040132562952199851755267676231679763293202376494579401684062115166749453, 11939080396069845996067874026756003949610004439984536334335031618492943738648), (1944289294929171247512981416199814665817798489805772451352458895850386031765, 5469957725493295949021369238218388459690014981964131274615581869489817104275)))",
+              "prof": {
+                "apply": 0.3388812069999992,
+                "batch_build": 2.8342889390000034,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.5221095440000005,
+                "decode": 14.761978411000005,
+                "finish": 1.031303314,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.13752650700000002,
+                "subgroup": 0.0,
+                "verify_inline": 33.49937262900005
+              },
+              "seconds_process": 53.662190298,
+              "seconds_produce": 33.35266090800001,
+              "seconds_total": 87.161632078,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "mask+CSZ": {
+                    "bytes": 70320240,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal+ZKP0": {
+                    "bytes": 39687000,
+                    "items": 87035,
+                    "points": 696260
+                  },
+                  "share+DLEQ": {
+                    "bytes": 14621880,
+                    "items": 87035,
+                    "points": 261105
+                  }
+                },
+                "framing_and_signature_bytes": 2167410
+              },
+              "transcript_message_bytes": 126796730
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v4-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 4,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((6454223390186500644309745448592234221724278635477468486085638881876012249205, 1989592938755501558429839337290633620214014519447338208281934791033233207813), (6579630479300527089325388900770701376641075924140980822162511903326856586762, 11846144029189378691370334191704468590137098318815318402849305286842368044238)))",
+              "prof": {
+                "apply": 0.3377897199999998,
+                "batch_build": 2.906296303000003,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.5585138590000003,
+                "decode": 1.5909960910000023,
+                "finish": 1.0354425649999999,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.21053697299999996,
+                "subgroup": 0.0,
+                "verify_inline": 33.98915805600001
+              },
+              "seconds_total": 41.172585905
+            },
+            "initialization_seconds": 1.719e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((6454223390186500644309745448592234221724278635477468486085638881876012249205, 1989592938755501558429839337290633620214014519447338208281934791033233207813), (6579630479300527089325388900770701376641075924140980822162511903326856586762, 11846144029189378691370334191704468590137098318815318402849305286842368044238)))",
+              "prof": {
+                "apply": 0.3319240320000002,
+                "batch_build": 3.696161681999998,
+                "batch_check": 0.0,
+                "batch_run": 8.90822485300001,
+                "batches": 810,
+                "cofactor_decode": 0.5606572099999994,
+                "decode": 1.605720976000001,
+                "finish": 1.0164013269999999,
+                "jobs": 2785000,
+                "max_batch": 81920,
+                "signature": 0.21563761300000014,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 16.903244012000002
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261105,
+              "messages": 810,
+              "output": "Some(((6454223390186500644309745448592234221724278635477468486085638881876012249205, 1989592938755501558429839337290633620214014519447338208281934791033233207813), (6579630479300527089325388900770701376641075924140980822162511903326856586762, 11846144029189378691370334191704468590137098318815318402849305286842368044238)))",
+              "prof": {
+                "apply": 0.33726333099999917,
+                "batch_build": 3.5117466589999995,
+                "batch_check": 0.0,
+                "batch_run": 8.339815099999987,
+                "batches": 810,
+                "cofactor_decode": 0.5429105230000008,
+                "decode": 1.5070297370000012,
+                "finish": 0.9566809159999997,
+                "jobs": 2785000,
+                "max_batch": 81920,
+                "signature": 0.1919584190000005,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 15.905381194999999,
+              "seconds_produce": 33.491772109999985,
+              "seconds_total": 49.61740309,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "mask+CSZ": {
+                    "bytes": 112094640,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal+ZKP0": {
+                    "bytes": 61967320,
+                    "items": 87035,
+                    "points": 696260
+                  },
+                  "share+DLEQ": {
+                    "bytes": 22977240,
+                    "items": 87035,
+                    "points": 261105
+                  }
+                },
+                "framing_and_signature_bytes": 2167410
+              },
+              "transcript_message_bytes": 199206810
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v5-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 5,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((18349235547011451598789813334428736061211387676509372181221981582999069583629, 13028018196198996374996794944941684413988021181778256310771779921881948448168), (19540432575143370174361056238558858838433046964911154853849577514521234593542, 7943407187247018838072296044571878516829242505810303232581638475926897970092)))",
+              "prof": {
+                "apply": 0.30310590399999976,
+                "batch_build": 1.6281649150000004,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.4532160170000008,
+                "decode": 12.15646917299999,
+                "finish": 1.10777981,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.13367301999999978,
+                "subgroup": 0.0,
+                "verify_inline": 66.07592073099995
+              },
+              "seconds_total": 82.364568331
+            },
+            "initialization_seconds": 1.525e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((18349235547011451598789813334428736061211387676509372181221981582999069583629, 13028018196198996374996794944941684413988021181778256310771779921881948448168), (19540432575143370174361056238558858838433046964911154853849577514521234593542, 7943407187247018838072296044571878516829242505810303232581638475926897970092)))",
+              "prof": {
+                "apply": 0.3011856700000004,
+                "batch_build": 2.419436342999998,
+                "batch_check": 0.0,
+                "batch_run": 7.71609531700001,
+                "batches": 810,
+                "cofactor_decode": 0.4531374060000003,
+                "decode": 12.161481643000018,
+                "finish": 1.1125131540000002,
+                "jobs": 2263880,
+                "max_batch": 81920,
+                "signature": 0.128442766,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 24.826020828
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261645,
+              "messages": 810,
+              "output": "Some(((18349235547011451598789813334428736061211387676509372181221981582999069583629, 13028018196198996374996794944941684413988021181778256310771779921881948448168), (19540432575143370174361056238558858838433046964911154853849577514521234593542, 7943407187247018838072296044571878516829242505810303232581638475926897970092)))",
+              "prof": {
+                "apply": 0.27044761299999975,
+                "batch_build": 2.045296975,
+                "batch_check": 0.0,
+                "batch_run": 6.9899656249999955,
+                "batches": 810,
+                "cofactor_decode": 0.42465325399999937,
+                "decode": 11.329108497999991,
+                "finish": 0.9652318639999998,
+                "jobs": 2263880,
+                "max_batch": 81920,
+                "signature": 0.1100952639999999,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 22.591475712000026,
+              "seconds_produce": 27.43861051199999,
+              "seconds_total": 50.136294747,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 71280,
+                    "items": 540,
+                    "points": 1080
+                  },
+                  "mask+CSZ": {
+                    "bytes": 70320240,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal (batched)": {
+                    "bytes": 18102880,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share (batched)": {
+                    "bytes": 4177680,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2171730
+              },
+              "transcript_message_bytes": 94844010
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "inline",
+            "canonical_reference": false,
+            "configuration": "v5-individual",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 5,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((7072186536085682249638816905669201255516797802780297792270901319266858184332, 19801907441564955563858346737061549053865843886654918972386682425981279626177), (10949927241321655307829795860953629688544729902172898772789335627413217461317, 17676459854951478924269674173179403453072915269286683953268426850251546402560)))",
+              "prof": {
+                "apply": 0.34245380900000066,
+                "batch_build": 1.6688793269999993,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.4794767370000004,
+                "decode": 12.444018434000009,
+                "finish": 1.0713410700000003,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.12980087499999987,
+                "subgroup": 0.0,
+                "verify_inline": 69.63271082900003
+              },
+              "seconds_total": 86.300153409
+            },
+            "initialization_seconds": 1.54e-7,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((7072186536085682249638816905669201255516797802780297792270901319266858184332, 19801907441564955563858346737061549053865843886654918972386682425981279626177), (10949927241321655307829795860953629688544729902172898772789335627413217461317, 17676459854951478924269674173179403453072915269286683953268426850251546402560)))",
+              "prof": {
+                "apply": 0.307454355,
+                "batch_build": 1.670599616999999,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.468849667,
+                "decode": 12.109466358000006,
+                "finish": 1.0933805309999995,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.134422512,
+                "subgroup": 0.0,
+                "verify_inline": 66.72840389999999
+              },
+              "seconds_total": 83.039362847
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261645,
+              "messages": 810,
+              "output": "Some(((7072186536085682249638816905669201255516797802780297792270901319266858184332, 19801907441564955563858346737061549053865843886654918972386682425981279626177), (10949927241321655307829795860953629688544729902172898772789335627413217461317, 17676459854951478924269674173179403453072915269286683953268426850251546402560)))",
+              "prof": {
+                "apply": 0.3079895,
+                "batch_build": 1.5595897860000012,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.44417940500000025,
+                "decode": 11.795186900000004,
+                "finish": 1.103078209,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.11258862399999998,
+                "subgroup": 0.0,
+                "verify_inline": 65.57680344200001
+              },
+              "seconds_process": 81.39905322100022,
+              "seconds_produce": 28.921381016999973,
+              "seconds_total": 110.42879535,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 71280,
+                    "items": 540,
+                    "points": 1080
+                  },
+                  "mask+CSZ": {
+                    "bytes": 70320240,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal (batched)": {
+                    "bytes": 18102880,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share (batched)": {
+                    "bytes": 4177680,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2171730
+              },
+              "transcript_message_bytes": 94844010
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v6-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 6,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((11449580786327336997104761735695357108957988096170619576238794717915114816047, 21275655414614481419780878524246997560598907668531259415795242003074417690006), (10264654944723743070637547408340390846918295941970597912705103549856867157497, 5640925469893939209141846223048562090266966019891659319487986665908274373680)))",
+              "prof": {
+                "apply": 0.3224319960000004,
+                "batch_build": 1.7276699380000011,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.513116514,
+                "decode": 1.4624549129999984,
+                "finish": 1.1223524819999986,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.18330633299999965,
+                "subgroup": 0.0,
+                "verify_inline": 70.84201927500006
+              },
+              "seconds_total": 76.692422266
+            },
+            "initialization_seconds": 1.583e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((11449580786327336997104761735695357108957988096170619576238794717915114816047, 21275655414614481419780878524246997560598907668531259415795242003074417690006), (10264654944723743070637547408340390846918295941970597912705103549856867157497, 5640925469893939209141846223048562090266966019891659319487986665908274373680)))",
+              "prof": {
+                "apply": 0.30873001099999864,
+                "batch_build": 2.2414171119999975,
+                "batch_check": 0.0,
+                "batch_run": 7.933145151000012,
+                "batches": 810,
+                "cofactor_decode": 0.47903309300000035,
+                "decode": 1.340324639,
+                "finish": 1.190237569,
+                "jobs": 2263880,
+                "max_batch": 81920,
+                "signature": 0.17637200300000017,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 14.186685122
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261645,
+              "messages": 810,
+              "output": "Some(((11449580786327336997104761735695357108957988096170619576238794717915114816047, 21275655414614481419780878524246997560598907668531259415795242003074417690006), (10264654944723743070637547408340390846918295941970597912705103549856867157497, 5640925469893939209141846223048562090266966019891659319487986665908274373680)))",
+              "prof": {
+                "apply": 0.29853604599999967,
+                "batch_build": 2.2060637450000002,
+                "batch_check": 0.0,
+                "batch_run": 8.025763923999996,
+                "batches": 810,
+                "cofactor_decode": 0.47806031599999976,
+                "decode": 1.3199272590000002,
+                "finish": 1.0397108709999998,
+                "jobs": 2263880,
+                "max_batch": 81920,
+                "signature": 0.15881530199999996,
+                "subgroup": 0.0,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 14.036933671000027,
+              "seconds_produce": 31.057536198999983,
+              "seconds_total": 45.26027322,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 105840,
+                    "items": 540,
+                    "points": 1080
+                  },
+                  "mask+CSZ": {
+                    "bytes": 112094640,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal (batched)": {
+                    "bytes": 29243040,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share (batched)": {
+                    "bytes": 6962800,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2171730
+              },
+              "transcript_message_bytes": 150578250
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v7-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 7,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((16311109490567759573774264646462948463129608381998890110701376906653717050141, 13349751608926158952129404363843570264570144468178436075607621459625563414362), (11511632410823423870865304475869678482028891392953343138784075424449685022327, 17959179924219164926908101510096785989840298704254076842826159310125075395652)))",
+              "prof": {
+                "apply": 0.3189538970000002,
+                "batch_build": 1.8914267669999971,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 22.480833580000002,
+                "finish": 1.1623189419999997,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.15452516199999977,
+                "subgroup": 7.04951042000001,
+                "verify_inline": 37.73868429900003
+              },
+              "seconds_total": 64.527554734
+            },
+            "initialization_seconds": 1.407e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((16311109490567759573774264646462948463129608381998890110701376906653717050141, 13349751608926158952129404363843570264570144468178436075607621459625563414362), (11511632410823423870865304475869678482028891392953343138784075424449685022327, 17959179924219164926908101510096785989840298704254076842826159310125075395652)))",
+              "prof": {
+                "apply": 0.3438196869999999,
+                "batch_build": 2.671183732999998,
+                "batch_check": 0.0,
+                "batch_run": 9.453647716000004,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 22.894195293000028,
+                "finish": 1.108552175,
+                "jobs": 2785000,
+                "max_batch": 81920,
+                "signature": 0.1551073220000002,
+                "subgroup": 7.251417147999996,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 37.430100694
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261105,
+              "messages": 810,
+              "output": "Some(((16311109490567759573774264646462948463129608381998890110701376906653717050141, 13349751608926158952129404363843570264570144468178436075607621459625563414362), (11511632410823423870865304475869678482028891392953343138784075424449685022327, 17959179924219164926908101510096785989840298704254076842826159310125075395652)))",
+              "prof": {
+                "apply": 0.35683847599999957,
+                "batch_build": 2.613240703999998,
+                "batch_check": 0.0,
+                "batch_run": 9.47312462900001,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 22.872275166999966,
+                "finish": 1.1443210500000005,
+                "jobs": 2785000,
+                "max_batch": 81920,
+                "signature": 0.14070162599999994,
+                "subgroup": 7.203232510999995,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 37.40094437500011,
+              "seconds_produce": 36.31537422900005,
+              "seconds_total": 73.899635005,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "mask+CSZ": {
+                    "bytes": 70320240,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal+ZKP0": {
+                    "bytes": 39687000,
+                    "items": 87035,
+                    "points": 696260
+                  },
+                  "share+DLEQ": {
+                    "bytes": 14621880,
+                    "items": 87035,
+                    "points": 261105
+                  }
+                },
+                "framing_and_signature_bytes": 2167410
+              },
+              "transcript_message_bytes": 126796730
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v8-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 8,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((16602053695721291917320509548781726876143853056946562680655046387241164450459, 7487077013195326274426532263074925714501326739716117393241374385066572853315), (1798853870577381190267334008364167446418780398043102733857442588346022631463, 20620628195115560341071459265487574263983062681721246499489371976678629662279)))",
+              "prof": {
+                "apply": 0.273643948,
+                "batch_build": 1.1500552980000007,
+                "batch_check": 0.0,
+                "batch_run": 0.0,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 16.710053169000016,
+                "finish": 1.0824678160000003,
+                "jobs": 0,
+                "max_batch": 0,
+                "signature": 0.12329748700000015,
+                "subgroup": 5.240633154999997,
+                "verify_inline": 63.777343619000014
+              },
+              "seconds_total": 83.7003607
+            },
+            "initialization_seconds": 1.643e-6,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((16602053695721291917320509548781726876143853056946562680655046387241164450459, 7487077013195326274426532263074925714501326739716117393241374385066572853315), (1798853870577381190267334008364167446418780398043102733857442588346022631463, 20620628195115560341071459265487574263983062681721246499489371976678629662279)))",
+              "prof": {
+                "apply": 0.2588872900000001,
+                "batch_build": 1.6975904590000013,
+                "batch_check": 0.0,
+                "batch_run": 7.126333324000004,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 16.044612142999984,
+                "finish": 0.9803908430000003,
+                "jobs": 2263880,
+                "max_batch": 81920,
+                "signature": 0.12784522699999992,
+                "subgroup": 4.970402659000007,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 26.821119679
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261645,
+              "messages": 810,
+              "output": "Some(((16602053695721291917320509548781726876143853056946562680655046387241164450459, 7487077013195326274426532263074925714501326739716117393241374385066572853315), (1798853870577381190267334008364167446418780398043102733857442588346022631463, 20620628195115560341071459265487574263983062681721246499489371976678629662279)))",
+              "prof": {
+                "apply": 0.2633174299999993,
+                "batch_build": 1.7215082770000016,
+                "batch_check": 0.0,
+                "batch_run": 7.557216388999993,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 17.117620715000022,
+                "finish": 1.0887955089999999,
+                "jobs": 2263880,
+                "max_batch": 81920,
+                "signature": 0.11452562900000013,
+                "subgroup": 5.369994413999982,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 28.437994436000004,
+              "seconds_produce": 28.019936888999975,
+              "seconds_total": 56.578759954,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 71280,
+                    "items": 540,
+                    "points": 1080
+                  },
+                  "mask+CSZ": {
+                    "bytes": 70320240,
+                    "items": 87030,
+                    "points": 1305450
+                  },
+                  "reveal (batched)": {
+                    "bytes": 18102880,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share (batched)": {
+                    "bytes": 4177680,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2171730
+              },
+              "transcript_message_bytes": 94844010
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v9-cpu",
+            "execution_order": [
+              "v1-cpu",
+              "v1-tate",
+              "v3-cpu",
+              "v3-individual",
+              "v4-cpu",
+              "v5-cpu",
+              "v5-individual",
+              "v6-cpu",
+              "v7-cpu",
+              "v8-cpu",
+              "v9-cpu"
+            ],
+            "format": 9,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((6747523565317995059456884820095725818289145180388601727532913625476048017373, 7867805121571889035639666501147045499209703739162601639300945176373740455924), (10663485740425515618308155495515374802205167796944645436095475976294745872618, 6905000514881580746391906487794284342343518701803374000277408202600535105413)))",
+              "prof": {
+                "apply": 0.2767111319999996,
+                "batch_build": 0.9346495710000001,
+                "batch_check": 3.3665302400000012,
+                "batch_run": 18.284801888999983,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 8.556029079000002,
+                "finish": 1.0025019410000002,
+                "jobs": 870300,
+                "max_batch": 0,
+                "signature": 0.10173811299999998,
+                "subgroup": 2.614455543000001,
+                "verify_inline": 42.26882472599986
+              },
+              "seconds_total": 74.880278102
+            },
+            "initialization_seconds": 9.86e-7,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": false,
+              "output": "Some(((6747523565317995059456884820095725818289145180388601727532913625476048017373, 7867805121571889035639666501147045499209703739162601639300945176373740455924), (10663485740425515618308155495515374802205167796944645436095475976294745872618, 6905000514881580746391906487794284342343518701803374000277408202600535105413)))",
+              "prof": {
+                "apply": 0.24792309700000034,
+                "batch_build": 1.1427675679999982,
+                "batch_check": 3.334155347000002,
+                "batch_run": 20.184599627000015,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 8.262046537999975,
+                "finish": 0.9624086020000001,
+                "jobs": 1393580,
+                "max_batch": 16386,
+                "signature": 0.09590296999999999,
+                "subgroup": 2.528033208000002,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 34.30844597
+            },
+            "tally": {
+              "decision": false,
+              "gates": 17406,
+              "items": 261645,
+              "messages": 810,
+              "output": "Some(((6747523565317995059456884820095725818289145180388601727532913625476048017373, 7867805121571889035639666501147045499209703739162601639300945176373740455924), (10663485740425515618308155495515374802205167796944645436095475976294745872618, 6905000514881580746391906487794284342343518701803374000277408202600535105413)))",
+              "prof": {
+                "apply": 0.25983882200000025,
+                "batch_build": 1.163632878999997,
+                "batch_check": 3.369771756000001,
+                "batch_run": 20.274986260999942,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 8.391446275000003,
+                "finish": 1.0236431309999996,
+                "jobs": 1393580,
+                "max_batch": 16386,
+                "signature": 0.08723143699999995,
+                "subgroup": 2.585987580000003,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 34.629840452000046,
+              "seconds_produce": 22.389609377000045,
+              "seconds_total": 57.099043671,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 71280,
+                    "items": 540,
+                    "points": 1080
+                  },
+                  "mask+CSZ": {
+                    "bytes": 38989440,
+                    "items": 87030,
+                    "points": 435150
+                  },
+                  "reveal (batched)": {
+                    "bytes": 18102880,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share (batched)": {
+                    "bytes": 4177680,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2171730
+              },
+              "transcript_message_bytes": 63513210
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          }
+        ],
+        "threshold": 67367
+      }
+    ],
+    "scope": "Engine only, genuine encrypted inputs and trustee proofs. Setup/Groth16/admission/file IO excluded. Independent CPU individual verification outside selected timings."
+  }
+}
