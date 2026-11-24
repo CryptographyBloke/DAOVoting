@@ -587,7 +587,7 @@ fn t009_formats_end_to_end() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    for format in ["v5", "v6", "v7", "v8"] {
+    for format in ["v5", "v6", "v7", "v8", "v9"] {
         let out = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("t009-{format}-{nonce}"));
         let o = wod()
             .args([

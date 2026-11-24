@@ -20,6 +20,8 @@ const MAGIC_V5: &[u8; 6] = b"WODT5\n";
 const MAGIC_V6: &[u8; 6] = b"WODT6\n";
 const MAGIC_V7: &[u8; 6] = b"WODT7\n";
 const MAGIC_V8: &[u8; 6] = b"WODT8\n";
+/// T009 v9: challenge-response PoK-CSZ + batched linear statements, native points.
+const MAGIC_V9: &[u8; 6] = b"WODT9\n";
 
 pub struct Writer {
     w: BufWriter<std::fs::File>,
@@ -51,6 +53,7 @@ impl Writer {
             6 => MAGIC_V6,
             7 => MAGIC_V7,
             8 => MAGIC_V8,
+            9 => MAGIC_V9,
             _ => MAGIC,
         })?;
         w.raw(setup_hash)?;
@@ -100,7 +103,8 @@ impl Reader {
         r.read_exact(&mut hdr)?;
         ensure!(
             [
-                MAGIC, MAGIC_V2, MAGIC_V3, MAGIC_V4, MAGIC_V5, MAGIC_V6, MAGIC_V7, MAGIC_V8
+                MAGIC, MAGIC_V2, MAGIC_V3, MAGIC_V4, MAGIC_V5, MAGIC_V6, MAGIC_V7, MAGIC_V8,
+                MAGIC_V9,
             ]
             .iter()
             .any(|m| &m[..] == &hdr[..6]),

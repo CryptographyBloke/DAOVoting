@@ -42,6 +42,7 @@ GPU research (T005; see reports/T005.md):
                           linear statements (Enc(0) rerandomizers, decryption shares);
                           v7 = native subgroup points (exact Tate check), per-item proofs;
                           v8 = v7 with batched linear statements
+                          v9 = v8 with compact challenge-response PoK-CSZ (GPU-friendly)
   --subgroup q|tate       v1 verifier subgroup test: [q]P (default) or order-8 Tate pairing
   --lift-policy canonical|randomized   v3/v4 honest producer policy (default randomized)
   --v2-verify batch|individual   v2 verification: one MSM per message (default) or per relation
@@ -50,6 +51,10 @@ GPU research (T005; see reports/T005.md):
   --verify-backend SPEC   on any command: verify trustee messages in message-level
                           batches on cpu | cuda[:DEV] | cuda-msm[:DEV] | auto:MIN_BATCH[:DEV] | auto-msm:N[:DEV] | cert:SPEC | emu
                           (default: original inline verification)
+  wod tdec-sweep [--k 1,16,...,16384] [--trustees 5] [--threshold 3] [--reps 3] [--out DIR]
+                 T009 threshold-decryption proof methods (cp, cp-msm, rfc9497, lin, joint)
+  wod lin-sweep  [--k ...] [--reps 3] [--out DIR]   T009 Enc(0) family: per-item vs batched
+  wod subgroup-bench [--points 4096] [--reps 3] [--out DIR]   decode/[q]P/Tate/[8] per point
   wod profile    [--n 8,64,256,1024] [--groth-reps 5] [--out DIR]   CPU hotspot profile
   wod gpu-check  [--arch compute_89] [--device 0]    build features, NVRTC compile, device info,
                                                      vectors on the device
@@ -117,7 +122,7 @@ fn main() -> Result<()> {
         (
             "--format",
             "WOD_FORMAT",
-            &["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"][..],
+            &["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"][..],
         ),
         (
             "--lift-policy",
@@ -335,6 +340,48 @@ fn main() -> Result<()> {
             write_json(
                 &out,
                 &json!({"machine":experiment::machine(),"provenance":bench::provenance(),"results":v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "tdec-sweep" => {
+            let out = fresh_out(&a, "tdec_sweep.json")?;
+            let ks: Vec<usize> = a
+                .list("--k", "1,16,64,256,1024,4096,16384")
+                .iter()
+                .map(|x| x.parse())
+                .collect::<Result<_, _>>()?;
+            let v = wod::tdec::sweep(
+                &ks,
+                a.num("--trustees", 5)?,
+                a.num("--threshold", 3)?,
+                a.num("--reps", 3)?,
+            );
+            write_json(
+                &out,
+                &json!({"machine":experiment::machine(),"provenance":bench::provenance(),"tdec":v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "lin-sweep" => {
+            let out = fresh_out(&a, "lin_sweep.json")?;
+            let ks: Vec<usize> = a
+                .list("--k", "1,16,64,256,1024,4096,16384")
+                .iter()
+                .map(|x| x.parse())
+                .collect::<Result<_, _>>()?;
+            let v = bench::lin_sweep(&ks, a.num("--reps", 3)?);
+            write_json(
+                &out,
+                &json!({"machine":experiment::machine(),"provenance":bench::provenance(),"lin":v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "subgroup-bench" => {
+            let out = fresh_out(&a, "subgroup_bench.json")?;
+            let v = bench::subgroup_bench(a.num("--points", 4096)?, a.num("--reps", 3)?);
+            write_json(
+                &out,
+                &json!({"machine":experiment::machine(),"provenance":bench::provenance(),"subgroup":v}),
             )?;
             println!("wrote {}", out.display());
         }
