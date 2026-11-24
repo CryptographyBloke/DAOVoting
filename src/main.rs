@@ -350,11 +350,21 @@ fn main() -> Result<()> {
                 .iter()
                 .map(|x| x.parse())
                 .collect::<Result<_, _>>()?;
+            let methods: Vec<String> = if a.get("--attribution").is_some() {
+                wod::tdec::ATTRIBUTION
+                    .iter()
+                    .map(|m| m.to_string())
+                    .collect()
+            } else {
+                wod::tdec::METHODS.iter().map(|m| m.to_string()).collect()
+            };
+            let methods: Vec<&str> = methods.iter().map(|m| m.as_str()).collect();
             let v = wod::tdec::sweep(
                 &ks,
                 a.num("--trustees", 5)?,
                 a.num("--threshold", 3)?,
                 a.num("--reps", 3)?,
+                &methods,
             );
             write_json(
                 &out,

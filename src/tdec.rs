@@ -31,6 +31,10 @@ use serde_json::{Value, json};
 use std::time::Instant;
 
 pub const METHODS: [&str; 5] = ["cp", "cp-msm", "rfc9497", "lin", "joint"];
+/// Attribution variants (§13.1 of reports/T009.md): RFC 9497 structure with
+/// 128-bit composites; `lin` proofs verified per trustee (one MSM each) and
+/// in one MSM without merging the shared bases u_j.
+pub const ATTRIBUTION: [&str; 4] = ["rfc9497", "rfc9497-128", "lin-sep", "lin-nomerge"];
 const PT: usize = 32;
 const SC: usize = 32;
 
@@ -94,8 +98,10 @@ pub fn ciphertexts<R: RngCore + CryptoRng>(s: &Setup, k: usize, rng: &mut R) -> 
 pub enum Proofs {
     Cp(Vec<Vec<Dleq>>),
     CpMsm(Vec<Vec<Dleq2>>),
-    Rfc(Vec<(F, F)>),
-    Lin(Vec<Lin>),
+    /// proofs, 128-bit composites
+    Rfc(Vec<(F, F)>, bool),
+    /// proofs, verification mode: 0 merged one MSM, 1 per trustee, 2 one MSM unmerged
+    Lin(Vec<Lin>, u8),
     /// combined decryptions, (A, B, z), challenge-binding data
     Joint(Vec<G>, (G, G, F)),
 }
@@ -116,7 +122,7 @@ fn shares_of(s: &Setup, cts: &[Ct]) -> Vec<Vec<G>> {
         .collect()
 }
 
-fn rfc_composites(s: &Setup, i: usize, u: &[G], w: &[G]) -> Vec<F> {
+fn rfc_composites(s: &Setup, i: usize, u: &[G], w: &[G], short: bool) -> Vec<F> {
     let seed = Hasher::new("wod/t009/rfc9497-seed", &s.ctx)
         .pts(&[s.wb[i]])
         .digest();
@@ -128,6 +134,15 @@ fn rfc_composites(s: &Setup, i: usize, u: &[G], w: &[G]) -> Vec<F> {
                 .u64(j as u64)
                 .pts(&[u[j], w[j]])
                 .scalar()
+        })
+        .map(|d| {
+            if short {
+                use ark_ff::{BigInteger, PrimeField};
+                let b = d.into_bigint().to_bytes_le();
+                F::from(u128::from_le_bytes(b[..16].try_into().unwrap()))
+            } else {
+                d
+            }
         })
         .collect()
 }
@@ -239,10 +254,11 @@ pub fn prove<R: RngCore + CryptoRng>(
                 rounds: 1,
             }
         }
-        "rfc9497" => {
+        "rfc9497" | "rfc9497-128" => {
+            let short = method == "rfc9497-128";
             let p = (0..t)
                 .map(|i| {
-                    let d = rfc_composites(s, i, &u, &shares[i]);
+                    let d = rfc_composites(s, i, &u, &shares[i], short);
                     let m = msm_cpu(&u, &d);
                     let z = vmul(&m, &s.sigma[i]);
                     let r = rand_scalar(rng);
@@ -253,13 +269,18 @@ pub fn prove<R: RngCore + CryptoRng>(
                 .collect();
             Published {
                 shares,
-                proofs: Proofs::Rfc(p),
+                proofs: Proofs::Rfc(p, short),
                 bytes_public: t * (k * PT + 2 * SC),
                 bytes_internal: 0,
                 rounds: 1,
             }
         }
-        "lin" => {
+        "lin" | "lin-sep" | "lin-nomerge" => {
+            let mode = match method {
+                "lin" => 0,
+                "lin-sep" => 1,
+                _ => 2,
+            };
             let p = (0..t)
                 .map(|i| {
                     let st = lin_stmt(i, &u, &shares[i]);
@@ -271,7 +292,7 @@ pub fn prove<R: RngCore + CryptoRng>(
                 .collect();
             Published {
                 shares,
-                proofs: Proofs::Lin(p),
+                proofs: Proofs::Lin(p, mode),
                 bytes_public: t * (k * PT + 2 * PT + SC),
                 bytes_internal: 0,
                 rounds: 1,
@@ -375,8 +396,8 @@ pub fn verify(s: &Setup, cts: &[Ct], p: &Published) -> Option<(Vec<G>, Value)> {
             terms += all.pts.len();
             (total + msm_cpu(&all.pts, &all.sc)).is_zero()
         }
-        Proofs::Rfc(pr) => (0..t).all(|i| {
-            let d = rfc_composites(s, i, &u, &p.shares[i]);
+        Proofs::Rfc(pr, short) => (0..t).all(|i| {
+            let d = rfc_composites(s, i, &u, &p.shares[i], *short);
             let m = msm_cpu(&u, &d);
             let z = msm_cpu(&p.shares[i], &d);
             terms += 2 * k;
@@ -385,7 +406,37 @@ pub fn verify(s: &Setup, cts: &[Ct], p: &Published) -> Option<(Vec<G>, Value)> {
             let t3 = vmul(&m, &sr) + vmul(&z, &c);
             rfc_challenge(s, i, &m, &z, &t2, &t3) == c
         }),
-        Proofs::Lin(pr) => {
+        Proofs::Lin(pr, mode) if *mode > 0 => {
+            // attribution variants: per-trustee MSMs, or one unmerged MSM
+            let mut rng = rand::thread_rng();
+            let mut total = G::zero();
+            let mut all = Acc::default();
+            let mut ok = true;
+            for i in 0..t {
+                let st = lin_stmt(i, &u, &p.shares[i]);
+                let Some(r) = pr[i].rels(&s.ctx, 0, i, &s.wb[i], &st) else {
+                    ok = false;
+                    break;
+                };
+                let mut a = Acc::default();
+                a.add(&r, &mut rng);
+                terms += a.pts.len();
+                if *mode == 1 {
+                    ok &= (a.fixed_part(&bases(s, i)) + msm_cpu(&a.pts, &a.sc)).is_zero();
+                } else {
+                    total += a.fixed_part(&bases(s, i));
+                    all.merge(Acc {
+                        fixed: [F::zero(); 4],
+                        ..a
+                    });
+                }
+            }
+            if *mode == 2 {
+                ok &= (total + msm_cpu(&all.pts, &all.sc)).is_zero();
+            }
+            ok
+        }
+        Proofs::Lin(pr, _) => {
             // one MSM over all trustees; u_j merged across trustees
             let mut rng = rand::thread_rng();
             let mut uc = vec![F::zero(); k];
@@ -467,7 +518,7 @@ fn bases(s: &Setup, i: usize) -> Bases<'_> {
 }
 
 /// Controlled sweep: identical setup and ciphertexts for every method.
-pub fn sweep(ks: &[usize], n: usize, t: usize, reps: usize) -> Value {
+pub fn sweep(ks: &[usize], n: usize, t: usize, reps: usize, methods: &[&str]) -> Value {
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(20261124009);
     let s = Setup::deal(n, t, &mut rng);
@@ -478,8 +529,8 @@ pub fn sweep(ks: &[usize], n: usize, t: usize, reps: usize) -> Value {
         let (cts, msgs) = (&all_cts[..k], &all_m[..k]);
         let mut samples = Vec::new();
         for rep in 0..reps {
-            for off in 0..METHODS.len() {
-                let method = METHODS[(off + rep) % METHODS.len()];
+            for off in 0..methods.len() {
+                let method = methods[(off + rep) % methods.len()];
                 let t0 = Instant::now();
                 let p = prove(&s, cts, method, &mut rng);
                 let tp = t0.elapsed().as_secs_f64();
@@ -509,7 +560,8 @@ mod tests {
         let mut rng = thread_rng();
         let s = Setup::deal(5, 3, &mut rng);
         let (cts, msgs) = ciphertexts(&s, 12, &mut rng);
-        for method in METHODS {
+        for method in METHODS.iter().chain(&ATTRIBUTION[1..]) {
+            let method = *method;
             let p = prove(&s, &cts, method, &mut rng);
             let (m, _) = verify(&s, &cts, &p).expect(method);
             assert_eq!(m, msgs, "{method}");
