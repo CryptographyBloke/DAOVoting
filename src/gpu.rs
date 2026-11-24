@@ -812,6 +812,7 @@ pub fn check_msm_vectors(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::batch::MulBackend;
     use ark_ec::twisted_edwards::TECurveConfig;
     use ark_ed_on_bn254::EdwardsConfig;
     use ark_ff::{Field, PrimeField, Zero};
