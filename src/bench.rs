@@ -655,6 +655,48 @@ fn fmt(x: Option<f64>, d: usize) -> String {
     x.map(|x| format!("{x:.d$}")).unwrap_or_else(|| "-".into())
 }
 
+fn prepared_protocol_summary(rows: &Value) -> anyhow::Result<Value> {
+    use anyhow::{Context, ensure};
+    let mut groups = std::collections::BTreeMap::<(u64, String, String), Vec<f64>>::new();
+    for r in rows.as_array().context("expected protocol result array")? {
+        let n = r["n"].as_u64().context("missing electorate size")?;
+        let mode = r["mode"].as_str().context("missing tally mode")?;
+        let backend = r["backend"].as_str().context("missing backend")?;
+        ensure!(r["oracle_agrees"] == true, "oracle did not agree");
+        for label in ["cpu", "selected"] {
+            let v = &r["verification"][label];
+            ensure!(
+                v["accept"] == true
+                    && v["ballots"] == n
+                    && v["decision"].is_boolean()
+                    && v["decision"] == r["tally"]["decision"],
+                "public verification failed: {label}"
+            );
+        }
+        let seconds = match mode {
+            "local" => r["tally"]["seconds_tally"].as_f64(),
+            "dist" => r["tally"]["board"]["seconds_total"].as_f64(),
+            _ => None,
+        }
+        .context("missing tally measurement")?;
+        ensure!(seconds.is_finite() && seconds > 0.0, "invalid tally time");
+        groups
+            .entry((n, mode.into(), backend.into()))
+            .or_default()
+            .push(seconds);
+    }
+    ensure!(!groups.is_empty(), "no verified protocol results");
+    Ok(json!(
+        groups
+            .into_iter()
+            .map(|((n, mode, backend), times)| {
+                json!({"n": n, "mode": mode, "backend": backend, "tally_s": med(times),
+               "cpu_accept": true, "selected_accept": true, "oracle_agrees": true})
+            })
+            .collect::<Vec<_>>()
+    ))
+}
+
 /// Renders `summary.md` (and `summary.json`) for a `reproduce_gpu.ps1` output
 /// directory: sweep, crossover, end-to-end S and R, full-protocol runs, GPU
 /// monitor peaks. Only measured values are reported.
@@ -756,15 +798,38 @@ pub fn gpu_summary(dir: &std::path::Path) -> anyhow::Result<String> {
         js.insert(sub.into(), b);
     }
     // full protocol runs
+    let prepared = dir.join("protocol-results.json");
+    if prepared.exists() {
+        // PowerShell writes UTF-8 with a BOM on Windows PowerShell 5.1.
+        let text = std::fs::read_to_string(&prepared)?;
+        let rows: Value = serde_json::from_str(text.trim_start_matches('\u{feff}'))?;
+        let summary = prepared_protocol_summary(&rows)?;
+        md += "## Paired full protocol\n\nTally excludes proving and independent replay. Distributed time is Board START to completion; process startup is excluded.\n\n| n | mode | backend | runs | tally median s | min s | max s | CPU / selected / oracle |\n|---:|---|---|---:|---:|---:|---:|---|\n";
+        for r in summary.as_array().unwrap() {
+            md += &format!(
+                "| {} | {} | {} | {} | {} | {} | {} | PASS / PASS / PASS |\n",
+                r["n"],
+                r["mode"].as_str().unwrap(),
+                r["backend"].as_str().unwrap(),
+                r["tally_s"]["runs"],
+                fmt(f(&r["tally_s"]["median"]), 3),
+                fmt(f(&r["tally_s"]["min"]), 3),
+                fmt(f(&r["tally_s"]["max"]), 3)
+            );
+        }
+        md += "\n";
+        js.insert("paired_protocol".into(), summary);
+    }
     let mut prot: Vec<_> = std::fs::read_dir(dir)
         .map(|d| {
             d.filter_map(|e| e.ok())
                 .map(|e| e.path())
                 .filter(|p| {
-                    p.file_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .starts_with("protocol-")
+                    p.is_dir()
+                        && p.file_name()
+                            .unwrap()
+                            .to_string_lossy()
+                            .starts_with("protocol-")
                 })
                 .collect()
         })
@@ -863,4 +928,35 @@ pub fn gpu_summary(dir: &std::path::Path) -> anyhow::Result<String> {
     std::fs::write(dir.join("summary.md"), &md)?;
     crate::setup::write_json(&dir.join("summary.json"), &Value::Object(js))?;
     Ok(md)
+}
+
+#[cfg(test)]
+mod gpu_summary_tests {
+    use super::*;
+
+    #[test]
+    fn prepared_results_require_both_verifiers_and_oracle() {
+        let v = json!({"accept": true, "ballots": 8, "decision": false});
+        let local = json!({"n": 8, "mode": "local", "backend": "cpu",
+            "tally": {"decision": false, "seconds_tally": 2.0},
+            "verification": {"cpu": v, "selected": v}, "oracle_agrees": true});
+        let mut dist = local.clone();
+        dist["mode"] = json!("dist");
+        dist["tally"]["board"] = json!({"seconds_total": 3.0});
+        let result = prepared_protocol_summary(&json!([local.clone(), dist])).unwrap();
+        assert_eq!(result.as_array().unwrap().len(), 2);
+        assert_eq!(result[0]["tally_s"]["median"], 3.0);
+        for field in ["cpu", "selected"] {
+            let mut bad = local.clone();
+            bad["verification"][field]["accept"] = json!(false);
+            assert!(prepared_protocol_summary(&json!([bad])).is_err());
+        }
+        let mut bad = local.clone();
+        bad["oracle_agrees"] = json!(false);
+        assert!(prepared_protocol_summary(&json!([bad])).is_err());
+        let mut bad = local;
+        bad["tally"]["decision"] = json!(true);
+        assert!(prepared_protocol_summary(&json!([bad])).is_err());
+        assert!(prepared_protocol_summary(&json!([])).is_err());
+    }
 }

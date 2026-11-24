@@ -29,6 +29,19 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# An explicit Windows PowerShell executable can inherit PowerShell 7's module
+# search path from a Python launcher. Load its own hashing/JSON cmdlets.
+if ($PSVersionTable.PSEdition -eq 'Desktop') {
+    Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Utility') -ErrorAction Stop
+}
+$savedPath = $env:PATH
+$savedThreads = $env:RAYON_NUM_THREADS
+if (-not ('WodGpuPower' -as [type])) {
+    Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class WodGpuPower { [DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint flags); }'
+}
+# Prevent idle sleep for this thread only; restore even if a command fails.
+if ([WodGpuPower]::SetThreadExecutionState([uint32]2147483649) -eq 0) { throw 'cannot inhibit idle sleep' }
+try {
 Set-Location $PSScriptRoot
 $env:RAYON_NUM_THREADS = "$Threads"
 
@@ -44,13 +57,17 @@ function Native([string]$exe, [string[]]$argv, [string]$log) {
 function WriteJson($obj, $path) { $obj | ConvertTo-Json -Depth 12 | Set-Content -Encoding UTF8 $path }
 function RunJson([string]$exe, [string[]]$argv, [string]$path) {
     $prev = $ErrorActionPreference
+    $errorLog = Join-Path $Out ('logs/cli-' + [guid]::NewGuid().ToString('N') + '.stderr.log')
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     try {
         $ErrorActionPreference = "Continue"
-        & $exe @argv 2> "$path.stderr.log" | Set-Content -Encoding UTF8 $path
+        & $exe @argv 2> $errorLog | Set-Content -Encoding UTF8 $path
         $code = $LASTEXITCODE
-    } finally { $ErrorActionPreference = $prev }
+    } finally { $timer.Stop(); $ErrorActionPreference = $prev }
     if ($null -eq $code -or $code -ne 0) { throw "failed ($code): $exe $($argv -join ' ')" }
-    return (Get-Content $path -Raw | ConvertFrom-Json)
+    $result = Get-Content $path -Raw | ConvertFrom-Json
+    $result | Add-Member -NotePropertyName cli_wall_seconds -NotePropertyValue $timer.Elapsed.TotalSeconds
+    return $result
 }
 
 if ($Quick) { $TallyN = "8,64"; $Reps = 3; $ProtocolReps = 2; $Sizes = "1,16,256,4096,65536" }
@@ -67,15 +84,17 @@ $stamp = (Get-Date).ToString("yyyyMMdd-HHmmss")
 $Out = Join-Path $PSScriptRoot "results\local\t005-gpu-$stamp-$rev"
 if (Test-Path $Out) { throw "output directory exists: $Out" }
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $Out 'logs') | Out-Null
 $log = Join-Path $Out "run.log"
 
-$smi = (nvidia-smi --query-gpu=name,memory.total,driver_version,compute_cap,pcie.link.gen.max,pcie.link.width.max,power.limit --format=csv,noheader) | Select-Object -First 1
+$smi = (nvidia-smi '--query-gpu=name,memory.total,driver_version,compute_cap,pcie.link.gen.max,pcie.link.width.max,power.limit' '--format=csv,noheader') | Select-Object -First 1
+if ($LASTEXITCODE -ne 0) { throw 'nvidia-smi discovery failed' }
 Write-Host "GPU: $smi"
 $cuda = $env:CUDA_PATH
 $nvrtc = $null
 if ($cuda -and (Test-Path $cuda)) {
     $nvrtc = Get-ChildItem -Path (Join-Path $cuda "bin") -Recurse -Filter "nvrtc64_*.dll" -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -notlike "*builtins*" } | Select-Object -First 1
+        Where-Object { $_.Name -notlike "*builtins*" -and $_.Name -notlike "*.alt.dll" } | Select-Object -First 1
 }
 if (-not $nvrtc) { throw "NVRTC not found: install the CUDA Toolkit 12.x or 13.x (sets CUDA_PATH); see reports/T005.md section D." }
 # make NVRTC (and its builtins DLL) loadable for this session
@@ -87,6 +106,8 @@ $nvcc = ""
 if (Get-Command nvcc -ErrorAction SilentlyContinue) { $nvcc = ((nvcc --version) -join " ") }
 $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
 $os = Get-CimInstance Win32_OperatingSystem
+$ac = @(Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus -ErrorAction SilentlyContinue | Select-Object -ExpandProperty PowerOnline)
+if ($ac -contains $false) { throw 'Connect AC power before benchmarking' }
 $machine = [ordered]@{
     source_revision = (git rev-parse HEAD).Trim()
     source_dirty = [bool](git status --porcelain --untracked-files=no)
@@ -98,6 +119,8 @@ $machine = [ordered]@{
     memory_gb = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1)
     rustc = (rustc -V); cargo = (cargo -V)
     power_scheme = ((powercfg /getactivescheme) -join " ")
+    ac_power_online = $ac; idle_sleep_inhibited = $true
+    cargo_lock_sha256 = (Get-FileHash Cargo.lock -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 WriteJson $machine (Join-Path $Out "machine.json")
 nvidia-smi -q | Set-Content (Join-Path $Out "nvidia-smi-q.txt")
@@ -120,6 +143,9 @@ Copy-Item "target\release\wod.exe" $wod
     Copy-Item "target\release\wod.exe" $cpuExe
 }
 
+$machine.gpu_binary_sha256 = (Get-FileHash -LiteralPath $wod -Algorithm SHA256).Hash.ToLowerInvariant()
+WriteJson $machine (Join-Path $Out 'machine.json')
+
 # 3. Tests ---------------------------------------------------------------------
 if (-not $SkipTests) {
     Step "3. CPU and emulated-kernel correctness tests"
@@ -140,7 +166,12 @@ Native $wod @("gpu-vectors", "--check", "tests\vectors\bjj_mul_v1.json", "--back
 
 # GPU utilization / memory monitor (background, 200 ms)
 $mon = Join-Path $Out "gpu_monitor.csv"
-$monJob = Start-Job -ScriptBlock { param($f) nvidia-smi --query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,clocks.sm,power.draw,temperature.gpu --format=csv -lms 200 | Out-File -Encoding ascii $f } -ArgumentList $mon
+$query = '--query-gpu=timestamp,utilization.gpu,utilization.memory,memory.used,clocks.sm,power.draw,temperature.gpu'
+# Quote the query as one native argument on Windows PowerShell 5.1, including
+# inside the job, and fail before benchmarking if monitoring is unavailable.
+$probe = @(nvidia-smi $query '--format=csv')
+if ($LASTEXITCODE -ne 0 -or $probe.Count -lt 2) { throw 'GPU telemetry query failed' }
+$monJob = Start-Job -ScriptBlock { param($f, $q) nvidia-smi $q '--format=csv' -lms 200 | Out-File -Encoding ascii $f } -ArgumentList $mon, $query
 $cpuJob = Start-Job -ScriptBlock {
     param($exe, $file)
     while ($true) {
@@ -221,7 +252,8 @@ try {
                         }
                         $manifest = [ordered]@{source_commit=$machine.source_revision;source_dirty=$machine.source_dirty;machine=$machine;
                             n=$n;rep=$rep;mode=$mode;backend=$vb;execution_order=$order;prepared_input_sha256=$inputHashes;
-                            input_origin=(Resolve-Path -LiteralPath $PreparedInputs).Path;tally=$tally;verification=$reports;oracle_agrees=$true;public_sha256=$hashes}
+                            input_origin=(Resolve-Path -LiteralPath $PreparedInputs).Path;completed_utc=[DateTimeOffset]::UtcNow.ToString('o');
+                            tally=$tally;verification=$reports;oracle_agrees=$true;public_sha256=$hashes}
                         WriteJson $manifest (Join-Path $dir 'public/manifest.json')
                         $all += $manifest
                     }
@@ -245,9 +277,14 @@ try {
 
 # 8. Summary -------------------------------------------------------------------------
 Step "8. Summary"
+Native $wod @("gpu-summary", "--dir", $Out) $null
 WriteJson ([ordered]@{status='complete';machine=$machine;cargo_lock_sha256=(Get-FileHash Cargo.lock -Algorithm SHA256).Hash.ToLowerInvariant();
     protocol_only=[bool]$ProtocolOnly;prepared_inputs=$PreparedInputs;min_batch=$MinBatch;threads=$Threads}) (Join-Path $Out 'manifest.json')
-Native $wod @("gpu-summary", "--dir", $Out) $null
 Get-Content (Join-Path $Out "summary.md")
 Write-Host "`nResults: $Out" -ForegroundColor Green
 Write-Host "Do not publish */private folders (test-only trustee shares, votes, oracle W)." -ForegroundColor Yellow
+} finally {
+    [void][WodGpuPower]::SetThreadExecutionState([uint32]2147483648)
+    $env:PATH = $savedPath
+    $env:RAYON_NUM_THREADS = $savedThreads
+}
