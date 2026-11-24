@@ -38,6 +38,11 @@ GPU research (T005; see reports/T005.md):
                           commitment-form proofs, pre-weighted shares; the verifier
                           reads the format from the transcript header)
                           v3 = secure randomized lifts; v4 = validated affine wire points
+                          T009: v5/v6 = v3/v4 with one batched proof per message for the
+                          linear statements (Enc(0) rerandomizers, decryption shares);
+                          v7 = native subgroup points (exact Tate check), per-item proofs;
+                          v8 = v7 with batched linear statements
+  --subgroup q|tate       v1 verifier subgroup test: [q]P (default) or order-8 Tate pairing
   --lift-policy canonical|randomized   v3/v4 honest producer policy (default randomized)
   --v2-verify batch|individual   v2 verification: one MSM per message (default) or per relation
   --v2-coeff random|fs    v2 batch coefficients: verifier randomness (default) or
@@ -109,7 +114,11 @@ fn main() -> Result<()> {
     let backend = take("--verify-backend");
     // T007 global options, exported so board/trustee/verifier subprocesses inherit them
     for (flag, var, ok) in [
-        ("--format", "WOD_FORMAT", &["v1", "v2", "v3", "v4"][..]),
+        (
+            "--format",
+            "WOD_FORMAT",
+            &["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"][..],
+        ),
         (
             "--lift-policy",
             "WOD_LIFT_POLICY",
@@ -117,6 +126,7 @@ fn main() -> Result<()> {
         ),
         ("--v2-verify", "WOD_V2_VERIFY", &["batch", "individual"][..]),
         ("--v2-coeff", "WOD_V2_COEFF", &["random", "fs"][..]),
+        ("--subgroup", "WOD_SUBGROUP", &["q", "tate"][..]),
     ] {
         if let Some(v) = take(flag) {
             ensure!(ok.contains(&v.as_str()), "{flag} must be one of {ok:?}");

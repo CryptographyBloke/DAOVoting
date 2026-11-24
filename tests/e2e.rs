@@ -576,3 +576,68 @@ fn secure_lift_formats_public_only_individual_replay() {
         }
     }
 }
+
+/// T009: batched linear statements (v5/v6), native exact-membership points
+/// (v7/v8): Groth16 ballots, co-located and five-process tallies, the
+/// separate verifier (format from the header), oracle, individual replay of
+/// the public directory only, and rejection of a corrupted transcript.
+#[test]
+fn t009_formats_end_to_end() {
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    for format in ["v5", "v6", "v7", "v8"] {
+        let out = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("t009-{format}-{nonce}"));
+        let o = wod()
+            .args([
+                "--format",
+                format,
+                "experiment",
+                "--n",
+                "8",
+                "--modes",
+                "local,dist",
+            ])
+            .args(["--reps", "1", "--out"])
+            .arg(&out)
+            .output()
+            .unwrap();
+        assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+        for r in json(&out.join("n8/results.json"))["runs"]
+            .as_array()
+            .unwrap()
+        {
+            assert_eq!(r["verification"]["accept"], true);
+            assert_eq!(r["oracle_agrees"], true);
+        }
+        for mode in ["local", "dist-rtt0"] {
+            let original = out.join("n8/rep0").join(mode).join("public");
+            let t = std::fs::read(original.join("transcript.bin")).unwrap();
+            assert_eq!(&t[..6], format!("WODT{}\n", &format[1..]).as_bytes());
+            let replay = out.join(format!("public-only-{mode}"));
+            std::fs::create_dir_all(replay.join("public")).unwrap();
+            for file in ["setup.bin", "ledger.bin", "transcript.bin", "claim.json"] {
+                std::fs::copy(original.join(file), replay.join("public").join(file)).unwrap();
+            }
+            let o = wod()
+                .args(["--v2-verify", "individual", "verify", "--dir"])
+                .arg(&replay)
+                .output()
+                .unwrap();
+            assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+            assert_eq!(json(&replay.join("public/verify.json"))["accept"], true);
+            // a flipped byte deep in the transcript is rejected
+            let mut bad = t.clone();
+            let k = bad.len() - 200;
+            bad[k] ^= 1;
+            std::fs::write(replay.join("public/transcript.bin"), &bad).unwrap();
+            let _ = wod()
+                .args(["verify", "--dir"])
+                .arg(&replay)
+                .output()
+                .unwrap();
+            assert_eq!(json(&replay.join("public/verify.json"))["accept"], false);
+        }
+    }
+}

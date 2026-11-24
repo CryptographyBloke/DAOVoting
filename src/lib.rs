@@ -3,6 +3,7 @@
 //!
 //! Module map (bottom-up):
 //! * [`group`]      BabyJubjub group, exponential ElGamal, fixed-base tables, Fiat–Shamir hashing
+//! * [`subgroup`]   exact prime-order membership by an order-8 Tate pairing (T009 baseline)
 //! * [`shamir`]     Shamir sharing, Lagrange interpolation, threshold decryption
 //! * [`sigma`]      Σ-proofs: PoK-CSZ (masking), ZKP0 (rerandomization), DLEQ (decryption)
 //! * [`circuit`]    adder tree + subtractor + terminal adapter over encrypted bits
@@ -30,6 +31,7 @@ pub mod oracle;
 pub mod setup;
 pub mod shamir;
 pub mod sigma;
+pub mod subgroup;
 pub mod tally;
 pub mod transcript;
 pub mod verify;

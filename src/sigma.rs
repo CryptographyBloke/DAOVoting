@@ -656,6 +656,179 @@ impl Dleq2 {
     }
 }
 
+// ---------------------------------------------------------------------------
+// T009: message-level batching of the linear (subspace) statements.
+// ---------------------------------------------------------------------------
+
+/// The linear statements of one trustee message, in canonical form and in
+/// message order: rerandomizers `R_k ∈ Enc(0) = {([ρ]g, [ρ]h)}` (independent
+/// witnesses `ρ_k`) and pre-weighted shares `w_j = [σ]u_j` against
+/// `W = [σ]g` (one shared witness `σ = λ_i s_i`). Both relations are
+/// memberships in fixed subgroups (images of group homomorphisms), so they
+/// are closed under linear combinations; that is what makes a constant-size
+/// proof possible. CSZ (a union of two such subgroups) is not.
+#[derive(Clone, Debug, Default)]
+pub struct LinStmt {
+    pub enc: Vec<(u64, Ct)>,
+    pub dec: Vec<(u64, G, G)>,
+}
+
+/// T009 batched proof for a [`LinStmt`] (commitment form, so it joins the
+/// message MSM): `t = [T1, T2]` (= `[a]g, [a]h`) if `enc` is non-empty and
+/// `[T3, T4]` (= `[b]g, [b]U*`) if `dec` is non-empty; one response per part.
+/// For `enc` this is the random-linear-combination batch of Enc(0) proofs
+/// with independent witnesses; for `dec` it is the batched DLEQ of
+/// Henry / Davidson et al. (RFC 9497 §2.2), here with 128-bit coefficients
+/// and a seed that binds the complete canonical statement.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Lin {
+    #[serde(with = "arkser_fast")]
+    pub t: Vec<G>,
+    #[serde(with = "arkser")]
+    pub z: Vec<F>,
+}
+
+impl LinStmt {
+    /// Seed binding the format version, session, sender, its weighted key and
+    /// every statement with its slot label, in order.
+    pub fn seed(&self, ctx: &[u8; 32], version: u8, from: usize, wb: &G) -> [u8; 32] {
+        let mut h = Hasher::new("wod/v5/lin-seed", ctx)
+            .u64(version as u64)
+            .u64(from as u64)
+            .pts(&[g(), *wb])
+            .u64(self.enc.len() as u64);
+        for (l, c) in &self.enc {
+            h = h.u64(*l).cts(&[*c]);
+        }
+        h = h.u64(self.dec.len() as u64);
+        for (l, u, w) in &self.dec {
+            h = h.u64(*l).pts(&[*u, *w]);
+        }
+        h.digest()
+    }
+    /// Coefficients `α_k` (enc) and `β_j` (dec), uniform in `[0, 2^128)`.
+    pub fn coeffs(&self, seed: &[u8; 32]) -> (Vec<F>, Vec<F>) {
+        let c = |tag: &[u8], n: usize| -> Vec<F> {
+            (0..n)
+                .map(|i| {
+                    let d = sha256(&[b"wod/v5/lin-coef", seed, tag, &(i as u64).to_be_bytes()]);
+                    F::from(u128::from_le_bytes(d[..16].try_into().unwrap()))
+                })
+                .collect()
+        };
+        (c(b"enc", self.enc.len()), c(b"dec", self.dec.len()))
+    }
+    fn parts(&self) -> usize {
+        (!self.enc.is_empty()) as usize + (!self.dec.is_empty()) as usize
+    }
+}
+
+fn lin_challenge(ctx: &[u8; 32], seed: &[u8; 32], t: &[G]) -> F {
+    Hasher::new("wod/v5/lin-challenge", ctx)
+        .bytes(seed)
+        .pts(t)
+        .scalar()
+}
+
+impl Lin {
+    /// `rho[k]` are the Enc(0) witnesses of `st.enc`, `sigma` the share
+    /// witness. Returns *lifted* commitments (receivers use `[8]T`).
+    #[allow(clippy::too_many_arguments)]
+    pub fn prove<R: RngCore + CryptoRng>(
+        lk: &LiftKey,
+        ctx: &[u8; 32],
+        version: u8,
+        from: usize,
+        wb: &G,
+        st: &LinStmt,
+        rho: &[F],
+        sigma: &F,
+        rng: &mut R,
+    ) -> Lin {
+        assert_eq!(rho.len(), st.enc.len());
+        let seed = st.seed(ctx, version, from, wb);
+        let (al, be) = st.coeffs(&seed);
+        let (mut tl, mut nonces) = (Vec::new(), Vec::new());
+        if !st.enc.is_empty() {
+            let a = rand_scalar(rng);
+            tl.extend([lk.tg.mul(&a), lk.th.mul(&a)]);
+            let kappa: F = al.iter().zip(rho).map(|(a, r)| *a * r).sum();
+            nonces.push((a, kappa));
+        }
+        if !st.dec.is_empty() {
+            let b = rand_scalar(rng);
+            let us: Vec<G> = st.dec.iter().map(|d| d.1).collect();
+            let ustar = crate::batch::msm_cpu(&us, &be);
+            tl.extend([lk.tg.mul(&b), vmul(&ustar, &(b * inv8()))]);
+            nonces.push((b, *sigma));
+        }
+        let t: Vec<G> = tl.iter().map(clear8).collect();
+        let c = lin_challenge(ctx, &seed, &t);
+        Lin {
+            t: tl,
+            z: nonces.iter().map(|(n, w)| *n + c * w).collect(),
+        }
+    }
+
+    /// Relations of a canonical proof; `None` on a malformed proof.
+    pub fn rels(
+        &self,
+        ctx: &[u8; 32],
+        version: u8,
+        from: usize,
+        wb: &G,
+        st: &LinStmt,
+    ) -> Option<Rels> {
+        let parts = st.parts();
+        if self.t.len() != 2 * parts || self.z.len() != parts {
+            return None;
+        }
+        let seed = st.seed(ctx, version, from, wb);
+        let (al, be) = st.coeffs(&seed);
+        let c = lin_challenge(ctx, &seed, &self.t);
+        let m1 = -F::from(1u64);
+        let mut r = Rels::default();
+        let mut part = 0;
+        if !st.enc.is_empty() {
+            let z = self.z[part];
+            let b = r.pts.len();
+            for (_, ct) in &st.enc {
+                r.pts.extend([ct.a, ct.b]);
+            }
+            let nt = r.pts.len();
+            r.pts.extend([self.t[0], self.t[1]]);
+            let mut ra = vec![(nt, m1)];
+            let mut rb = vec![(nt + 1, m1)];
+            for (k, a) in al.iter().enumerate() {
+                ra.push((b + 2 * k, -c * a));
+                rb.push((b + 2 * k + 1, -c * a));
+            }
+            r.rows.push(row(vec![(Base::G, z)], ra));
+            r.rows.push(row(vec![(Base::H, z)], rb));
+            part += 1;
+        }
+        if !st.dec.is_empty() {
+            let z = self.z[part];
+            let (t3, t4) = (self.t[2 * part], self.t[2 * part + 1]);
+            let b = r.pts.len();
+            for (_, u, w) in &st.dec {
+                r.pts.extend([*u, *w]);
+            }
+            let nt = r.pts.len();
+            r.pts.extend([t3, t4]);
+            r.rows
+                .push(row(vec![(Base::G, z), (Base::W, -c)], vec![(nt, m1)]));
+            let mut rd = vec![(nt + 1, m1)];
+            for (j, be) in be.iter().enumerate() {
+                rd.push((b + 2 * j, z * be));
+                rd.push((b + 2 * j + 1, -c * be));
+            }
+            r.rows.push(row(vec![], rd));
+        }
+        Some(r)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -896,5 +1069,131 @@ mod tests {
         let t: G = t2.into();
         assert!((t * F::from(2u64)).is_zero() && !(t * F::from(3u64)).is_zero());
         let _ = &mut rng;
+    }
+
+    #[test]
+    fn t009_lin_batch_complete_sound_and_bound() {
+        let mut rng = thread_rng();
+        let k = Key::new(g() * rand_scalar(&mut rng));
+        let lk = LiftKey::new(k.h);
+        let tht = FixedBase::new(h_tilde());
+        let sigma = rand_scalar(&mut rng);
+        let wb = g() * sigma;
+        let tw = FixedBase::new(wb);
+        let b = Bases {
+            g: &k.tg,
+            h: &k.th,
+            ht: &tht,
+            w: Some(&tw),
+        };
+        let ctx = [7u8; 32];
+        let rho: Vec<F> = (0..5).map(|_| rand_scalar(&mut rng)).collect();
+        let mk = |enc: bool, dec: bool, rng: &mut rand::rngs::ThreadRng| {
+            let mut st = LinStmt::default();
+            if enc {
+                st.enc = rho
+                    .iter()
+                    .enumerate()
+                    .map(|(i, r)| (((i as u64) << 8) | 2, k.enc0(r)))
+                    .collect();
+            }
+            if dec {
+                st.dec = (0..6)
+                    .map(|j| {
+                        let u = g() * rand_scalar(rng);
+                        ((j << 8) | 2, u, u * sigma)
+                    })
+                    .collect();
+            }
+            st
+        };
+        let prove = |st: &LinStmt, rng: &mut rand::rngs::ThreadRng| {
+            let w: &[F] = if st.enc.is_empty() { &[] } else { &rho };
+            let mut p = Lin::prove(&lk, &ctx, 5, 2, &wb, st, w, &sigma, rng);
+            // torsion in the lifted commitments is irrelevant after [8]
+            p.t[0] += crate::group::torsion8()[3];
+            p.t = p.t.iter().map(clear8).collect();
+            p
+        };
+        let ok = |p: &Lin, st: &LinStmt, ctx: &[u8; 32], ver: u8, from: usize, wb: &G| match p
+            .rels(ctx, ver, from, wb, st)
+        {
+            None => false,
+            Some(r) => {
+                let each = r.check_each(&b);
+                assert_eq!(each, batch_ok(std::slice::from_ref(&r), &b));
+                each
+            }
+        };
+        for (enc, dec) in [(true, true), (true, false), (false, true)] {
+            let st = mk(enc, dec, &mut rng);
+            let p = prove(&st, &mut rng);
+            assert!(ok(&p, &st, &ctx, 5, 2, &wb), "complete ({enc},{dec})");
+            // binding: session, version, sender, sender key
+            assert!(!ok(&p, &st, &[8; 32], 5, 2, &wb));
+            assert!(!ok(&p, &st, &ctx, 6, 2, &wb));
+            assert!(!ok(&p, &st, &ctx, 5, 3, &wb));
+            if dec {
+                assert!(!ok(&p, &st, &ctx, 5, 2, &(wb + g())));
+            }
+            // altered commitment / response; missing part
+            let mut q = p.clone();
+            q.t[0] += g();
+            assert!(!ok(&q, &st, &ctx, 5, 2, &wb));
+            let mut q = p.clone();
+            q.z[0] += F::from(1u64);
+            assert!(!ok(&q, &st, &ctx, 5, 2, &wb));
+            let mut q = p.clone();
+            q.t.pop();
+            assert!(q.rels(&ctx, 5, 2, &wb, &st).is_none());
+        }
+        let st = mk(true, true, &mut rng);
+        let p = prove(&st, &mut rng);
+        let delta = g() * rand_scalar(&mut rng);
+        // a single wrong statement of either family
+        let mut s1 = st.clone();
+        s1.enc[3].1.b += g();
+        assert!(!ok(&p, &s1, &ctx, 5, 2, &wb));
+        let mut s1 = st.clone();
+        s1.dec[4].2 += g();
+        assert!(!ok(&p, &s1, &ctx, 5, 2, &wb));
+        // correlated (cancelling) errors: the plain sum is unchanged
+        let mut s1 = st.clone();
+        s1.dec[0].2 += delta;
+        s1.dec[1].2 -= delta;
+        let sum = |s: &LinStmt| s.dec.iter().map(|d| d.2).sum::<G>();
+        assert_eq!(sum(&s1), sum(&st));
+        assert!(!ok(&p, &s1, &ctx, 5, 2, &wb));
+        let mut s1 = st.clone();
+        s1.enc[0].1.b += delta;
+        s1.enc[1].1.b -= delta;
+        assert!(!ok(&p, &s1, &ctx, 5, 2, &wb));
+        // reordering and relabelling (cross-slot substitution)
+        let mut s1 = st.clone();
+        s1.dec.swap(0, 1);
+        assert!(!ok(&p, &s1, &ctx, 5, 2, &wb));
+        let mut s1 = st.clone();
+        s1.enc[2].0 ^= 1 << 8;
+        assert!(!ok(&p, &s1, &ctx, 5, 2, &wb));
+        // a fresh honest proof for the reordered statement is accepted
+        let mut s1 = st.clone();
+        s1.dec.swap(0, 1);
+        assert!(ok(&prove(&s1, &mut rng), &s1, &ctx, 5, 2, &wb));
+        // identity bases: (O, O) is a correct share, (O, g) is not
+        let mut s1 = st.clone();
+        s1.dec[2] = (s1.dec[2].0, G::default(), G::default());
+        assert!(ok(&prove(&s1, &mut rng), &s1, &ctx, 5, 2, &wb));
+        let mut s2 = s1.clone();
+        s2.dec[2].2 = g();
+        assert!(!ok(&prove(&s2, &mut rng), &s2, &ctx, 5, 2, &wb));
+        // every u_j = O: U* = O; only all-identity shares verify
+        let mut s1 = mk(false, true, &mut rng);
+        s1.dec.iter_mut().for_each(|d| {
+            d.1 = G::default();
+            d.2 = G::default();
+        });
+        assert!(ok(&prove(&s1, &mut rng), &s1, &ctx, 5, 2, &wb));
+        s1.dec[5].2 = g();
+        assert!(!ok(&prove(&s1, &mut rng), &s1, &ctx, 5, 2, &wb));
     }
 }
