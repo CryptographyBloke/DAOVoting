@@ -46,6 +46,11 @@ impl CurveWire for G {
         on_curve_ext(self)
     }
 }
+impl CurveWire for Vec<G> {
+    fn valid_curve(&self) -> bool {
+        self.iter().all(on_curve_ext)
+    }
+}
 impl<const N: usize> CurveWire for [G; N] {
     fn valid_curve(&self) -> bool {
         self.iter().all(on_curve_ext)

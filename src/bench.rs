@@ -396,9 +396,47 @@ fn tally_cfg(
     let v = json!({
         "seconds_total": t0.elapsed().as_secs_f64(), "seconds_produce": prod, "seconds_process": proc,
         "messages": log.len(), "items": eng.n_items, "transcript_message_bytes": bytes, "gates": eng.gates_done, "decision": eng.result,
+        "stream": stream_profile(&log, eng.wide_points),
         "output": format!("{:?}", eng.output_ct().map(|c| (c.a.into_affine(), c.b.into_affine()))), "prof": eng.prof,
     });
     (log, v)
+}
+
+/// T009: per-family composition of a transcript: items, serialized item
+/// bytes (exact, from the signed bodies) and transmitted group elements.
+pub fn stream_profile(log: &[crate::tally::Msg], wide: bool) -> Value {
+    use crate::tally::Item;
+    let mut m: std::collections::BTreeMap<&'static str, (u64, u64, u64)> = Default::default();
+    let mut framing = 0u64;
+    for msg in log {
+        let total = bincode::serialize(msg).unwrap().len() as u64;
+        let enc: Vec<Vec<u8>> = bincode::deserialize(&msg.body).unwrap();
+        let mut inner = 0;
+        for b in &enc {
+            let it: Item = message_wire(wide, || bincode::deserialize(b).unwrap());
+            let fam = match &it {
+                Item::Mask { .. } | Item::Mask2 { .. } => "mask+CSZ",
+                Item::Commit { .. } => "commit",
+                Item::Reveal { .. } | Item::Reveal2 { .. } => "reveal+ZKP0",
+                Item::Reveal5 { .. } => "reveal (batched)",
+                Item::Dec { .. } | Item::Dec2 { .. } => "share+DLEQ",
+                Item::Dec5 { .. } => "share (batched)",
+                Item::Lin5 { .. } => "linear batch proof",
+            };
+            let pts = (it.points().len() + it.v2_points().len()) as u64;
+            let e = m.entry(fam).or_default();
+            e.0 += 1;
+            e.1 += b.len() as u64;
+            e.2 += pts;
+            inner += b.len() as u64;
+        }
+        framing += total - inner;
+    }
+    let fams: serde_json::Map<String, Value> = m
+        .into_iter()
+        .map(|(k, (n, b, p))| (k.to_string(), json!({"items": n, "bytes": b, "points": p})))
+        .collect();
+    json!({"families": fams, "framing_and_signature_bytes": framing})
 }
 
 /// Public replay (the independent verifier's backend check) of a transcript.
@@ -1762,8 +1800,21 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                 .map(|i| names[(i + rep) % names.len()].clone())
                 .collect();
             for name in &order {
+                let tate = name.contains("tate");
                 let (version, individual, canonical, spec) = match name.as_str() {
                     "v1-inline" => (1, false, false, "inline"),
+                    "v1-tate" => (1, false, false, "cpu"),
+                    "v1-tate-inline" => (1, false, false, "inline"),
+                    "v5-cpu" => (5, false, false, "cpu"),
+                    "v5-individual" => (5, true, false, "inline"),
+                    "v6-cpu" => (6, false, false, "cpu"),
+                    "v7-cpu" => (7, false, false, "cpu"),
+                    "v7-individual" => (7, true, false, "inline"),
+                    "v8-cpu" => (8, false, false, "cpu"),
+                    "v9-cpu" => (9, false, false, "cpu"),
+                    "v9-gpu" => (9, false, false, "auto:4096:0"),
+                    "v5-gpu-msm" => (5, false, false, "auto-msm:4096:0"),
+                    "v6-gpu-msm" => (6, false, false, "auto-msm:4096:0"),
                     "v1-cpu" => (1, false, false, "cpu"),
                     "v1-gpu" => (1, false, false, "auto:4096:0"),
                     "v1-certified" => (1, false, false, "cert:auto:4096:0"),
@@ -1795,6 +1846,7 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                     }
                     e.v2_individual = individual;
                     e.v2_coeff_fs = false;
+                    e.tate = tate;
                     e.set_batch_backend(backend.clone());
                 };
                 let telemetry = || {
@@ -1889,4 +1941,169 @@ pub fn msm_sweep(sizes: &[usize], reps: usize, specs: &[String]) -> Value {
         rows.push(json!({"terms":n,"unsigned_short_128":short,"negative_short_128":short_negative,"samples":samples}));
     }
     json!({"scope":"Real MSM; mixed positive128/negative128/fullwidth scalars, same bases/scalars per backend, warmup equality check outside measured repetitions.","public_input_seed":20261124008u64,"reps":reps,"initialization":initialization,"rows":rows})
+}
+
+/// T009: per-point validation costs on identical prime-order points:
+/// compressed and affine decoding, `[q]P`, the order-8 Tate test and the
+/// cofactor clearing `[8]Q` (single thread, so per-operation latencies).
+pub fn subgroup_bench(npts: usize, reps: usize) -> Value {
+    use ark_ff::Zero;
+    use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+    use rand::SeedableRng;
+    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(20261124091);
+    let tb = FixedBase::new(g());
+    let pts: Vec<G> = (0..npts).map(|_| tb.mul(&rand_scalar(&mut rng))).collect();
+    let comp: Vec<Vec<u8>> = pts
+        .iter()
+        .map(|p| {
+            let mut v = Vec::new();
+            p.serialize_compressed(&mut v).unwrap();
+            v
+        })
+        .collect();
+    let wide: Vec<Vec<u8>> = pts
+        .iter()
+        .map(|p| {
+            let mut v = Vec::new();
+            p.serialize_uncompressed(&mut v).unwrap();
+            v
+        })
+        .collect();
+    let mut rows = Vec::new();
+    for rep in 0..reps {
+        let mut time = |name: &str, f: &dyn Fn(usize) -> bool| {
+            let t = Instant::now();
+            let ok = (0..npts).all(f);
+            let s = t.elapsed().as_secs_f64();
+            assert!(ok, "{name}");
+            rows.push(json!({"rep":rep,"op":name,"seconds":s,"us_per_point":s*1e6/npts as f64}));
+        };
+        time("decode_compressed", &|i| {
+            G::deserialize_compressed_unchecked(&comp[i][..]).unwrap() == pts[i]
+        });
+        time("decode_affine_with_curve_check", &|i| {
+            let p = G::deserialize_uncompressed_unchecked(&wide[i][..]).unwrap();
+            on_curve_ext(&p) && p == pts[i]
+        });
+        time("subgroup_q_mul", &|i| in_subgroup(&pts[i]));
+        time("subgroup_tate", &|i| {
+            crate::subgroup::in_subgroup_tate(&pts[i])
+        });
+        time("cofactor_clear8", &|i| !clear8(&pts[i]).is_zero());
+    }
+    json!({"scope":"single thread, identical random prime-order points; decode includes equality with the original","points":npts,"reps":reps,"rows":rows})
+}
+
+/// T009 proof-level sweep for the Enc(0) family (rerandomizers): per-item
+/// challenge-response ZKP0 (v1), per-item commitment-form ZKP0 in one RLC
+/// MSM (v3), and one constant-size batched proof (v5 `Lin`).
+pub fn lin_sweep(sizes: &[usize], reps: usize) -> Value {
+    use crate::sigma::{Acc, Bases, Lin, LinStmt, Zkp0, Zkp02};
+    use ark_ff::Zero;
+    use rand::SeedableRng;
+    use rayon::prelude::*;
+    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(20261124092);
+    let key = Key::new(g() * rand_scalar(&mut rng));
+    let lk = LiftKey::new(key.h);
+    let tht = FixedBase::new(h_tilde());
+    let ctx = [9u8; 32];
+    let max = *sizes.iter().max().unwrap();
+    let rho: Vec<F> = (0..max).map(|_| rand_scalar(&mut rng)).collect();
+    let cts: Vec<Ct> = rho.iter().map(|r| key.enc0(r)).collect();
+    let b = Bases {
+        g: &key.tg,
+        h: &key.th,
+        ht: &tht,
+        w: None,
+    };
+    let mut rows = Vec::new();
+    for &k in sizes {
+        let (c, r) = (&cts[..k], &rho[..k]);
+        let mut samples = Vec::new();
+        for rep in 0..reps {
+            // v1: one AND-proof per ciphertext (as in CGY: per item)
+            let t = Instant::now();
+            let p1: Vec<Zkp0> = (0..k)
+                .into_par_iter()
+                .map(|j| {
+                    Zkp0::prove(
+                        &key,
+                        &ctx,
+                        j as u64,
+                        &c[j..j + 1],
+                        &r[j..j + 1],
+                        &mut rand::thread_rng(),
+                    )
+                })
+                .collect();
+            let tp = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            assert!((0..k).into_par_iter().all(|j| p1[j].verify(
+                &key,
+                &ctx,
+                j as u64,
+                &c[j..j + 1]
+            )));
+            let tv = t.elapsed().as_secs_f64();
+            samples.push(json!({"rep":rep,"method":"zkp0-cr","prove_seconds":tp,"verify_seconds":tv,"proof_bytes":k*64}));
+            // v3: commitment form, one RLC MSM
+            let t = Instant::now();
+            let p2: Vec<Zkp02> = (0..k)
+                .into_par_iter()
+                .map(|j| {
+                    let p = Zkp02::prove(
+                        &key,
+                        &lk,
+                        &ctx,
+                        j as u64,
+                        &c[j..j + 1],
+                        &r[j..j + 1],
+                        &mut rand::thread_rng(),
+                    );
+                    Zkp02 {
+                        e: p.e.iter().map(|x| x.clear8()).collect(),
+                        z: p.z,
+                    }
+                })
+                .collect();
+            let tp = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let acc = (0..k)
+                .into_par_iter()
+                .map(|j| {
+                    let mut a = Acc::default();
+                    a.add(
+                        &p2[j].rels(&ctx, j as u64, &c[j..j + 1]).unwrap(),
+                        &mut rand::thread_rng(),
+                    );
+                    a
+                })
+                .reduce(Acc::default, |mut a, x| {
+                    a.merge(x);
+                    a
+                });
+            assert!((acc.fixed_part(&b) + crate::batch::msm_cpu(&acc.pts, &acc.sc)).is_zero());
+            let tv = t.elapsed().as_secs_f64();
+            samples.push(json!({"rep":rep,"method":"zkp0-msm","prove_seconds":tp,"verify_seconds":tv,"proof_bytes":k*96,"msm_terms":acc.pts.len()}));
+            // v5: one batched proof
+            let st = LinStmt {
+                enc: (0..k).map(|j| (j as u64, c[j])).collect(),
+                dec: vec![],
+            };
+            let t = Instant::now();
+            let mut p3 = Lin::prove(&lk, &ctx, 5, 0, &g(), &st, r, &F::from(0u64), &mut rng);
+            p3.t.iter_mut().for_each(|p| *p = clear8(p));
+            let tp = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let rels = p3.rels(&ctx, 5, 0, &g(), &st).unwrap();
+            let mut acc = Acc::default();
+            acc.add(&rels, &mut rng);
+            assert!((acc.fixed_part(&b) + crate::batch::msm_cpu(&acc.pts, &acc.sc)).is_zero());
+            let tv = t.elapsed().as_secs_f64();
+            samples.push(json!({"rep":rep,"method":"lin","prove_seconds":tp,"verify_seconds":tv,"proof_bytes":96,"msm_terms":acc.pts.len()}));
+        }
+        eprintln!("lin-sweep k={k}: PASS");
+        rows.push(json!({"k":k,"samples":samples}));
+    }
+    json!({"scope":"Enc(0) statements (one rerandomizer ciphertext each), statements given in memory (no decoding); prove/verify include hashing; zkp0-cr per-item proof; zkp0-msm per-item commitment form + one RLC MSM; lin one batched proof.","reps":reps,"seed":20261124092u64,"rows":rows})
 }

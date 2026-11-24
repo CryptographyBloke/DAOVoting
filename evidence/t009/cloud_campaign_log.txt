@@ -1,0 +1,130 @@
+wrote results/local/t009-cloud-20261124-142458-d6eb26649ef1/subgroup/subgroup_bench.json
+lin-sweep k=1: PASS
+lin-sweep k=16: PASS
+lin-sweep k=64: PASS
+lin-sweep k=256: PASS
+lin-sweep k=1024: PASS
+lin-sweep k=4096: PASS
+lin-sweep k=16384: PASS
+wrote results/local/t009-cloud-20261124-142458-d6eb26649ef1/lin/lin_sweep.json
+tdec-sweep k=1: all methods PASS
+tdec-sweep k=16: all methods PASS
+tdec-sweep k=64: all methods PASS
+tdec-sweep k=256: all methods PASS
+tdec-sweep k=1024: all methods PASS
+tdec-sweep k=4096: all methods PASS
+tdec-sweep k=16384: all methods PASS
+wrote results/local/t009-cloud-20261124-142458-d6eb26649ef1/tdec/tdec_sweep.json
+secure-bench n=8 rep=0 v1-cpu: tally
+secure-bench n=8 rep=0 v1-tate: tally
+secure-bench n=8 rep=0 v3-cpu: tally
+secure-bench n=8 rep=0 v3-individual: tally
+secure-bench n=8 rep=0 v4-cpu: tally
+secure-bench n=8 rep=0 v5-cpu: tally
+secure-bench n=8 rep=0 v5-individual: tally
+secure-bench n=8 rep=0 v6-cpu: tally
+secure-bench n=8 rep=0 v7-cpu: tally
+secure-bench n=8 rep=0 v8-cpu: tally
+secure-bench n=8 rep=0 v9-cpu: tally
+secure-bench n=8 rep=1 v1-tate: tally
+secure-bench n=8 rep=1 v3-cpu: tally
+secure-bench n=8 rep=1 v3-individual: tally
+secure-bench n=8 rep=1 v4-cpu: tally
+secure-bench n=8 rep=1 v5-cpu: tally
+secure-bench n=8 rep=1 v5-individual: tally
+secure-bench n=8 rep=1 v6-cpu: tally
+secure-bench n=8 rep=1 v7-cpu: tally
+secure-bench n=8 rep=1 v8-cpu: tally
+secure-bench n=8 rep=1 v9-cpu: tally
+secure-bench n=8 rep=1 v1-cpu: tally
+secure-bench n=8 rep=2 v3-cpu: tally
+secure-bench n=8 rep=2 v3-individual: tally
+secure-bench n=8 rep=2 v4-cpu: tally
+secure-bench n=8 rep=2 v5-cpu: tally
+secure-bench n=8 rep=2 v5-individual: tally
+secure-bench n=8 rep=2 v6-cpu: tally
+secure-bench n=8 rep=2 v7-cpu: tally
+secure-bench n=8 rep=2 v8-cpu: tally
+secure-bench n=8 rep=2 v9-cpu: tally
+secure-bench n=8 rep=2 v1-cpu: tally
+secure-bench n=8 rep=2 v1-tate: tally
+secure-bench n=64 rep=0 v1-cpu: tally
+secure-bench n=64 rep=0 v1-tate: tally
+secure-bench n=64 rep=0 v3-cpu: tally
+secure-bench n=64 rep=0 v3-individual: tally
+secure-bench n=64 rep=0 v4-cpu: tally
+secure-bench n=64 rep=0 v5-cpu: tally
+secure-bench n=64 rep=0 v5-individual: tally
+secure-bench n=64 rep=0 v6-cpu: tally
+secure-bench n=64 rep=0 v7-cpu: tally
+secure-bench n=64 rep=0 v8-cpu: tally
+secure-bench n=64 rep=0 v9-cpu: tally
+secure-bench n=64 rep=1 v1-tate: tally
+secure-bench n=64 rep=1 v3-cpu: tally
+secure-bench n=64 rep=1 v3-individual: tally
+secure-bench n=64 rep=1 v4-cpu: tally
+secure-bench n=64 rep=1 v5-cpu: tally
+secure-bench n=64 rep=1 v5-individual: tally
+secure-bench n=64 rep=1 v6-cpu: tally
+secure-bench n=64 rep=1 v7-cpu: tally
+secure-bench n=64 rep=1 v8-cpu: tally
+secure-bench n=64 rep=1 v9-cpu: tally
+secure-bench n=64 rep=1 v1-cpu: tally
+secure-bench n=64 rep=2 v3-cpu: tally
+secure-bench n=64 rep=2 v3-individual: tally
+secure-bench n=64 rep=2 v4-cpu: tally
+secure-bench n=64 rep=2 v5-cpu: tally
+secure-bench n=64 rep=2 v5-individual: tally
+secure-bench n=64 rep=2 v6-cpu: tally
+secure-bench n=64 rep=2 v7-cpu: tally
+secure-bench n=64 rep=2 v8-cpu: tally
+secure-bench n=64 rep=2 v9-cpu: tally
+secure-bench n=64 rep=2 v1-cpu: tally
+secure-bench n=64 rep=2 v1-tate: tally
+secure-bench n=256 rep=0 v1-cpu: tally
+secure-bench n=256 rep=0 v1-tate: tally
+secure-bench n=256 rep=0 v3-cpu: tally
+secure-bench n=256 rep=0 v3-individual: tally
+secure-bench n=256 rep=0 v4-cpu: tally
+secure-bench n=256 rep=0 v5-cpu: tally
+secure-bench n=256 rep=0 v5-individual: tally
+secure-bench n=256 rep=0 v6-cpu: tally
+secure-bench n=256 rep=0 v7-cpu: tally
+secure-bench n=256 rep=0 v8-cpu: tally
+secure-bench n=256 rep=0 v9-cpu: tally
+secure-bench n=256 rep=1 v1-tate: tally
+secure-bench n=256 rep=1 v3-cpu: tally
+secure-bench n=256 rep=1 v3-individual: tally
+secure-bench n=256 rep=1 v4-cpu: tally
+secure-bench n=256 rep=1 v5-cpu: tally
+secure-bench n=256 rep=1 v5-individual: tally
+secure-bench n=256 rep=1 v6-cpu: tally
+secure-bench n=256 rep=1 v7-cpu: tally
+secure-bench n=256 rep=1 v8-cpu: tally
+secure-bench n=256 rep=1 v9-cpu: tally
+secure-bench n=256 rep=1 v1-cpu: tally
+secure-bench n=256 rep=2 v3-cpu: tally
+secure-bench n=256 rep=2 v3-individual: tally
+secure-bench n=256 rep=2 v4-cpu: tally
+secure-bench n=256 rep=2 v5-cpu: tally
+secure-bench n=256 rep=2 v5-individual: tally
+secure-bench n=256 rep=2 v6-cpu: tally
+secure-bench n=256 rep=2 v7-cpu: tally
+secure-bench n=256 rep=2 v8-cpu: tally
+secure-bench n=256 rep=2 v9-cpu: tally
+secure-bench n=256 rep=2 v1-cpu: tally
+secure-bench n=256 rep=2 v1-tate: tally
+wrote results/local/t009-cloud-20261124-142458-d6eb26649ef1/engine-small/secure_bench.json
+secure-bench n=1024 rep=0 v1-cpu: tally
+secure-bench n=1024 rep=0 v1-tate: tally
+secure-bench n=1024 rep=0 v3-cpu: tally
+secure-bench n=1024 rep=0 v3-individual: tally
+secure-bench n=1024 rep=0 v4-cpu: tally
+secure-bench n=1024 rep=0 v5-cpu: tally
+secure-bench n=1024 rep=0 v5-individual: tally
+secure-bench n=1024 rep=0 v6-cpu: tally
+secure-bench n=1024 rep=0 v7-cpu: tally
+secure-bench n=1024 rep=0 v8-cpu: tally
+secure-bench n=1024 rep=0 v9-cpu: tally
+wrote results/local/t009-cloud-20261124-142458-d6eb26649ef1/engine-1024/secure_bench.json
+ALL_DONE

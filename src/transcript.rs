@@ -13,6 +13,15 @@ const MAGIC: &[u8; 6] = b"WODT1\n";
 const MAGIC_V2: &[u8; 6] = b"WODT2\n";
 const MAGIC_V3: &[u8; 6] = b"WODT3\n";
 const MAGIC_V4: &[u8; 6] = b"WODT4\n";
+/// T009 formats: batched linear statements (v5 compressed lifts, v6 affine
+/// lifts), native subgroup points with exact checks (v7 per-item proofs, v8
+/// batched linear statements).
+const MAGIC_V5: &[u8; 6] = b"WODT5\n";
+const MAGIC_V6: &[u8; 6] = b"WODT6\n";
+const MAGIC_V7: &[u8; 6] = b"WODT7\n";
+const MAGIC_V8: &[u8; 6] = b"WODT8\n";
+/// T009 v9: challenge-response PoK-CSZ + batched linear statements, native points.
+const MAGIC_V9: &[u8; 6] = b"WODT9\n";
 
 pub struct Writer {
     w: BufWriter<std::fs::File>,
@@ -40,6 +49,11 @@ impl Writer {
             2 => MAGIC_V2,
             3 => MAGIC_V3,
             4 => MAGIC_V4,
+            5 => MAGIC_V5,
+            6 => MAGIC_V6,
+            7 => MAGIC_V7,
+            8 => MAGIC_V8,
+            9 => MAGIC_V9,
             _ => MAGIC,
         })?;
         w.raw(setup_hash)?;
@@ -88,7 +102,12 @@ impl Reader {
         let mut hdr = [0u8; 70];
         r.read_exact(&mut hdr)?;
         ensure!(
-            [&MAGIC[..], &MAGIC_V2[..], &MAGIC_V3[..], &MAGIC_V4[..]].contains(&&hdr[..6]),
+            [
+                MAGIC, MAGIC_V2, MAGIC_V3, MAGIC_V4, MAGIC_V5, MAGIC_V6, MAGIC_V7, MAGIC_V8,
+                MAGIC_V9,
+            ]
+            .iter()
+            .any(|m| &m[..] == &hdr[..6]),
             "not a transcript file"
         );
         let mut h = Sha256::new();
@@ -100,15 +119,7 @@ impl Reader {
             setup_hash: hdr[6..38].try_into()?,
             board_hash: hdr[38..70].try_into()?,
             v2: &hdr[..6] != MAGIC,
-            version: if &hdr[..6] == MAGIC_V2 {
-                2
-            } else if &hdr[..6] == MAGIC_V3 {
-                3
-            } else if &hdr[..6] == MAGIC_V4 {
-                4
-            } else {
-                1
-            },
+            version: if &hdr[..6] == MAGIC { 1 } else { hdr[4] - b'0' },
             remaining: file_len - 70,
         })
     }

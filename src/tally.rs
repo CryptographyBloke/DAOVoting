@@ -23,7 +23,7 @@ use crate::batch::{Job, MulBackend, eval_all};
 use crate::circuit::{Circuit, Node, ReferenceSchedule, Scheduler};
 use crate::group::*;
 use crate::shamir;
-use crate::sigma::{Acc, Bases, Csz, Csz2, CszStmt, Dleq, Dleq2, Rels, Zkp0, Zkp02};
+use crate::sigma::{Acc, Bases, Csz, Csz2, CszStmt, Dleq, Dleq2, Lin, LinStmt, Rels, Zkp0, Zkp02};
 use anyhow::{Result, bail, ensure};
 use ark_ff::{Field, Zero};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
@@ -85,6 +85,23 @@ pub enum Item {
         w: G,
         proof: Dleq2,
     },
+    // ---- T009 formats v5/v6/v8: the linear statements of a message
+    // (rerandomizers, decryption shares) carry no per-item proof; one
+    // `Lin5` per message proves all of them.
+    Reveal5 {
+        slot: u32,
+        r: Vec<Ct>,
+        salt: [u8; 32],
+    },
+    Dec5 {
+        slot: u32,
+        #[serde(with = "arkser_fast")]
+        w: G,
+    },
+    /// Last item of a message iff it has `Reveal5`/`Dec5` items.
+    Lin5 {
+        proof: Lin,
+    },
 }
 
 impl Item {
@@ -120,6 +137,17 @@ impl Item {
                 randomize_lift(&mut proof.e1, rng);
                 randomize_lift(&mut proof.e2, rng);
             }
+            Item::Reveal5 { r, .. } => {
+                for c in r {
+                    ct(c);
+                }
+            }
+            Item::Dec5 { w, .. } => randomize_lift(w, rng),
+            Item::Lin5 { proof } => {
+                for p in &mut proof.t {
+                    randomize_lift(p, rng);
+                }
+            }
             Item::Commit { .. } => {}
             _ => unreachable!("representation refresh only applies to lifted proofs"),
         }
@@ -134,7 +162,74 @@ impl Item {
             Item::Reveal { r, .. } => cts_ok(r),
             Item::Dec { w, .. } => in_subgroup(w),
             // v2 points are canonicalised by [8] on decode (always in G)
-            Item::Mask2 { .. } | Item::Reveal2 { .. } | Item::Dec2 { .. } => true,
+            Item::Mask2 { .. }
+            | Item::Reveal2 { .. }
+            | Item::Dec2 { .. }
+            | Item::Reveal5 { .. }
+            | Item::Dec5 { .. }
+            | Item::Lin5 { .. } => true,
+        }
+    }
+
+    /// `Some(true)` for the T009 batched-linear items, `Some(false)` for the
+    /// per-item-proof rerandomizer/share items, `None` otherwise.
+    pub fn lin_kind(&self) -> Option<bool> {
+        match self {
+            Item::Reveal5 { .. } | Item::Dec5 { .. } | Item::Lin5 { .. } => Some(true),
+            Item::Reveal { .. } | Item::Reveal2 { .. } | Item::Dec { .. } | Item::Dec2 { .. } => {
+                Some(false)
+            }
+            _ => None,
+        }
+    }
+
+    /// Every group element of a v2-family item (formats 7/8 check them all).
+    pub fn v2_points(&self) -> Vec<G> {
+        let mut v = Vec::new();
+        let mut ct = |c: &Ct| v.extend([c.a, c.b]);
+        match self {
+            Item::Mask2 { x, y, e, proof, .. } => {
+                ct(x);
+                ct(y);
+                proof.c.iter().for_each(&mut ct);
+                v.push(*e);
+                v.extend(proof.ce);
+            }
+            Item::Reveal2 { r, proof, .. } => {
+                r.iter().for_each(&mut ct);
+                proof.e.iter().for_each(&mut ct);
+            }
+            Item::Reveal5 { r, .. } => r.iter().for_each(&mut ct),
+            Item::Dec2 { w, proof, .. } => v.extend([*w, proof.e1, proof.e2]),
+            Item::Dec5 { w, .. } => v.push(*w),
+            Item::Lin5 { proof } => v.extend(proof.t.iter().copied()),
+            _ => {}
+        }
+        v
+    }
+
+    /// Native-point formats (7/8), producer side: replaces the lifted proof
+    /// points by their canonical images `[8]Q`. Statement points of a mask
+    /// are computed canonically by the producer and are left unchanged.
+    fn native_clear(&mut self) {
+        match self {
+            Item::Mask2 { proof, .. } => {
+                proof.c = proof.c.map(|c| c.clear8());
+                proof.ce = proof.ce.map(|p| clear8(&p));
+            }
+            Item::Reveal2 { r, proof, .. } => {
+                r.iter_mut().for_each(|c| *c = c.clear8());
+                proof.e.iter_mut().for_each(|c| *c = c.clear8());
+            }
+            Item::Reveal5 { r, .. } => r.iter_mut().for_each(|c| *c = c.clear8()),
+            Item::Dec2 { w, proof, .. } => {
+                *w = clear8(w);
+                proof.e1 = clear8(&proof.e1);
+                proof.e2 = clear8(&proof.e2);
+            }
+            Item::Dec5 { w, .. } => *w = clear8(w),
+            Item::Lin5 { proof } => proof.t.iter_mut().for_each(|p| *p = clear8(p)),
+            _ => {}
         }
     }
 
@@ -142,7 +237,12 @@ impl Item {
     pub fn is_v2(&self) -> Option<bool> {
         match self {
             Item::Commit { .. } => None,
-            Item::Mask2 { .. } | Item::Reveal2 { .. } | Item::Dec2 { .. } => Some(true),
+            Item::Mask2 { .. }
+            | Item::Reveal2 { .. }
+            | Item::Dec2 { .. }
+            | Item::Reveal5 { .. }
+            | Item::Dec5 { .. }
+            | Item::Lin5 { .. } => Some(true),
             _ => Some(false),
         }
     }
@@ -171,6 +271,18 @@ impl Item {
                 proof.e2 = clear8(&proof.e2);
                 None
             }
+            Item::Reveal5 { r, .. } => {
+                r.iter_mut().for_each(|c| *c = c.clear8());
+                None
+            }
+            Item::Dec5 { w, .. } => {
+                *w = clear8(w);
+                None
+            }
+            Item::Lin5 { proof } => {
+                proof.t.iter_mut().for_each(|p| *p = clear8(p));
+                None
+            }
             _ => None,
         }
     }
@@ -181,6 +293,9 @@ impl Item {
             Item::Reveal { .. } | Item::Reveal2 { .. } => "ZKP0",
             Item::Dec { .. } | Item::Dec2 { .. } => "DLEQ",
             Item::Commit { .. } => "commit",
+            Item::Reveal5 { .. } => "Enc(0) statement (batched)",
+            Item::Dec5 { .. } => "share statement (batched)",
+            Item::Lin5 { .. } => "linear batch proof",
         }
     }
 
@@ -191,7 +306,7 @@ impl Item {
             Item::Commit { .. } => vec![],
             Item::Reveal { r, .. } => r.iter().flat_map(|c| [c.a, c.b]).collect(),
             Item::Dec { w, .. } => vec![*w],
-            Item::Mask2 { .. } | Item::Reveal2 { .. } | Item::Dec2 { .. } => vec![],
+            _ => vec![],
         }
     }
 
@@ -203,7 +318,10 @@ impl Item {
             | Item::Dec { slot, .. }
             | Item::Mask2 { slot, .. }
             | Item::Reveal2 { slot, .. }
-            | Item::Dec2 { slot, .. } => *slot,
+            | Item::Dec2 { slot, .. }
+            | Item::Reveal5 { slot, .. }
+            | Item::Dec5 { slot, .. } => *slot,
+            Item::Lin5 { .. } => u32::MAX,
         }
     }
 }
@@ -225,8 +343,14 @@ fn msg_digest(ctx: &[u8; 32], from: u8, ctr: u64, body: &[u8]) -> [u8; 32] {
 
 fn msg_digest_format(ctx: &[u8; 32], from: u8, ctr: u64, body: &[u8], version: u8) -> [u8; 32] {
     match version {
-        3 => sha256(&[b"wod/msg/v3", ctx, &[from], &ctr.to_be_bytes(), body]),
-        4 => sha256(&[b"wod/msg/v4", ctx, &[from], &ctr.to_be_bytes(), body]),
+        // v3..v9 each sign under their own domain (version separation)
+        3..=9 => sha256(&[
+            format!("wod/msg/v{version}").as_bytes(),
+            ctx,
+            &[from],
+            &ctr.to_be_bytes(),
+            body,
+        ]),
         _ => msg_digest(ctx, from, ctr, body),
     }
 }
@@ -245,7 +369,7 @@ impl Msg {
     ) -> Msg {
         let enc: Vec<Vec<u8>> = items
             .par_iter()
-            .map(|i| message_wire(version == 4, || bincode::serialize(i).unwrap()))
+            .map(|i| message_wire(matches!(version, 4 | 6), || bincode::serialize(i).unwrap()))
             .collect();
         let body = bincode::serialize(&enc).unwrap();
         let sig = sk
@@ -307,6 +431,11 @@ pub fn default_format() -> u8 {
         Ok("v2") => 2,
         Ok("v3") => 3,
         Ok("v4") => 4,
+        Ok("v5") => 5,
+        Ok("v6") => 6,
+        Ok("v7") => 7,
+        Ok("v8") => 8,
+        Ok("v9") => 9,
         _ => 1,
     }
 }
@@ -317,11 +446,16 @@ pub enum LiftPolicy {
     Legacy,
     Canonical,
     Randomized,
+    /// formats 7/8: canonical subgroup points on the wire, checked exactly
+    /// by the receiver ([`crate::subgroup::in_subgroup_tate`]).
+    Native,
 }
 
 fn default_lift_policy() -> LiftPolicy {
     if default_format() < 3 {
         LiftPolicy::Legacy
+    } else if default_format() >= 7 {
+        LiftPolicy::Native
     } else if std::env::var("WOD_LIFT_POLICY").as_deref() == Ok("canonical") {
         LiftPolicy::Canonical
     } else {
@@ -426,8 +560,17 @@ pub struct Engine {
     pub v2: bool,
     /// v3/v4 repair: subgroup reference or independently uniform torsion.
     pub lift_policy: LiftPolicy,
-    /// v4: validated uncompressed affine message points (experimental).
+    /// v4/v6: validated uncompressed affine message points (experimental).
     pub wide_points: bool,
+    /// v5/v6/v8 (T009): one batched proof per message for its linear statements.
+    pub lin: bool,
+    /// v9 (T009): compact challenge-response PoK-CSZ (v1 `Mask` items) on
+    /// native points, verified as independent multiplications, with the
+    /// batched linear statements of v8.
+    pub cr_mask: bool,
+    /// v1 only (verifier option, T009 baseline): exact subgroup checks by the
+    /// order-8 Tate pairing instead of `[q]P`.
+    pub tate: bool,
     /// v2 only: verify every relation separately instead of one MSM per message
     pub v2_individual: bool,
     /// v2 only: derive batch coefficients from the message (reproducible)
@@ -441,6 +584,9 @@ pub struct Prof {
     pub decode: f64,
     /// Subset of decode: cofactor-image canonicalization (not additive to decode).
     pub cofactor_decode: f64,
+    /// Exact Tate-pairing subgroup checks (v1 with `tate`, formats 7/8).
+    #[serde(default)]
+    pub subgroup: f64,
     pub signature: f64,
     /// inline path: subgroup checks + proof verification
     pub verify_inline: f64,
@@ -500,6 +646,16 @@ fn commit_hash2(
     h.digest()
 }
 
+/// Formats 5/6/8: the rerandomizer commitment binds the canonical
+/// rerandomizers and the salt (there is no per-item proof to bind).
+fn commit_hash5(ctx: &[u8; 32], slot: u32, who: usize, r: &[Ct], salt: &[u8; 32]) -> [u8; 32] {
+    Hasher::new("wod/v5/rr-commit", ctx)
+        .u64(Public::label(slot, who))
+        .bytes(salt)
+        .cts(r)
+        .digest()
+}
+
 impl Engine {
     pub fn new(pp: Arc<Public>, circ: Arc<Circuit>, inputs: &[Ct]) -> Result<Self> {
         let n_in = circ.n * circ.l_vote;
@@ -536,7 +692,10 @@ impl Engine {
             prof: Prof::default(),
             v2: default_v2(),
             lift_policy: default_lift_policy(),
-            wide_points: default_format() == 4,
+            wide_points: matches!(default_format(), 4 | 6),
+            lin: matches!(default_format(), 5 | 6 | 8 | 9),
+            cr_mask: default_format() == 9,
+            tate: std::env::var("WOD_SUBGROUP").as_deref() == Ok("tate"),
             v2_individual: std::env::var("WOD_V2_VERIFY")
                 .map(|v| v == "individual")
                 .unwrap_or(false),
@@ -584,14 +743,16 @@ impl Engine {
     }
 
     pub fn format(&self) -> u8 {
-        if !self.v2 {
-            1
-        } else if self.lift_policy == LiftPolicy::Legacy {
-            2
-        } else if self.wide_points {
-            4
-        } else {
-            3
+        match (self.v2, self.lift_policy, self.wide_points, self.lin) {
+            (false, ..) => 1,
+            _ if self.cr_mask => 9,
+            (true, LiftPolicy::Legacy, ..) => 2,
+            (true, LiftPolicy::Native, _, false) => 7,
+            (true, LiftPolicy::Native, _, true) => 8,
+            (true, _, true, false) => 4,
+            (true, _, true, true) => 6,
+            (true, _, false, false) => 3,
+            (true, _, false, true) => 5,
         }
     }
 
@@ -600,12 +761,28 @@ impl Engine {
     /// the same v3 predicate and have identical canonical semantics.
     pub fn select_format(&mut self, version: u8) {
         self.v2 = version >= 2;
-        self.lift_policy = if version >= 3 {
+        self.lift_policy = if version >= 7 {
+            LiftPolicy::Native
+        } else if version >= 3 {
             LiftPolicy::Randomized
         } else {
             LiftPolicy::Legacy
         };
-        self.wide_points = version == 4;
+        self.wide_points = matches!(version, 4 | 6);
+        self.lin = matches!(version, 5 | 6 | 8 | 9);
+        self.cr_mask = version == 9;
+    }
+
+    /// Whether an item belongs to the selected transcript format.
+    fn format_ok(&self, it: &Item) -> bool {
+        match it {
+            Item::Mask { .. } => !self.v2 || self.cr_mask,
+            Item::Mask2 { .. } => self.v2 && !self.cr_mask,
+            _ => {
+                it.is_v2().unwrap_or(self.v2) == self.v2
+                    && it.lin_kind().unwrap_or(self.lin) == self.lin
+            }
+        }
     }
 
     pub fn release_slot(&self) -> u32 {
@@ -722,14 +899,19 @@ impl Engine {
     /// Ordering, state and commitment checks (no proof arithmetic).
     pub fn validate(&self, from: usize, it: &Item) -> Result<()> {
         let pp = &*self.pp;
+        ensure!(
+            it.lin_kind().unwrap_or(self.lin) == self.lin,
+            "item of the wrong transcript format"
+        );
+        if matches!(it, Item::Lin5 { .. }) {
+            // checked against the whole message by verify_v2
+            return Ok(());
+        }
         let sid = it.slot();
         ensure!((sid as usize) < self.slots.len(), "bad slot");
         let s = &self.slots[sid as usize];
         ensure!(!s.done, "slot already closed");
-        ensure!(
-            it.is_v2().unwrap_or(self.v2) == self.v2,
-            "item of the wrong transcript format"
-        );
+        ensure!(self.format_ok(it), "item of the wrong transcript format");
         match it {
             Item::Mask { .. } | Item::Mask2 { .. } => {
                 ensure!(!self.is_release(sid), "mask on release slot");
@@ -774,7 +956,25 @@ impl Engine {
                     "reveal does not match commitment"
                 );
             }
-            Item::Dec { .. } | Item::Dec2 { .. } => {
+            Item::Reveal5 { r, salt, .. } => {
+                ensure!(s.rr[from].is_none(), "duplicate reveal");
+                ensure!(
+                    s.commits.iter().all(|c| c.is_some()),
+                    "reveal before all commitments"
+                );
+                let want = if self.is_release(sid) { 1 } else { 2 };
+                ensure!(
+                    self.is_release(sid) || s.chain.len() == pp.a,
+                    "reveal before masking complete"
+                );
+                ensure!(r.len() == want, "wrong rerandomizer count");
+                ensure!(
+                    commit_hash5(&pp.ctx, sid, from, r, salt) == s.commits[from].unwrap(),
+                    "reveal does not match commitment"
+                );
+            }
+            Item::Lin5 { .. } => unreachable!(),
+            Item::Dec { .. } | Item::Dec2 { .. } | Item::Dec5 { .. } => {
                 ensure!(s.dct.is_some(), "nothing to decrypt");
                 ensure!(s.dec[from].is_none(), "duplicate share");
             }
@@ -795,9 +995,13 @@ impl Engine {
                     e,
                 })
             }
-            Item::Commit { .. } | Item::Mask2 { .. } | Item::Reveal2 { .. } | Item::Dec2 { .. } => {
-                vec![]
-            }
+            Item::Commit { .. }
+            | Item::Mask2 { .. }
+            | Item::Reveal2 { .. }
+            | Item::Dec2 { .. }
+            | Item::Reveal5 { .. }
+            | Item::Dec5 { .. }
+            | Item::Lin5 { .. } => vec![],
             Item::Reveal { r, proof, .. } => proof.jobs(r),
             Item::Dec { w, proof, .. } => {
                 let d = self.slots[it.slot() as usize].dct.as_ref().unwrap();
@@ -827,7 +1031,12 @@ impl Engine {
                 );
             }
             Item::Commit { .. } => {}
-            Item::Mask2 { .. } | Item::Reveal2 { .. } | Item::Dec2 { .. } => {
+            Item::Mask2 { .. }
+            | Item::Reveal2 { .. }
+            | Item::Dec2 { .. }
+            | Item::Reveal5 { .. }
+            | Item::Dec5 { .. }
+            | Item::Lin5 { .. } => {
                 bail!("v2 items are verified by verify_v2")
             }
             Item::Reveal { r: rr, proof, .. } => {
@@ -855,6 +1064,9 @@ impl Engine {
 
     /// Records a verified item and advances the slot.
     pub fn apply(&mut self, from: usize, it: Item) -> Result<()> {
+        if matches!(it, Item::Lin5 { .. }) {
+            return Ok(());
+        }
         let a = self.pp.a;
         let sid = it.slot();
         let rel = self.is_release(sid);
@@ -865,7 +1077,7 @@ impl Engine {
                 s.commits[from] = Some(commit);
             }
             Item::Commit { commit, .. } => s.commits[from] = Some(commit),
-            Item::Reveal { r, .. } | Item::Reveal2 { r, .. } => {
+            Item::Reveal { r, .. } | Item::Reveal2 { r, .. } | Item::Reveal5 { r, .. } => {
                 s.rr[from] = Some(r);
                 s.n_rr += 1;
                 if s.n_rr == a {
@@ -887,7 +1099,8 @@ impl Engine {
                     }
                 }
             }
-            Item::Dec { w, .. } | Item::Dec2 { w, .. } => {
+            Item::Lin5 { .. } => unreachable!(),
+            Item::Dec { w, .. } | Item::Dec2 { w, .. } | Item::Dec5 { w, .. } => {
                 s.dec[from] = Some(w);
                 s.n_dec += 1;
                 if s.n_dec == a {
@@ -1009,20 +1222,29 @@ impl Engine {
             .map(|b| message_wire(self.wide_points, || bincode::deserialize(b)))
             .collect::<Result<_, _>>()?;
         ensure!(
-            items
-                .iter()
-                .all(|it| it.is_v2().unwrap_or(self.v2) == self.v2),
+            items.iter().all(|it| self.format_ok(it)),
             "item of the wrong transcript format"
         );
         let cofactor_start = Instant::now();
-        let lifts: Vec<Option<(Ct, Ct)>> = if self.v2 {
-            items.par_iter_mut().map(|it| it.canonicalize()).collect()
+        let lifts: Vec<Option<(Ct, Ct)>> = if self.lift_policy == LiftPolicy::Native {
+            // formats 7/8: points are sent canonically and checked exactly
+            ensure!(
+                items.par_iter().all(|it| it
+                    .v2_points()
+                    .iter()
+                    .chain(it.points().iter())
+                    .all(crate::subgroup::in_subgroup_tate)),
+                "point outside the prime-order subgroup"
+            );
+            self.prof.subgroup += cofactor_start.elapsed().as_secs_f64();
+            vec![None; items.len()]
+        } else if self.v2 {
+            let l = items.par_iter_mut().map(|it| it.canonicalize()).collect();
+            self.prof.cofactor_decode += cofactor_start.elapsed().as_secs_f64();
+            l
         } else {
             vec![None; items.len()]
         };
-        if self.v2 {
-            self.prof.cofactor_decode += cofactor_start.elapsed().as_secs_f64();
-        }
         self.prof.decode += t.elapsed().as_secs_f64();
         let mut seen = HashSet::new();
         let mut starts = 0;
@@ -1045,8 +1267,14 @@ impl Engine {
             match self.batch.clone() {
                 None => {
                     let t = Instant::now();
+                    let tate = self.tate;
                     items.par_iter().try_for_each(|it| {
-                        ensure!(it.points_valid(), "point outside the prime-order subgroup");
+                        let ok = if tate {
+                            it.points().iter().all(crate::subgroup::in_subgroup_tate)
+                        } else {
+                            it.points_valid()
+                        };
+                        ensure!(ok, "point outside the prime-order subgroup");
                         self.check(from, it)
                     })?;
                     self.prof.verify_inline += t.elapsed().as_secs_f64();
@@ -1086,10 +1314,21 @@ impl Engine {
         items
             .par_iter()
             .try_for_each(|it| self.validate(from, it))?;
+        if self.tate {
+            let ts = Instant::now();
+            ensure!(
+                items
+                    .par_iter()
+                    .all(|it| it.points().iter().all(crate::subgroup::in_subgroup_tate)),
+                "point outside the prime-order subgroup"
+            );
+            self.prof.subgroup += ts.elapsed().as_secs_f64();
+        }
+        let tate = self.tate;
         let per: Vec<(usize, Vec<Job>)> = items
             .par_iter()
             .map(|it| {
-                let pts = it.points();
+                let pts = if tate { vec![] } else { it.points() };
                 let mut v: Vec<Job> = pts.iter().map(|p| Job::subgroup(*p)).collect();
                 v.extend(self.proof_jobs(from, it));
                 (pts.len(), v)
@@ -1155,9 +1394,78 @@ impl Engine {
                 let u = self.slots[sid as usize].dct.unwrap().a;
                 proof.rels(&pp.ctx, label, &pp.v2().wb[from], &u, w)
             }
-            Item::Commit { .. } => Rels::default(),
+            Item::Commit { .. } | Item::Reveal5 { .. } | Item::Dec5 { .. } | Item::Lin5 { .. } => {
+                Rels::default()
+            }
+            // v9: verified by verify_cr_masks
+            Item::Mask { .. } if self.cr_mask => Rels::default(),
             _ => bail!("v1 item in a v2 transcript"),
         })
+    }
+
+    /// v9: the challenge-response PoK-CSZ of a message, as one batch of
+    /// independent variable-base multiplications (GPU-friendly, as in T006).
+    fn verify_cr_masks(&mut self, from: usize, items: &[Item]) -> Result<()> {
+        let t = Instant::now();
+        let masks: Vec<&Item> = items
+            .iter()
+            .filter(|i| matches!(i, Item::Mask { .. }))
+            .collect();
+        if masks.is_empty() {
+            return Ok(());
+        }
+        let per: Vec<Vec<Job>> = masks
+            .par_iter()
+            .map(|it| self.proof_jobs(from, it))
+            .collect();
+        let all: Vec<Job> = per.iter().flatten().cloned().collect();
+        self.prof.batch_build += t.elapsed().as_secs_f64();
+        let t = Instant::now();
+        let res = match &self.batch {
+            Some(b) => b.run(&all)?,
+            None => crate::batch::Cpu.run(&all)?,
+        };
+        ensure!(res.len() == all.len(), "backend result count");
+        self.prof.batch_run += t.elapsed().as_secs_f64();
+        self.prof.jobs += all.len() as u64;
+        let t = Instant::now();
+        let mut offs = vec![0];
+        for v in &per {
+            offs.push(offs.last().unwrap() + v.len());
+        }
+        masks
+            .par_iter()
+            .enumerate()
+            .try_for_each(|(i, it)| self.proof_ok(from, it, &res[offs[i]..offs[i + 1]]))?;
+        self.prof.batch_check += t.elapsed().as_secs_f64();
+        Ok(())
+    }
+
+    /// T009: the canonical linear statement of a (validated) message, in item
+    /// order, and its batch proof, which must be the last item and unique.
+    fn lin_statement<'a>(
+        &self,
+        from: usize,
+        items: &'a [Item],
+    ) -> Result<(LinStmt, Option<&'a Item>)> {
+        let mut st = LinStmt::default();
+        let mut proof = None;
+        for (i, it) in items.iter().enumerate() {
+            let label = Public::label(it.slot(), from);
+            match it {
+                Item::Reveal5 { r, .. } => st.enc.extend(r.iter().map(|c| (label, *c))),
+                Item::Dec5 { w, .. } => {
+                    let u = self.slots[it.slot() as usize].dct.unwrap().a;
+                    st.dec.push((label, u, *w));
+                }
+                Item::Lin5 { .. } => {
+                    ensure!(i + 1 == items.len(), "batch proof is not the last item");
+                    proof = Some(it);
+                }
+                _ => {}
+            }
+        }
+        Ok((st, proof))
     }
 
     /// v2 verification of one message: state checks, then either every
@@ -1170,10 +1478,35 @@ impl Engine {
         items
             .par_iter()
             .try_for_each(|it| self.validate(from, it))?;
-        let rels: Vec<Rels> = items
+        if self.cr_mask {
+            self.prof.batch_build += t.elapsed().as_secs_f64();
+            self.verify_cr_masks(from, items)?;
+        }
+        let t = Instant::now();
+        let mut rels: Vec<Rels> = items
             .par_iter()
             .map(|it| self.rels_v2(from, it))
             .collect::<Result<_>>()?;
+        if self.lin {
+            let (st, last) = self.lin_statement(from, items)?;
+            let pp = &*self.pp;
+            match last {
+                None => ensure!(
+                    st.enc.is_empty() && st.dec.is_empty(),
+                    "linear statements without a batch proof"
+                ),
+                Some(Item::Lin5 { proof }) => {
+                    ensure!(
+                        !(st.enc.is_empty() && st.dec.is_empty()),
+                        "batch proof without linear statements"
+                    );
+                    *rels.last_mut().unwrap() = proof
+                        .rels(&pp.ctx, self.format(), from, &pp.v2().wb[from], &st)
+                        .ok_or_else(|| anyhow::anyhow!("linear batch proof malformed"))?;
+                }
+                Some(_) => unreachable!(),
+            }
+        }
         let pp = self.pp.clone();
         let tw = &pp.v2().tw[from];
         let bases = Bases {
@@ -1269,12 +1602,14 @@ pub struct Trustee {
     /// Independent random tape: never reused for a witness/proof nonce.
     representation_rng: Option<ChaCha20Rng>,
     reveals: HashMap<u32, Item>,
+    /// formats 5/6/8: Enc(0) witnesses of the precomputed reveals
+    reveal_w: HashMap<u32, Vec<F>>,
     sent: HashSet<Act>,
 }
 
 enum Out {
     Item(Item),
-    WithReveal(Item, Item),
+    WithReveal(Item, Item, Vec<F>),
 }
 
 impl Trustee {
@@ -1287,6 +1622,7 @@ impl Trustee {
             rng: ChaCha20Rng::from_entropy(),
             representation_rng: None,
             reveals: HashMap::new(),
+            reveal_w: HashMap::new(),
             sent: HashSet::new(),
         }
     }
@@ -1349,14 +1685,101 @@ impl Trustee {
         )
     }
 
+    /// Formats 5/6/8: lifted `Enc(0)` rerandomizers without a per-item proof;
+    /// the witnesses are kept for the message's batch proof.
+    fn rerand5<R: RngCore + CryptoRng>(
+        &self,
+        eng: &Engine,
+        sid: u32,
+        k: usize,
+        rng: &mut R,
+    ) -> (Item, [u8; 32], Vec<F>) {
+        let pp = &*eng.pp;
+        let v2 = pp.v2();
+        let rs: Vec<F> = (0..k).map(|_| rand_scalar(rng)).collect();
+        let rl: Vec<Ct> = rs.iter().map(|x| v2.lk.enc0(x)).collect();
+        let r: Vec<Ct> = rl.iter().map(|c| c.clear8()).collect();
+        let salt: [u8; 32] = rng.r#gen();
+        let commit = commit_hash5(&pp.ctx, sid, self.id, &r, &salt);
+        (
+            Item::Reveal5 {
+                slot: sid,
+                r: rl,
+                salt,
+            },
+            commit,
+            rs,
+        )
+    }
+
+    fn rerand_any<R: RngCore + CryptoRng>(
+        &self,
+        eng: &Engine,
+        sid: u32,
+        k: usize,
+        rng: &mut R,
+    ) -> (Item, [u8; 32], Vec<F>) {
+        if eng.lin {
+            self.rerand5(eng, sid, k, rng)
+        } else {
+            let (i, c) = self.rerand2(eng, sid, k, rng);
+            (i, c, vec![])
+        }
+    }
+
     fn act2(&self, eng: &Engine, act: Act, rng: &mut ChaCha20Rng) -> Out {
         let pp = &*eng.pp;
         let v2 = pp.v2();
         let me = self.id;
+        if let (Act::Mask(sid), true) = (act, eng.cr_mask) {
+            // v9: v1 challenge-response PoK-CSZ on canonical points
+            let s = &eng.slots[sid as usize];
+            let (x0, y0) = if me == 0 {
+                (s.x.unwrap(), s.y0.unwrap())
+            } else {
+                s.chain[me - 1]
+            };
+            let sign: i64 = if rng.r#gen::<bool>() { 1 } else { -1 };
+            let (r1, r2) = (rand_scalar(rng), rand_scalar(rng));
+            let x1 = pp.key.reenc(&x0.small(sign), &r1);
+            let y1 = pp.key.reenc(&y0.small(sign), &r2);
+            let e = pp.tht.mul(&r1);
+            let st = CszStmt {
+                x0: &x0,
+                y0: &y0,
+                x1: &x1,
+                y1: &y1,
+                e: &e,
+            };
+            let label = Public::label(sid, me);
+            let proof = Csz::prove(&pp.key, &pp.tht, &pp.ctx, label, &st, sign, &r1, &r2, rng);
+            let (rev, commit, w) = self.rerand_any(eng, sid, 2, rng);
+            return Out::WithReveal(
+                Item::Mask {
+                    slot: sid,
+                    x: x1,
+                    y: y1,
+                    e,
+                    proof,
+                    commit,
+                },
+                rev,
+                w,
+            );
+        }
         match act {
             Act::Mask(sid) => {
                 let s = &eng.slots[sid as usize];
-                let ((x0, y0), (lx0, ly0)) = if me == 0 {
+                let native = eng.lift_policy == LiftPolicy::Native;
+                let ((x0, y0), (lx0, ly0)) = if native {
+                    // formats 7/8: canonical arithmetic; no lift of the input needed
+                    let p = if me == 0 {
+                        (s.x.unwrap(), s.y0.unwrap())
+                    } else {
+                        s.chain[me - 1]
+                    };
+                    (p, p)
+                } else if me == 0 {
                     let (x, y) = (s.x.unwrap(), s.y0.unwrap());
                     ((x, y), (x.lift_of(), y.lift_of()))
                 } else if eng.lift_policy == LiftPolicy::Canonical {
@@ -1367,10 +1790,17 @@ impl Trustee {
                 };
                 let sign: i64 = if rng.r#gen::<bool>() { 1 } else { -1 };
                 let (r1, r2) = (rand_scalar(rng), rand_scalar(rng));
-                let lx1 = lx0.small(sign).add(&v2.lk.enc0(&r1));
-                let ly1 = ly0.small(sign).add(&v2.lk.enc0(&r2));
-                let le = v2.tht8.mul(&r1);
-                let (x1, y1, e) = (lx1.clear8(), ly1.clear8(), clear8(&le));
+                let (lx1, ly1, le, x1, y1, e) = if native {
+                    let x1 = x0.small(sign).add(&pp.key.enc0(&r1));
+                    let y1 = y0.small(sign).add(&pp.key.enc0(&r2));
+                    let e = pp.tht.mul(&r1);
+                    (x1, y1, e, x1, y1, e)
+                } else {
+                    let lx1 = lx0.small(sign).add(&v2.lk.enc0(&r1));
+                    let ly1 = ly0.small(sign).add(&v2.lk.enc0(&r2));
+                    let le = v2.tht8.mul(&r1);
+                    (lx1, ly1, le, lx1.clear8(), ly1.clear8(), clear8(&le))
+                };
                 let st = CszStmt {
                     x0: &x0,
                     y0: &y0,
@@ -1382,7 +1812,7 @@ impl Trustee {
                 let proof = Csz2::prove(
                     &pp.key, &v2.lk, &v2.tht8, &pp.ctx, label, &st, sign, &r1, &r2, rng,
                 );
-                let (rev, commit) = self.rerand2(eng, sid, 2, rng);
+                let (rev, commit, w) = self.rerand_any(eng, sid, 2, rng);
                 Out::WithReveal(
                     Item::Mask2 {
                         slot: sid,
@@ -1393,13 +1823,22 @@ impl Trustee {
                         commit,
                     },
                     rev,
+                    w,
                 )
             }
             Act::Commit(sid) => {
-                let (rev, commit) = self.rerand2(eng, sid, 1, rng);
-                Out::WithReveal(Item::Commit { slot: sid, commit }, rev)
+                let (rev, commit, w) = self.rerand_any(eng, sid, 1, rng);
+                Out::WithReveal(Item::Commit { slot: sid, commit }, rev, w)
             }
             Act::Reveal(_) => unreachable!("reveals are precomputed"),
+            Act::Dec(sid) if eng.lin => {
+                let u = eng.slots[sid as usize].dct.unwrap().a;
+                let sw = pp.lam[me] * self.share;
+                Out::Item(Item::Dec5 {
+                    slot: sid,
+                    w: vmul(&u, &(sw * inv8())),
+                })
+            }
             Act::Dec(sid) => {
                 let u = eng.slots[sid as usize].dct.unwrap().a;
                 let sw = pp.lam[me] * self.share;
@@ -1470,11 +1909,12 @@ impl Trustee {
                         commit,
                     },
                     rev,
+                    vec![],
                 )
             }
             Act::Commit(sid) => {
                 let (rev, commit) = self.rerand(eng, sid, 1, rng);
-                Out::WithReveal(Item::Commit { slot: sid, commit }, rev)
+                Out::WithReveal(Item::Commit { slot: sid, commit }, rev, vec![])
             }
             Act::Reveal(_) => unreachable!("reveals are precomputed"),
             Act::Dec(sid) => {
@@ -1547,9 +1987,17 @@ impl Trustee {
                     let mut rr = ChaCha20Rng::from_seed(seed);
                     match &mut out {
                         Out::Item(i) => i.randomize_lifts(&mut rr),
-                        Out::WithReveal(i, rev) => {
+                        Out::WithReveal(i, rev, _) => {
                             i.randomize_lifts(&mut rr);
                             rev.randomize_lifts(&mut rr);
+                        }
+                    }
+                } else if eng.lift_policy == LiftPolicy::Native {
+                    match &mut out {
+                        Out::Item(i) => i.native_clear(),
+                        Out::WithReveal(i, rev, _) => {
+                            i.native_clear();
+                            rev.native_clear();
                         }
                     }
                 }
@@ -1559,10 +2007,18 @@ impl Trustee {
         for o in outs {
             match o {
                 Out::Item(i) => items.push(i),
-                Out::WithReveal(i, rev) => {
+                Out::WithReveal(i, rev, w) => {
+                    if !w.is_empty() {
+                        self.reveal_w.insert(i.slot(), w);
+                    }
                     self.reveals.insert(i.slot(), rev);
                     items.push(i);
                 }
+            }
+        }
+        if eng.lin {
+            if let Some(lin) = self.lin_proof(eng, &items) {
+                items.push(lin);
             }
         }
         let m = Msg::sign_format(
@@ -1575,6 +2031,76 @@ impl Trustee {
         );
         self.ctr += 1;
         Some(m)
+    }
+}
+
+impl Trustee {
+    /// T009: the batch proof for the message's linear statements (formats
+    /// 5/6/8); `None` if the message has none.
+    fn lin_proof(&mut self, eng: &Engine, items: &[Item]) -> Option<Item> {
+        let pp = &*eng.pp;
+        let v2 = pp.v2();
+        let me = self.id;
+        let native = eng.lift_policy == LiftPolicy::Native;
+        let canon = |p: &G| if native { *p } else { clear8(p) };
+        let mut st = LinStmt::default();
+        let mut rho = Vec::new();
+        for it in items {
+            let label = Public::label(it.slot(), me);
+            match it {
+                Item::Reveal5 { slot, r, .. } => {
+                    st.enc.extend(r.iter().map(|c| {
+                        (
+                            label,
+                            Ct {
+                                a: canon(&c.a),
+                                b: canon(&c.b),
+                            },
+                        )
+                    }));
+                    rho.extend(self.reveal_w.remove(slot).expect("reveal witness"));
+                }
+                Item::Dec5 { slot, w } => {
+                    let u = eng.slots[*slot as usize].dct.unwrap().a;
+                    st.dec.push((label, u, canon(w)));
+                }
+                _ => {}
+            }
+        }
+        if st.enc.is_empty() && st.dec.is_empty() {
+            return None;
+        }
+        let sigma = pp.lam[me] * self.share;
+        let proof = Lin::prove(
+            &v2.lk,
+            &pp.ctx,
+            eng.format(),
+            me,
+            &v2.wb[me],
+            &st,
+            &rho,
+            &sigma,
+            &mut self.rng,
+        );
+        let mut it = Item::Lin5 { proof };
+        match eng.lift_policy {
+            LiftPolicy::Randomized => {
+                let seed = sha256(&[
+                    b"wod/v5/representation-torsion",
+                    &pp.ctx,
+                    &(me as u64).to_be_bytes(),
+                    &self.ctr.to_be_bytes(),
+                    &self
+                        .representation_rng
+                        .get_or_insert_with(ChaCha20Rng::from_entropy)
+                        .r#gen::<[u8; 32]>(),
+                ]);
+                it.randomize_lifts(&mut ChaCha20Rng::from_seed(seed));
+            }
+            LiftPolicy::Native => it.native_clear(),
+            _ => {}
+        }
+        Some(it)
     }
 }
 
@@ -2046,7 +2572,7 @@ mod tests {
                     let mut r = ChaCha20Rng::seed_from_u64(seed);
                     let sign = if r.clone().r#gen::<bool>() { 1 } else { -1 };
                     let out = ts[1].act2(&eng, Act::Mask(0), &mut r);
-                    let Out::WithReveal(Item::Mask2 { x, .. }, _) = out else {
+                    let Out::WithReveal(Item::Mask2 { x, .. }, _, _) = out else {
                         panic!("mask required");
                     };
                     let observed = x.a.mul_bigint(F::MODULUS);
@@ -2142,5 +2668,314 @@ mod tests {
                 .to_string()
                 .contains("PoK-CSZ")
         );
+    }
+
+    // ---------------- T009 formats v5..v8 ----------------
+
+    fn fmt_engine(
+        pp: &Arc<Public>,
+        circ: &Arc<Circuit>,
+        inputs: &[Ct],
+        version: u8,
+        individual: bool,
+    ) -> Engine {
+        let mut e = Engine::new(pp.clone(), circ.clone(), inputs).unwrap();
+        e.select_format(version);
+        e.v2_individual = individual;
+        e
+    }
+
+    fn items_fmt(m: &Msg, version: u8) -> Vec<Item> {
+        let enc: Vec<Vec<u8>> = bincode::deserialize(&m.body).unwrap();
+        enc.iter()
+            .map(|b| {
+                message_wire(matches!(version, 4 | 6), || {
+                    bincode::deserialize(b).unwrap()
+                })
+            })
+            .collect()
+    }
+
+    #[test]
+    fn t009_formats_single_gate_and_replays() {
+        let mut rng = thread_rng();
+        for version in [5u8, 6, 7, 8, 9] {
+            for (x, y) in [(0u64, 1u64), (1, 1)] {
+                let (sk, pp, mut ts) = committee(5);
+                let inputs = [
+                    pp.key.enc(&F::from(x), &rand_scalar(&mut rng)),
+                    pp.key.enc(&F::from(y), &rand_scalar(&mut rng)),
+                ];
+                let circ = Arc::new(Circuit::single_gate());
+                let mut eng = fmt_engine(&pp, &circ, &inputs, version, false);
+                assert_eq!(eng.format(), version);
+                let log = run_local(&mut eng, &mut ts, true).unwrap();
+                assert_eq!(
+                    decrypt_small(&sk, &eng.output_ct().unwrap(), 4),
+                    Some((x * y) as i64)
+                );
+                assert_eq!(eng.result, Some(x * y == 1));
+                let all: Vec<Item> = log.iter().flat_map(|m| items_fmt(m, version)).collect();
+                let lin = version != 7;
+                assert!(all.iter().all(|i| i.lin_kind().unwrap_or(lin) == lin));
+                assert_eq!(
+                    all.iter()
+                        .filter(|i| matches!(i, Item::Lin5 { .. }))
+                        .count()
+                        > 0,
+                    lin
+                );
+                for ind in [true, false] {
+                    let mut v = fmt_engine(&pp, &circ, &inputs, version, ind);
+                    for m in &log {
+                        v.process(m, true).unwrap();
+                    }
+                    assert_eq!((v.result, v.output_ct()), (eng.result, eng.output_ct()));
+                }
+                // version confusion: every other format rejects the first message
+                for other in [1u8, 3, 4, 5, 6, 7, 8, 9] {
+                    if other != version {
+                        let mut v = fmt_engine(&pp, &circ, &inputs, other, false);
+                        assert!(
+                            v.process(&log[0], true).is_err(),
+                            "v{other} accepted v{version}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn t009_election_n4_all_formats_agree() {
+        let mut rng = thread_rng();
+        let (w, v, tau) = ([3u64, 5, 200, 17], [1u64, 1, 0, 1], 25);
+        let circ = Arc::new(Circuit::build(4, 8, tau));
+        for version in [5u8, 8, 9] {
+            let (sk, pp, mut ts) = committee(5);
+            let inputs: Vec<Ct> = (0..4)
+                .flat_map(|i| (0..8).map(move |k| (v[i] * w[i] >> k) & 1))
+                .map(|b| pp.key.enc(&F::from(b), &rand_scalar(&mut rng)))
+                .collect();
+            let mut eng = fmt_engine(&pp, &circ, &inputs, version, false);
+            let log = run_local(&mut eng, &mut ts, true).unwrap();
+            assert_eq!(eng.gates_done, circ.n_gates());
+            assert_eq!(eng.result, Some(true));
+            assert_eq!(decrypt_small(&sk, &eng.output_ct().unwrap(), 2), Some(1));
+            let mut ind = fmt_engine(&pp, &circ, &inputs, version, true);
+            for m in &log {
+                ind.process(m, true).unwrap();
+            }
+            assert_eq!(ind.output_ct(), eng.output_ct());
+        }
+    }
+
+    #[test]
+    fn t009_adversarial_batched_messages_rejected() {
+        let mut rng = thread_rng();
+        for version in [5u8, 8, 9] {
+            let (_, pp, mut ts) = committee(5);
+            let inputs = [
+                pp.key.enc(&F::from(1u64), &rand_scalar(&mut rng)),
+                pp.key.enc(&F::from(1u64), &rand_scalar(&mut rng)),
+            ];
+            let circ = Arc::new(Circuit::single_gate());
+            let mut eng = fmt_engine(&pp, &circ, &inputs, version, false);
+            let log = run_local(&mut eng, &mut ts, true).unwrap();
+            let pos = |pred: &dyn Fn(&Item) -> bool| {
+                log.iter()
+                    .position(|m| items_fmt(m, version).iter().any(pred))
+                    .unwrap()
+            };
+            let i_rev = pos(&|i| matches!(i, Item::Reveal5 { .. }));
+            let i_dec = pos(&|i| matches!(i, Item::Dec5 { .. }));
+            // engine state just before message `i`, in both verifier modes
+            let before = |i: usize, ind: bool| {
+                let mut e = fmt_engine(&pp, &circ, &inputs, version, ind);
+                for m in &log[..i] {
+                    e.process(m, true).unwrap();
+                }
+                e
+            };
+            let resend = |i: usize, items: &[Item]| {
+                let m = &log[i];
+                Msg::sign_format(
+                    &ts[m.from as usize].sk,
+                    &pp.ctx,
+                    m.from,
+                    m.ctr,
+                    items,
+                    version,
+                )
+            };
+            let reject = |i: usize, items: &[Item], why: &str| {
+                for ind in [false, true] {
+                    let err = before(i, ind).process(&resend(i, items), true);
+                    assert!(
+                        err.is_err(),
+                        "v{version} accepted: {why} (individual={ind})"
+                    );
+                }
+            };
+            let accept = |i: usize, items: &[Item]| {
+                before(i, false).process(&resend(i, items), true).unwrap();
+            };
+            let t2 = crate::group::torsion8()[4];
+            let lin_last = |its: &mut Vec<Item>| its.pop().unwrap();
+            for &i in &[i_rev, i_dec] {
+                let base = items_fmt(&log[i], version);
+                accept(i, &base);
+                // missing, misplaced and duplicated batch proof
+                let mut it = base.clone();
+                lin_last(&mut it);
+                reject(i, &it, "missing batch proof");
+                let mut it = base.clone();
+                let l = lin_last(&mut it);
+                it.insert(0, l);
+                reject(i, &it, "batch proof not last");
+                let mut it = base.clone();
+                let l = it.last().unwrap().clone();
+                it.push(l);
+                reject(i, &it, "duplicated batch proof");
+                // altered commitment / response
+                let mut it = base.clone();
+                if let Some(Item::Lin5 { proof }) = it.last_mut() {
+                    proof.t[1] += g();
+                }
+                reject(i, &it, "altered commitment");
+                let mut it = base.clone();
+                if let Some(Item::Lin5 { proof }) = it.last_mut() {
+                    proof.z[0] += F::from(1u64);
+                }
+                reject(i, &it, "altered response");
+                // torsion offsets: harmless lifts in v5, non-members in v8
+                let mut it = base.clone();
+                for x in it.iter_mut() {
+                    match x {
+                        Item::Reveal5 { r, .. } => r[0].b += t2,
+                        Item::Dec5 { w, .. } => *w += t2,
+                        Item::Lin5 { proof } => proof.t[0] += t2,
+                        _ => {}
+                    }
+                }
+                if version >= 8 {
+                    reject(i, &it, "torsion component in a native point");
+                } else {
+                    accept(i, &it);
+                }
+            }
+            // a wrong statement under an otherwise honest proof
+            let mut it = items_fmt(&log[i_rev], version);
+            let delta = g() * rand_scalar(&mut rng);
+            if let Item::Reveal5 { r, .. } = &mut it[0] {
+                r[0].b += delta;
+                r[1].b -= delta;
+            }
+            // (the commitment hash catches altered rerandomizers first)
+            reject(i_rev, &it, "altered rerandomizers");
+            let mut it = items_fmt(&log[i_dec], version);
+            if let Item::Dec5 { w, .. } = &mut it[0] {
+                *w += g();
+            }
+            reject(i_dec, &it, "wrong decryption share");
+            // the batch proof of another message
+            let mut it = items_fmt(&log[i_dec], version);
+            let other = items_fmt(&log[i_rev], version).pop().unwrap();
+            *it.last_mut().unwrap() = other;
+            reject(i_dec, &it, "batch proof of another message");
+            // a per-item v3 item inside a batched message
+            let mut it = items_fmt(&log[i_dec], version);
+            it.insert(
+                0,
+                Item::Dec2 {
+                    slot: 0,
+                    w: g(),
+                    proof: crate::sigma::Dleq2 {
+                        e1: g(),
+                        e2: g(),
+                        z: F::from(1u64),
+                    },
+                },
+            );
+            reject(i_dec, &it, "mixed per-item and batched items");
+            // replay of an accepted message
+            let mut e = before(i_dec, false);
+            e.process(&log[i_dec], true).unwrap();
+            assert!(e.process(&log[i_dec], true).is_err());
+        }
+    }
+
+    #[test]
+    fn t009_wrong_share_rejected_with_fresh_proof() {
+        // A malicious trustee proves a *wrong* share honestly-formatted: the
+        // batch proof is computed with the witness, so the statement check
+        // must fail, not the proof format.
+        let mut rng = thread_rng();
+        let (_, pp, mut ts) = committee(5);
+        let inputs = [
+            pp.key.enc(&F::from(1u64), &rand_scalar(&mut rng)),
+            pp.key.enc(&F::from(0u64), &rand_scalar(&mut rng)),
+        ];
+        let circ = Arc::new(Circuit::single_gate());
+        let mut eng = fmt_engine(&pp, &circ, &inputs, 5, false);
+        let log = run_local(&mut eng, &mut ts, true).unwrap();
+        let i_dec = log
+            .iter()
+            .position(|m| {
+                items_fmt(m, 5)
+                    .iter()
+                    .any(|i| matches!(i, Item::Dec5 { .. }))
+            })
+            .unwrap();
+        let mut e = fmt_engine(&pp, &circ, &inputs, 5, false);
+        for m in &log[..i_dec] {
+            e.process(m, true).unwrap();
+        }
+        let from = log[i_dec].from as usize;
+        let mut it = items_fmt(&log[i_dec], 5);
+        it.pop();
+        if let Item::Dec5 { w, .. } = &mut it[0] {
+            *w = -*w; // flips the opened sign if accepted
+        }
+        let lin = ts[from].lin_proof(&e, &it).unwrap();
+        it.push(lin);
+        let m = Msg::sign_format(&ts[from].sk, &pp.ctx, from as u8, log[i_dec].ctr, &it, 5);
+        let err = e.process(&m, true).unwrap_err().to_string();
+        assert!(
+            err.contains("linear batch proof") || err.contains("rejected"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn t009_v9_compact_csz_tamper_rejected() {
+        let mut rng = thread_rng();
+        let (_, pp, mut ts) = committee(5);
+        let inputs = [
+            pp.key.enc(&F::from(1u64), &rand_scalar(&mut rng)),
+            pp.key.enc(&F::from(1u64), &rand_scalar(&mut rng)),
+        ];
+        let circ = Arc::new(Circuit::single_gate());
+        let mut eng = fmt_engine(&pp, &circ, &inputs, 9, false);
+        let log = run_local(&mut eng, &mut ts, true).unwrap();
+        let base = items_fmt(&log[0], 9);
+        assert!(matches!(base[0], Item::Mask { .. }));
+        for k in 0..4 {
+            let mut it = base.clone();
+            if let Item::Mask { x, proof, e, .. } = &mut it[0] {
+                match k {
+                    0 => proof.a[1] += F::from(1u64),
+                    1 => proof.d[0] += F::from(1u64),
+                    2 => x.b += g(),
+                    _ => *e += crate::group::torsion8()[2],
+                }
+            }
+            let m = Msg::sign_format(&ts[0].sk, &pp.ctx, 0, 0, &it, 9);
+            let mut v = fmt_engine(&pp, &circ, &inputs, 9, false);
+            assert!(v.process(&m, true).is_err(), "tamper {k} accepted");
+        }
+        // the untampered message is accepted
+        let mut v = fmt_engine(&pp, &circ, &inputs, 9, false);
+        assert!(v.process(&log[0], true).is_ok());
     }
 }

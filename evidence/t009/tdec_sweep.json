@@ -1,0 +1,1447 @@
+{
+  "machine": {
+    "arch": "x86_64",
+    "cargo_lock_sha256": "f4a9b50efcae2cf903fa0dbed7ae8ff44e6c560a6fcb2134cf7032e13ef2f7bb",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "crates": {
+      "ark-bn254": "0.5.0",
+      "ark-crypto-primitives": "0.5.0",
+      "ark-ed-on-bn254": "0.5.0",
+      "ark-groth16": "0.5.0",
+      "ark-r1cs-std": "0.5.0",
+      "ed25519-dalek": "2.2.0",
+      "rayon": "1.12.0",
+      "sha2": "0.10.9",
+      "sha3": "0.10.9",
+      "tokio": "1.54.1"
+    },
+    "kernel": "Linux version 6.18.44-fc-v819 (builder@sandboxing) (gcc (GCC) 15.3.0, GNU ld (GNU Binutils) 2.46) #1 SMP PREEMPT_DYNAMIC @0",
+    "logical_cores": 4,
+    "memory": "MemTotal:       16473316 kB",
+    "os": "linux",
+    "profile": "release",
+    "rayon_threads": 4,
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)"
+  },
+  "provenance": {
+    "features": {
+      "cuda12": false,
+      "cuda13": false,
+      "cuda_emu": false,
+      "gpu": false
+    },
+    "rayon_threads": 4,
+    "source_commit": "d6eb26649ef1cd4a8879974bb0d5a605269bacb0",
+    "source_dirty": false,
+    "verify_backend_default": "inline"
+  },
+  "tdec": {
+    "n": 5,
+    "reps": 3,
+    "rows": [
+      {
+        "k": 1,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001080324,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.000880168
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "info": {
+              "msm_or_vmul_terms": 12
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001038291,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.00191185
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003879363,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.004293596
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "info": {
+              "msm_or_vmul_terms": 13
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002799887,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.001612016
+          },
+          {
+            "bytes_internal": 480,
+            "bytes_public": 128,
+            "info": {
+              "msm_or_vmul_terms": 5
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003016562,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.000914029
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "info": {
+              "msm_or_vmul_terms": 12
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001322918,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.00177322
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002912117,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.003352897
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "info": {
+              "msm_or_vmul_terms": 13
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002246705,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.001376595
+          },
+          {
+            "bytes_internal": 480,
+            "bytes_public": 128,
+            "info": {
+              "msm_or_vmul_terms": 5
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.004988198,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.000730184
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001532323,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.001318025
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.003278681,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.003246498
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "info": {
+              "msm_or_vmul_terms": 13
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001854795,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.001479936
+          },
+          {
+            "bytes_internal": 480,
+            "bytes_public": 128,
+            "info": {
+              "msm_or_vmul_terms": 5
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.002151781,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.000501421
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 288,
+            "info": {
+              "msm_or_vmul_terms": 6
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001036405,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.000980018
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 384,
+            "info": {
+              "msm_or_vmul_terms": 12
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.001006142,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.001227573
+          }
+        ]
+      },
+      {
+        "k": 16,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4608,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.004031951,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.004383024
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6144,
+            "info": {
+              "msm_or_vmul_terms": 192
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.008421194,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.00438701
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1728,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.010387019,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.008563586
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1824,
+            "info": {
+              "msm_or_vmul_terms": 73
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.005671875,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.00190595
+          },
+          {
+            "bytes_internal": 1920,
+            "bytes_public": 608,
+            "info": {
+              "msm_or_vmul_terms": 35
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.005331749,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.001347904
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6144,
+            "info": {
+              "msm_or_vmul_terms": 192
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.006487381,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.004998449
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1728,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.008597387,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.006783592
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1824,
+            "info": {
+              "msm_or_vmul_terms": 73
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.006553578,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.002273458
+          },
+          {
+            "bytes_internal": 1920,
+            "bytes_public": 608,
+            "info": {
+              "msm_or_vmul_terms": 35
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.006397459,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.001931421
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4608,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.005526122,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.005011226
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1728,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.006608007,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.004281153
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1824,
+            "info": {
+              "msm_or_vmul_terms": 73
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.005324879,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.002572592
+          },
+          {
+            "bytes_internal": 1920,
+            "bytes_public": 608,
+            "info": {
+              "msm_or_vmul_terms": 35
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.006964204,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.001410048
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4608,
+            "info": {
+              "msm_or_vmul_terms": 96
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.008014754,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.005371911
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6144,
+            "info": {
+              "msm_or_vmul_terms": 192
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.013082053,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.004153301
+          }
+        ]
+      },
+      {
+        "k": 64,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 18432,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.019691578,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.017657287
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24576,
+            "info": {
+              "msm_or_vmul_terms": 768
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.022545584,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.012954193
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6336,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.014241591,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.012946238
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6432,
+            "info": {
+              "msm_or_vmul_terms": 265
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.015097161,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.004725454
+          },
+          {
+            "bytes_internal": 6528,
+            "bytes_public": 2144,
+            "info": {
+              "msm_or_vmul_terms": 131
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.015836561,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.002800717
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24576,
+            "info": {
+              "msm_or_vmul_terms": 768
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.027208855,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.01552637
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6336,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.015454023,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.013507081
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6432,
+            "info": {
+              "msm_or_vmul_terms": 265
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.014412553,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.003923691
+          },
+          {
+            "bytes_internal": 6528,
+            "bytes_public": 2144,
+            "info": {
+              "msm_or_vmul_terms": 131
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.014601538,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.002589116
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 18432,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.014966459,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.015051972
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6336,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.012957322,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.011245537
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6432,
+            "info": {
+              "msm_or_vmul_terms": 265
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.011861618,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.004069136
+          },
+          {
+            "bytes_internal": 6528,
+            "bytes_public": 2144,
+            "info": {
+              "msm_or_vmul_terms": 131
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.010916334,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.00217028
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 18432,
+            "info": {
+              "msm_or_vmul_terms": 384
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.01268408,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.013724071
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24576,
+            "info": {
+              "msm_or_vmul_terms": 768
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.020679733,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.007964731
+          }
+        ]
+      },
+      {
+        "k": 256,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 73728,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.045818842,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.046978455
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98304,
+            "info": {
+              "msm_or_vmul_terms": 3072
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.067195957,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.028709871
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24768,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.03743189,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.024459588
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24864,
+            "info": {
+              "msm_or_vmul_terms": 1033
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.037468362,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.011980261
+          },
+          {
+            "bytes_internal": 24960,
+            "bytes_public": 8288,
+            "info": {
+              "msm_or_vmul_terms": 515
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.045602022,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.007480661
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98304,
+            "info": {
+              "msm_or_vmul_terms": 3072
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.10594449,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.028857088
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24768,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.035478717,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.020049495
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24864,
+            "info": {
+              "msm_or_vmul_terms": 1033
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.027089454,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.007014705
+          },
+          {
+            "bytes_internal": 24960,
+            "bytes_public": 8288,
+            "info": {
+              "msm_or_vmul_terms": 515
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.02437317,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.003998745
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 73728,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.04259965,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.046667392
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24768,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.027741,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.017857475
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 24864,
+            "info": {
+              "msm_or_vmul_terms": 1033
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.025863983,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.008305719
+          },
+          {
+            "bytes_internal": 24960,
+            "bytes_public": 8288,
+            "info": {
+              "msm_or_vmul_terms": 515
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.030599071,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.004468411
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 73728,
+            "info": {
+              "msm_or_vmul_terms": 1536
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.047826341,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.051889263
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98304,
+            "info": {
+              "msm_or_vmul_terms": 3072
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.072472866,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.023646667
+          }
+        ]
+      },
+      {
+        "k": 1024,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 294912,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.167643597,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.178459842
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393216,
+            "info": {
+              "msm_or_vmul_terms": 12288
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.270304615,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.085702255
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98496,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.137357877,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.060145644
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98592,
+            "info": {
+              "msm_or_vmul_terms": 4105
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.102362546,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.024831719
+          },
+          {
+            "bytes_internal": 98688,
+            "bytes_public": 32864,
+            "info": {
+              "msm_or_vmul_terms": 2051
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.117526281,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.017847577
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393216,
+            "info": {
+              "msm_or_vmul_terms": 12288
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.361311384,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.099691095
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98496,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.13168813,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.054551822
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98592,
+            "info": {
+              "msm_or_vmul_terms": 4105
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.109048464,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.028637957
+          },
+          {
+            "bytes_internal": 98688,
+            "bytes_public": 32864,
+            "info": {
+              "msm_or_vmul_terms": 2051
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.124998831,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.018133551
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 294912,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.226203316,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.209384275
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98496,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.105929678,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.051343125
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 98592,
+            "info": {
+              "msm_or_vmul_terms": 4105
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.098107563,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.025665844
+          },
+          {
+            "bytes_internal": 98688,
+            "bytes_public": 32864,
+            "info": {
+              "msm_or_vmul_terms": 2051
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.12532396,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.026796674
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 294912,
+            "info": {
+              "msm_or_vmul_terms": 6144
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.262730908,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.256651947
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393216,
+            "info": {
+              "msm_or_vmul_terms": 12288
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.316475507,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.083009974
+          }
+        ]
+      },
+      {
+        "k": 4096,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1179648,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.774724968,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.77645452
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1572864,
+            "info": {
+              "msm_or_vmul_terms": 49152
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.033396402,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.278803243
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393408,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.362947109,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.140745859
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393504,
+            "info": {
+              "msm_or_vmul_terms": 16393
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.3656605,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.063440319
+          },
+          {
+            "bytes_internal": 393600,
+            "bytes_public": 131168,
+            "info": {
+              "msm_or_vmul_terms": 8195
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.303198146,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.038683507
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1572864,
+            "info": {
+              "msm_or_vmul_terms": 49152
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.101544464,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.300150231
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393408,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.378773662,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.138143896
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393504,
+            "info": {
+              "msm_or_vmul_terms": 16393
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.311263202,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.068736351
+          },
+          {
+            "bytes_internal": 393600,
+            "bytes_public": 131168,
+            "info": {
+              "msm_or_vmul_terms": 8195
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.359355686,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.033917026
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1179648,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.732262385,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.743933854
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393408,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.371021067,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.128503085
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 393504,
+            "info": {
+              "msm_or_vmul_terms": 16393
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.299523915,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.080054222
+          },
+          {
+            "bytes_internal": 393600,
+            "bytes_public": 131168,
+            "info": {
+              "msm_or_vmul_terms": 8195
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.322886138,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.055234488
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1179648,
+            "info": {
+              "msm_or_vmul_terms": 24576
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.787980135,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.820641279
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1572864,
+            "info": {
+              "msm_or_vmul_terms": 49152
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 0.987007079,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.260831547
+          }
+        ]
+      },
+      {
+        "k": 16384,
+        "samples": [
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4718592,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 2.905943454,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 3.197731096
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6291456,
+            "info": {
+              "msm_or_vmul_terms": 196608
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 4.472838389,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 1.202993887
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573056,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.671051649,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.648448265
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573152,
+            "info": {
+              "msm_or_vmul_terms": 65545
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.362971275,
+            "rep": 0,
+            "rounds": 1,
+            "verify_seconds": 0.237018577
+          },
+          {
+            "bytes_internal": 1573248,
+            "bytes_public": 524384,
+            "info": {
+              "msm_or_vmul_terms": 32771
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.234463869,
+            "rep": 0,
+            "rounds": 4,
+            "verify_seconds": 0.128415127
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6291456,
+            "info": {
+              "msm_or_vmul_terms": 196608
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 4.06071101,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 1.093652521
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573056,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.480686459,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.513551723
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573152,
+            "info": {
+              "msm_or_vmul_terms": 65545
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.345791253,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 0.24927055
+          },
+          {
+            "bytes_internal": 1573248,
+            "bytes_public": 524384,
+            "info": {
+              "msm_or_vmul_terms": 32771
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.327368903,
+            "rep": 1,
+            "rounds": 4,
+            "verify_seconds": 0.156943599
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4718592,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 3.003464802,
+            "rep": 1,
+            "rounds": 1,
+            "verify_seconds": 3.418642854
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573056,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "rfc9497",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.575308727,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.554064822
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 1573152,
+            "info": {
+              "msm_or_vmul_terms": 65545
+            },
+            "method": "lin",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.4726781930000001,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 0.284922344
+          },
+          {
+            "bytes_internal": 1573248,
+            "bytes_public": 524384,
+            "info": {
+              "msm_or_vmul_terms": 32771
+            },
+            "method": "joint",
+            "plaintexts_ok": true,
+            "prove_seconds": 1.298309634,
+            "rep": 2,
+            "rounds": 4,
+            "verify_seconds": 0.102528165
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 4718592,
+            "info": {
+              "msm_or_vmul_terms": 98304
+            },
+            "method": "cp",
+            "plaintexts_ok": true,
+            "prove_seconds": 2.727663582,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 3.1745085140000002
+          },
+          {
+            "bytes_internal": 0,
+            "bytes_public": 6291456,
+            "info": {
+              "msm_or_vmul_terms": 196608
+            },
+            "method": "cp-msm",
+            "plaintexts_ok": true,
+            "prove_seconds": 3.958718519,
+            "rep": 2,
+            "rounds": 1,
+            "verify_seconds": 1.092419008
+          }
+        ]
+      }
+    ],
+    "scope": "Threshold ElGamal decryption (pre-weighted shares, fixed decryption set). prove = all trustees' shares and proofs (joint: all rounds incl. aggregator blame checks); verify = public verification incl. reconstruction. Same setup and ciphertexts for all methods; method order rotates per repetition.",
+    "seed": 20261124009,
+    "t": 3
+  }
+}

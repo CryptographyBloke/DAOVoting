@@ -1,0 +1,563 @@
+{
+  "lin": {
+    "reps": 3,
+    "rows": [
+      {
+        "k": 1,
+        "samples": [
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 64,
+            "prove_seconds": 0.000362867,
+            "rep": 0,
+            "verify_seconds": 0.000262728
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 4,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000095937,
+            "rep": 0,
+            "verify_seconds": 0.000768764
+          },
+          {
+            "method": "lin",
+            "msm_terms": 4,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000257092,
+            "rep": 0,
+            "verify_seconds": 0.001034642
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 64,
+            "prove_seconds": 0.000116793,
+            "rep": 1,
+            "verify_seconds": 0.000236401
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 4,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000154322,
+            "rep": 1,
+            "verify_seconds": 0.000825522
+          },
+          {
+            "method": "lin",
+            "msm_terms": 4,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000222473,
+            "rep": 1,
+            "verify_seconds": 0.001072271
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 64,
+            "prove_seconds": 0.000288966,
+            "rep": 2,
+            "verify_seconds": 0.000435889
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 4,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000398285,
+            "rep": 2,
+            "verify_seconds": 0.000923796
+          },
+          {
+            "method": "lin",
+            "msm_terms": 4,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000484175,
+            "rep": 2,
+            "verify_seconds": 0.0013545
+          }
+        ]
+      },
+      {
+        "k": 16,
+        "samples": [
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 1024,
+            "prove_seconds": 0.00035127,
+            "rep": 0,
+            "verify_seconds": 0.001232871
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 64,
+            "proof_bytes": 1536,
+            "prove_seconds": 0.000453015,
+            "rep": 0,
+            "verify_seconds": 0.001605855
+          },
+          {
+            "method": "lin",
+            "msm_terms": 34,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000436076,
+            "rep": 0,
+            "verify_seconds": 0.001521523
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 1024,
+            "prove_seconds": 0.000582137,
+            "rep": 1,
+            "verify_seconds": 0.001222376
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 64,
+            "proof_bytes": 1536,
+            "prove_seconds": 0.000381566,
+            "rep": 1,
+            "verify_seconds": 0.00187896
+          },
+          {
+            "method": "lin",
+            "msm_terms": 34,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000535977,
+            "rep": 1,
+            "verify_seconds": 0.001337181
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 1024,
+            "prove_seconds": 0.00039683,
+            "rep": 2,
+            "verify_seconds": 0.001210816
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 64,
+            "proof_bytes": 1536,
+            "prove_seconds": 0.000610775,
+            "rep": 2,
+            "verify_seconds": 0.002006507
+          },
+          {
+            "method": "lin",
+            "msm_terms": 34,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000558551,
+            "rep": 2,
+            "verify_seconds": 0.001409201
+          }
+        ]
+      },
+      {
+        "k": 64,
+        "samples": [
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 4096,
+            "prove_seconds": 0.001251828,
+            "rep": 0,
+            "verify_seconds": 0.004202899
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 256,
+            "proof_bytes": 6144,
+            "prove_seconds": 0.001185494,
+            "rep": 0,
+            "verify_seconds": 0.00364173
+          },
+          {
+            "method": "lin",
+            "msm_terms": 130,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000307303,
+            "rep": 0,
+            "verify_seconds": 0.002178634
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 4096,
+            "prove_seconds": 0.001027121,
+            "rep": 1,
+            "verify_seconds": 0.004058246
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 256,
+            "proof_bytes": 6144,
+            "prove_seconds": 0.001220812,
+            "rep": 1,
+            "verify_seconds": 0.005217075
+          },
+          {
+            "method": "lin",
+            "msm_terms": 130,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000259213,
+            "rep": 1,
+            "verify_seconds": 0.002496774
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 4096,
+            "prove_seconds": 0.001302206,
+            "rep": 2,
+            "verify_seconds": 0.004216131
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 256,
+            "proof_bytes": 6144,
+            "prove_seconds": 0.00110862,
+            "rep": 2,
+            "verify_seconds": 0.002732949
+          },
+          {
+            "method": "lin",
+            "msm_terms": 130,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000251422,
+            "rep": 2,
+            "verify_seconds": 0.001843921
+          }
+        ]
+      },
+      {
+        "k": 256,
+        "samples": [
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 16384,
+            "prove_seconds": 0.00418671,
+            "rep": 0,
+            "verify_seconds": 0.019599128
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 1024,
+            "proof_bytes": 24576,
+            "prove_seconds": 0.006939792,
+            "rep": 0,
+            "verify_seconds": 0.01092251
+          },
+          {
+            "method": "lin",
+            "msm_terms": 514,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000561272,
+            "rep": 0,
+            "verify_seconds": 0.006580891
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 16384,
+            "prove_seconds": 0.005277661,
+            "rep": 1,
+            "verify_seconds": 0.022895423
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 1024,
+            "proof_bytes": 24576,
+            "prove_seconds": 0.006073261,
+            "rep": 1,
+            "verify_seconds": 0.01144758
+          },
+          {
+            "method": "lin",
+            "msm_terms": 514,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000969857,
+            "rep": 1,
+            "verify_seconds": 0.006165866
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 16384,
+            "prove_seconds": 0.005860797,
+            "rep": 2,
+            "verify_seconds": 0.024187193
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 1024,
+            "proof_bytes": 24576,
+            "prove_seconds": 0.00592869,
+            "rep": 2,
+            "verify_seconds": 0.011386347
+          },
+          {
+            "method": "lin",
+            "msm_terms": 514,
+            "proof_bytes": 96,
+            "prove_seconds": 0.000488057,
+            "rep": 2,
+            "verify_seconds": 0.005064314
+          }
+        ]
+      },
+      {
+        "k": 1024,
+        "samples": [
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 65536,
+            "prove_seconds": 0.018028716,
+            "rep": 0,
+            "verify_seconds": 0.070955211
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 4096,
+            "proof_bytes": 98304,
+            "prove_seconds": 0.018262962,
+            "rep": 0,
+            "verify_seconds": 0.028786618
+          },
+          {
+            "method": "lin",
+            "msm_terms": 2050,
+            "proof_bytes": 96,
+            "prove_seconds": 0.001195361,
+            "rep": 0,
+            "verify_seconds": 0.013767484
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 65536,
+            "prove_seconds": 0.017702507,
+            "rep": 1,
+            "verify_seconds": 0.073853608
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 4096,
+            "proof_bytes": 98304,
+            "prove_seconds": 0.019249366,
+            "rep": 1,
+            "verify_seconds": 0.035085174
+          },
+          {
+            "method": "lin",
+            "msm_terms": 2050,
+            "proof_bytes": 96,
+            "prove_seconds": 0.001359727,
+            "rep": 1,
+            "verify_seconds": 0.013640282
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 65536,
+            "prove_seconds": 0.018562158,
+            "rep": 2,
+            "verify_seconds": 0.074299809
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 4096,
+            "proof_bytes": 98304,
+            "prove_seconds": 0.019124048,
+            "rep": 2,
+            "verify_seconds": 0.029777051
+          },
+          {
+            "method": "lin",
+            "msm_terms": 2050,
+            "proof_bytes": 96,
+            "prove_seconds": 0.001203138,
+            "rep": 2,
+            "verify_seconds": 0.013921809
+          }
+        ]
+      },
+      {
+        "k": 4096,
+        "samples": [
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 262144,
+            "prove_seconds": 0.075976057,
+            "rep": 0,
+            "verify_seconds": 0.324080706
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 16384,
+            "proof_bytes": 393216,
+            "prove_seconds": 0.085060084,
+            "rep": 0,
+            "verify_seconds": 0.123600046
+          },
+          {
+            "method": "lin",
+            "msm_terms": 8194,
+            "proof_bytes": 96,
+            "prove_seconds": 0.004955788,
+            "rep": 0,
+            "verify_seconds": 0.044050065
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 262144,
+            "prove_seconds": 0.08108955,
+            "rep": 1,
+            "verify_seconds": 0.334130115
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 16384,
+            "proof_bytes": 393216,
+            "prove_seconds": 0.085951545,
+            "rep": 1,
+            "verify_seconds": 0.104631888
+          },
+          {
+            "method": "lin",
+            "msm_terms": 8194,
+            "proof_bytes": 96,
+            "prove_seconds": 0.003230852,
+            "rep": 1,
+            "verify_seconds": 0.049059375
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 262144,
+            "prove_seconds": 0.079515202,
+            "rep": 2,
+            "verify_seconds": 0.259029598
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 16384,
+            "proof_bytes": 393216,
+            "prove_seconds": 0.071869141,
+            "rep": 2,
+            "verify_seconds": 0.097767013
+          },
+          {
+            "method": "lin",
+            "msm_terms": 8194,
+            "proof_bytes": 96,
+            "prove_seconds": 0.003327348,
+            "rep": 2,
+            "verify_seconds": 0.035657008
+          }
+        ]
+      },
+      {
+        "k": 16384,
+        "samples": [
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 1048576,
+            "prove_seconds": 0.250012422,
+            "rep": 0,
+            "verify_seconds": 1.052179371
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 65536,
+            "proof_bytes": 1572864,
+            "prove_seconds": 0.24497406,
+            "rep": 0,
+            "verify_seconds": 0.393413774
+          },
+          {
+            "method": "lin",
+            "msm_terms": 32770,
+            "proof_bytes": 96,
+            "prove_seconds": 0.01206303,
+            "rep": 0,
+            "verify_seconds": 0.150705329
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 1048576,
+            "prove_seconds": 0.38509396,
+            "rep": 1,
+            "verify_seconds": 1.453188193
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 65536,
+            "proof_bytes": 1572864,
+            "prove_seconds": 0.354074594,
+            "rep": 1,
+            "verify_seconds": 0.384489054
+          },
+          {
+            "method": "lin",
+            "msm_terms": 32770,
+            "proof_bytes": 96,
+            "prove_seconds": 0.01363449,
+            "rep": 1,
+            "verify_seconds": 0.161619481
+          },
+          {
+            "method": "zkp0-cr",
+            "proof_bytes": 1048576,
+            "prove_seconds": 0.312340044,
+            "rep": 2,
+            "verify_seconds": 1.085926091
+          },
+          {
+            "method": "zkp0-msm",
+            "msm_terms": 65536,
+            "proof_bytes": 1572864,
+            "prove_seconds": 0.28002578,
+            "rep": 2,
+            "verify_seconds": 0.380040131
+          },
+          {
+            "method": "lin",
+            "msm_terms": 32770,
+            "proof_bytes": 96,
+            "prove_seconds": 0.012703266,
+            "rep": 2,
+            "verify_seconds": 0.151555408
+          }
+        ]
+      }
+    ],
+    "scope": "Enc(0) statements (one rerandomizer ciphertext each), statements given in memory (no decoding); prove/verify include hashing; zkp0-cr per-item proof; zkp0-msm per-item commitment form + one RLC MSM; lin one batched proof.",
+    "seed": 20261124092
+  },
+  "machine": {
+    "arch": "x86_64",
+    "cargo_lock_sha256": "f4a9b50efcae2cf903fa0dbed7ae8ff44e6c560a6fcb2134cf7032e13ef2f7bb",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "crates": {
+      "ark-bn254": "0.5.0",
+      "ark-crypto-primitives": "0.5.0",
+      "ark-ed-on-bn254": "0.5.0",
+      "ark-groth16": "0.5.0",
+      "ark-r1cs-std": "0.5.0",
+      "ed25519-dalek": "2.2.0",
+      "rayon": "1.12.0",
+      "sha2": "0.10.9",
+      "sha3": "0.10.9",
+      "tokio": "1.54.1"
+    },
+    "kernel": "Linux version 6.18.44-fc-v819 (builder@sandboxing) (gcc (GCC) 15.3.0, GNU ld (GNU Binutils) 2.46) #1 SMP PREEMPT_DYNAMIC @0",
+    "logical_cores": 4,
+    "memory": "MemTotal:       16473316 kB",
+    "os": "linux",
+    "profile": "release",
+    "rayon_threads": 4,
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)"
+  },
+  "provenance": {
+    "features": {
+      "cuda12": false,
+      "cuda13": false,
+      "cuda_emu": false,
+      "gpu": false
+    },
+    "rayon_threads": 4,
+    "source_commit": "d6eb26649ef1cd4a8879974bb0d5a605269bacb0",
+    "source_dirty": false,
+    "verify_backend_default": "inline"
+  }
+}

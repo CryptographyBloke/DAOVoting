@@ -3,9 +3,11 @@
 //!
 //! Module map (bottom-up):
 //! * [`group`]      BabyJubjub group, exponential ElGamal, fixed-base tables, Fiat–Shamir hashing
+//! * [`subgroup`]   exact prime-order membership by an order-8 Tate pairing (T009 baseline)
 //! * [`shamir`]     Shamir sharing, Lagrange interpolation, threshold decryption
 //! * [`sigma`]      Σ-proofs: PoK-CSZ (masking), ZKP0 (rerandomization), DLEQ (decryption)
 //! * [`circuit`]    adder tree + subtractor + terminal adapter over encrypted bits
+//! * [`tdec`]       T009 second protocol: verifiable threshold ElGamal decryption (5 methods)
 //! * [`tally`]      CGY conditional gates, release, trustee logic, message engine
 //! * [`ballot`]     Groth16 ballot relation (Poseidon registry, nullifier, in-circuit ElGamal)
 //! * [`ledger`]     admission contract (simulated chain), sealed-board commitment, claim
@@ -30,6 +32,8 @@ pub mod oracle;
 pub mod setup;
 pub mod shamir;
 pub mod sigma;
+pub mod subgroup;
 pub mod tally;
+pub mod tdec;
 pub mod transcript;
 pub mod verify;
