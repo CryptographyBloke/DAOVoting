@@ -98,7 +98,8 @@ Design, CPU profiling evidence, correctness status and the local GPU handoff
 are in [reports/T005.md](reports/T005.md).
 
 Stage B (`research/gpu-stage-b`) records actual RTX 4050 validation in
-[reports/T006.md](reports/T006.md). Windows CUDA builds reserve a larger compiler
+[reports/T006.md](reports/T006.md), with the [public measurement index](evidence/t006.json).
+Windows CUDA builds reserve a larger compiler
 stack; adaptive dispatch initializes CUDA only when a batch reaches its threshold.
 `gpu-bench` includes the original inline verifier and retains raw samples.
 For paired full-protocol trials, `reproduce_gpu.ps1 -ProtocolOnly -SkipBuild
@@ -107,6 +108,18 @@ pre-claim elections at `DIR/**/nN/rep0/base/`, copies them to fresh outputs, rot
 backend order, and requires public-only CPU replay and oracle agreement.
 It uses three repetitions at n=8/64 and one at n=256/1024 by default.
 `wod tally --mode dist` reuses the existing five-process TCP runner.
+The script records startup-inclusive CLI wall time alongside the existing
+Board START-to-completion timer, inhibits idle sleep during a batch, and restores
+the calling environment on exit. Its summary requires both independent CPU and
+selected-backend replay and oracle agreement.
+
+The measured n=1024 public-only replay medians are 17.839 s (batched CPU) and
+9.592 s (adaptive CUDA/CPU), three repetitions on the same RTX 4050 laptop.
+Small n=8/64 elections remain on the CPU with the measured 4096-job threshold.
+Large full-protocol observations have fewer repetitions, as specified in the report.
+The ignored public-only evidence archive and its SHA-256 are indexed in
+`evidence/t006.json`; it contains all 64 primary transcripts and no trustee secrets.
+The GPU research does not change the frozen publication branch or v0.2.0 release.
 
 GPU jobs contain public values. Correct arithmetic is still an integrity
 assumption: sampling or public inputs alone do not make a malicious GPU safe.
