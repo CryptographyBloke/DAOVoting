@@ -1,0 +1,124 @@
+{
+  "machine": {
+    "arch": "x86_64",
+    "cargo_lock_sha256": "f4a9b50efcae2cf903fa0dbed7ae8ff44e6c560a6fcb2134cf7032e13ef2f7bb",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "crates": {
+      "ark-bn254": "0.5.0",
+      "ark-crypto-primitives": "0.5.0",
+      "ark-ed-on-bn254": "0.5.0",
+      "ark-groth16": "0.5.0",
+      "ark-r1cs-std": "0.5.0",
+      "ed25519-dalek": "2.2.0",
+      "rayon": "1.12.0",
+      "sha2": "0.10.9",
+      "sha3": "0.10.9",
+      "tokio": "1.54.1"
+    },
+    "kernel": "Linux version 6.18.44-fc-v819 (builder@sandboxing) (gcc (GCC) 15.3.0, GNU ld (GNU Binutils) 2.46) #1 SMP PREEMPT_DYNAMIC @0",
+    "logical_cores": 4,
+    "memory": "MemTotal:       16473316 kB",
+    "os": "linux",
+    "profile": "release",
+    "rayon_threads": 4,
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)"
+  },
+  "proof_sweep": {
+    "bytes": {
+      "csz_v1": 208,
+      "csz_v2": 568
+    },
+    "reps": 5,
+    "rows": [
+      {
+        "proofs": 1,
+        "speedup_v1_over_v2_batch": 2.954386121851259,
+        "speedup_v1_over_v2_individual": 2.4629669781811,
+        "v1_s": 0.001783427,
+        "v1_us_per_proof": 1783.427,
+        "v2_batch_s": 0.000603654,
+        "v2_batch_us_per_proof": 603.654,
+        "v2_individual_s": 0.000724097,
+        "v2_individual_us_per_proof": 724.0970000000001
+      },
+      {
+        "proofs": 4,
+        "speedup_v1_over_v2_batch": 1.53885562501029,
+        "speedup_v1_over_v2_individual": 1.9000259751993314,
+        "v1_s": 0.001682397,
+        "v1_us_per_proof": 420.59925,
+        "v2_batch_s": 0.001093278,
+        "v2_batch_us_per_proof": 273.3195,
+        "v2_individual_s": 0.00088546,
+        "v2_individual_us_per_proof": 221.365
+      },
+      {
+        "proofs": 16,
+        "speedup_v1_over_v2_batch": 1.7643104810178187,
+        "speedup_v1_over_v2_individual": 1.2290351165842195,
+        "v1_s": 0.004500659,
+        "v1_us_per_proof": 281.2911875,
+        "v2_batch_s": 0.002550945,
+        "v2_batch_us_per_proof": 159.4340625,
+        "v2_individual_s": 0.003661945,
+        "v2_individual_us_per_proof": 228.87156249999998
+      },
+      {
+        "proofs": 64,
+        "speedup_v1_over_v2_batch": 3.5689660899501554,
+        "speedup_v1_over_v2_individual": 1.248971284101633,
+        "v1_s": 0.020091955,
+        "v1_us_per_proof": 313.936796875,
+        "v2_batch_s": 0.005629629,
+        "v2_batch_us_per_proof": 87.962953125,
+        "v2_individual_s": 0.016086803,
+        "v2_individual_us_per_proof": 251.356296875
+      },
+      {
+        "proofs": 256,
+        "speedup_v1_over_v2_batch": 3.9119431926188817,
+        "speedup_v1_over_v2_individual": 1.3292276995198151,
+        "v1_s": 0.072018882,
+        "v1_us_per_proof": 281.32375781250005,
+        "v2_batch_s": 0.018410002,
+        "v2_batch_us_per_proof": 71.9140703125,
+        "v2_individual_s": 0.054180997,
+        "v2_individual_us_per_proof": 211.64451953125
+      },
+      {
+        "proofs": 1024,
+        "speedup_v1_over_v2_batch": 4.732521583408251,
+        "speedup_v1_over_v2_individual": 1.4599304005634954,
+        "v1_s": 0.264828065,
+        "v1_us_per_proof": 258.6211572265625,
+        "v2_batch_s": 0.055959188,
+        "v2_batch_us_per_proof": 54.64764453125,
+        "v2_individual_s": 0.181397733,
+        "v2_individual_us_per_proof": 177.1462236328125
+      },
+      {
+        "proofs": 4096,
+        "speedup_v1_over_v2_batch": 5.578939527645085,
+        "speedup_v1_over_v2_individual": 1.384988418191556,
+        "v1_s": 1.118149108,
+        "v1_us_per_proof": 272.9856220703125,
+        "v2_batch_s": 0.200423235,
+        "v2_batch_us_per_proof": 48.93145385742188,
+        "v2_individual_s": 0.807334627,
+        "v2_individual_us_per_proof": 197.10318041992187
+      }
+    ]
+  },
+  "provenance": {
+    "features": {
+      "cuda12": false,
+      "cuda13": false,
+      "cuda_emu": false,
+      "gpu": false
+    },
+    "rayon_threads": 4,
+    "source_commit": "f7bdb534c42f5b672b52ed59cb7c06d1eb79cad9",
+    "source_dirty": true,
+    "verify_backend_default": "inline"
+  }
+}

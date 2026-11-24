@@ -62,6 +62,21 @@ pub fn eval_all(jobs: &[Job]) -> Vec<G> {
 pub trait MulBackend: Send + Sync {
     fn name(&self) -> String;
     fn run(&self, jobs: &[Job]) -> Result<Vec<G>>;
+    /// Multi-scalar multiplication `Σ [s_i]P_i` (v2 batch verification).
+    /// Default: arkworks' Pippenger on the CPU; device backends may override.
+    fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
+        Ok(msm_cpu(pts, sc))
+    }
+}
+
+/// CPU reference MSM (arkworks Pippenger over normalised bases).
+pub fn msm_cpu(pts: &[G], sc: &[F]) -> G {
+    use ark_ec::{CurveGroup, VariableBaseMSM};
+    if pts.is_empty() {
+        return G::default();
+    }
+    let aff = G::normalize_batch(pts);
+    G::msm(&aff, sc).expect("equal lengths")
 }
 
 /// Sequential evaluation in the calling thread (the original unbatched path).
@@ -110,6 +125,140 @@ impl MulBackend for Adaptive {
         } else {
             Cpu.run(jobs)
         }
+    }
+    fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
+        if pts.len() >= self.min_batch {
+            self.big.msm(pts, sc)
+        } else {
+            Ok(msm_cpu(pts, sc))
+        }
+    }
+}
+
+/// Device MSM baseline: every term `[s_i]P_i` as a device job, summed on the
+/// host. Correct for any backend; it does not use Pippenger amortisation
+/// (a dedicated GPU MSM kernel is future work, T007 §13).
+pub fn msm_via_jobs(b: &dyn MulBackend, pts: &[G], sc: &[F]) -> Result<G> {
+    let jobs: Vec<Job> = pts.iter().zip(sc).map(|(p, s)| Job::mul(*p, s)).collect();
+    Ok(b.run(&jobs)?.into_par_iter().sum())
+}
+
+/// Certified offload (T007): accepts results of an untrusted backend `inner`
+/// (e.g. a GPU) only after cheap CPU checks.
+///
+/// Every job `[k]P` is sent to the device as the *lifted* job `[k/8]P`.
+/// * Subgroup job (`k = q`): the device returns a certificate `L = [1/8]P`;
+///   the CPU accepts iff `L` is on the curve and `[8]L = P`. Since
+///   `[8]E(F_p) = G`, this proves `P ∈ G` with no error probability.
+/// * Proof job: the CPU forms `Q_i = [8]L_i ∈ G` (on-curve `L_i`) and checks
+///   `Σ α_i Q_i = Σ (α_i k_i) P_i` with fresh `α_i ∈ [0, 2^128)` drawn after
+///   the outputs are fixed (one MSM of `2N` terms).
+///
+/// Any failed check falls back to exact CPU recomputation of the batch, so a
+/// faulty device can only cost time; honest results are bit-for-bit the
+/// mathematical values (canonical elements of `G`, or `O` for members).
+pub struct Certified {
+    pub inner: Arc<dyn MulBackend>,
+    pub stats: Mutex<CertStats>,
+}
+
+#[derive(Clone, Debug, Default, serde::Serialize)]
+pub struct CertStats {
+    pub batches: u64,
+    pub jobs: u64,
+    pub fallbacks: u64,
+    pub seconds_device: f64,
+    pub seconds_check: f64,
+}
+
+impl Certified {
+    pub fn new(inner: Arc<dyn MulBackend>) -> Arc<Self> {
+        Arc::new(Certified {
+            inner,
+            stats: Mutex::new(CertStats::default()),
+        })
+    }
+
+    /// Checks device outputs `l` for `jobs`; returns the certified results.
+    pub fn check(jobs: &[Job], l: &[G]) -> Option<Vec<G>> {
+        use ark_ff::Zero;
+        if l.len() != jobs.len() || !l.par_iter().all(on_curve_ext) {
+            return None;
+        }
+        let q: Vec<G> = l.par_iter().map(clear8).collect();
+        // subgroup certificates: [8]L == P
+        let mut proof_idx = Vec::new();
+        for (i, j) in jobs.iter().enumerate() {
+            if j.k == F::MODULUS {
+                if q[i] != j.p {
+                    return None;
+                }
+            } else {
+                proof_idx.push(i);
+            }
+        }
+        if !proof_idx.is_empty() {
+            let mut pts = Vec::with_capacity(2 * proof_idx.len());
+            let mut sc = Vec::with_capacity(2 * proof_idx.len());
+            for &i in &proof_idx {
+                let a = F::from(rand::random::<u128>());
+                pts.push(q[i]);
+                sc.push(a);
+                pts.push(-jobs[i].p);
+                sc.push(a * F::from_bigint(jobs[i].k).unwrap_or_default());
+            }
+            if !msm_cpu(&pts, &sc).is_zero() {
+                return None;
+            }
+        }
+        Some(
+            jobs.iter()
+                .zip(q)
+                .map(|(j, x)| if j.k == F::MODULUS { G::default() } else { x })
+                .collect(),
+        )
+    }
+}
+
+impl MulBackend for Certified {
+    fn name(&self) -> String {
+        format!("certified({})", self.inner.name())
+    }
+    fn run(&self, jobs: &[Job]) -> Result<Vec<G>> {
+        // reduce proof scalars mod q (protocol scalars already are) so the
+        // aggregate check is over Z_q; k = q marks a subgroup job
+        let lifted: Vec<Job> = jobs
+            .iter()
+            .map(|j| {
+                let k = if j.k == F::MODULUS {
+                    inv8()
+                } else {
+                    F::from_bigint(j.k).unwrap_or_default() * inv8()
+                };
+                Job::mul(j.p, &k)
+            })
+            .collect();
+        let t = Instant::now();
+        let out = self.inner.run(&lifted);
+        let td = t.elapsed().as_secs_f64();
+        let t = Instant::now();
+        let checked = out.ok().and_then(|l| Self::check(jobs, &l));
+        let mut st = self.stats.lock().unwrap();
+        st.batches += 1;
+        st.jobs += jobs.len() as u64;
+        st.seconds_device += td;
+        let r = match checked {
+            Some(r) => r,
+            None => {
+                st.fallbacks += 1;
+                Cpu.run(jobs)?
+            }
+        };
+        st.seconds_check += t.elapsed().as_secs_f64();
+        Ok(r)
+    }
+    fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
+        Ok(msm_cpu(pts, sc))
     }
 }
 
@@ -204,6 +353,9 @@ impl MulBackend for LazyCuda {
             Err(e) => bail!("CUDA initialization: {e}"),
         }
     }
+    fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
+        msm_via_jobs(self, pts, sc)
+    }
 }
 
 fn adaptive_cuda(device: usize) -> Result<Arc<dyn MulBackend>> {
@@ -237,7 +389,13 @@ pub fn backend(spec: &str) -> Result<Arc<dyn MulBackend>> {
             })
         }
         "emu" => emu()?,
-        _ => bail!("unknown verification backend `{spec}` (cpu | cuda[:dev] | auto:N[:dev] | emu)"),
+        "cert" => {
+            let rest = spec.split_once(':').map(|x| x.1).unwrap_or("cpu");
+            Certified::new(backend(rest)?)
+        }
+        _ => bail!(
+            "unknown verification backend `{spec}` (cpu | cuda[:dev] | auto:N[:dev] | emu | cert:<backend>)"
+        ),
     })
 }
 
@@ -289,5 +447,62 @@ mod tests {
             assert!(r[64 + i].is_zero());
         }
         assert_eq!(r, eval_all(&jobs));
+    }
+
+    /// A device that lies: corrupts one result per batch in a chosen way.
+    struct Faulty(u8);
+    impl MulBackend for Faulty {
+        fn name(&self) -> String {
+            "faulty".into()
+        }
+        fn run(&self, jobs: &[Job]) -> Result<Vec<G>> {
+            let mut r = Cpu.run(jobs)?;
+            let t2: G =
+                ark_ed_on_bn254::EdwardsAffine::new_unchecked(Fb::from(0u64), -Fb::from(1u64))
+                    .into();
+            match self.0 {
+                0 => r[0] += g(),         // wrong multiple
+                1 => r[0] += t2,          // torsion offset
+                2 => r[1] = G::default(), // "certificate" for a torsion point
+                _ => {
+                    r[0] = G::new_unchecked(
+                        Fb::from(1u64),
+                        Fb::from(2u64),
+                        Fb::from(3u64),
+                        Fb::from(4u64),
+                    )
+                } // off curve
+            }
+            Ok(r)
+        }
+    }
+
+    #[test]
+    fn certified_offload_detects_faulty_devices() {
+        let mut rng = thread_rng();
+        let t2: G =
+            ark_ed_on_bn254::EdwardsAffine::new_unchecked(Fb::from(0u64), -Fb::from(1u64)).into();
+        let p = g() * rand_scalar(&mut rng);
+        let jobs = vec![
+            Job::mul(p, &rand_scalar(&mut rng)),
+            Job::subgroup(p + t2), // not in G
+            Job::subgroup(p),      // in G
+            Job::mul(g(), &rand_scalar(&mut rng)),
+        ];
+        let want = Cpu.run(&jobs).unwrap();
+        // honest device: certified, no fallback
+        let c = Certified::new(Arc::new(Cpu));
+        assert_eq!(c.run(&jobs).unwrap(), want);
+        assert_eq!(c.stats.lock().unwrap().fallbacks, 1); // the torsion point has no certificate
+        let honest = vec![jobs[0], jobs[2], jobs[3]];
+        let c = Certified::new(Arc::new(Cpu));
+        assert_eq!(c.run(&honest).unwrap(), Cpu.run(&honest).unwrap());
+        assert_eq!(c.stats.lock().unwrap().fallbacks, 0);
+        // lying devices: results stay correct, every lie is detected
+        for mode in 0..4 {
+            let c = Certified::new(Arc::new(Faulty(mode)));
+            assert_eq!(c.run(&jobs).unwrap(), want, "mode {mode}");
+            assert!(c.stats.lock().unwrap().fallbacks >= 1);
+        }
     }
 }

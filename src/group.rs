@@ -368,6 +368,83 @@ pub fn sha256(parts: &[&[u8]]) -> [u8; 32] {
     h.finalize().into()
 }
 
+// ------------------------------------------------ cofactor-image encoding
+//
+// T007. BabyJubjub has #E(F_p) = 8q, hence [8]E(F_p) = G (the q-torsion):
+// any rational curve point Q yields [8]Q ∈ G, and every P ∈ G has exactly
+// eight preimages Q (P/8 + E[8]). A *lift* of P is any such Q. Transcript
+// format v2 sends lifts and every receiver uses [8]Q, so decoded points are
+// in G without a subgroup test; senders obtain lifts at no extra cost by
+// using the bases g/8, h/8, h~/8 and scalars k/8.
+
+/// `8^{-1} mod q`.
+pub fn inv8() -> F {
+    static I: OnceLock<F> = OnceLock::new();
+    *I.get_or_init(|| F::from(8u64).inverse().unwrap())
+}
+
+/// `[8]P` (three doublings): the canonical element of `G` encoded by a lift.
+pub fn clear8(p: &G) -> G {
+    let mut x = p.double();
+    x.double_in_place();
+    x.double_in_place();
+    x
+}
+
+/// Whether extended coordinates `(X, Y, T, Z)` describe a point of the curve
+/// (`X² + Y² = Z² + dT²`, `XY = TZ`, `Z ≠ 0`; arkworks' `a = 1` form). Needed
+/// for coordinates returned by an untrusted device: the doubling formulas are
+/// defined off the curve too.
+pub fn on_curve_ext(p: &G) -> bool {
+    use ark_ec::twisted_edwards::TECurveConfig;
+    let (x2, y2, z2, t2) = (p.x.square(), p.y.square(), p.z.square(), p.t.square());
+    !p.z.is_zero()
+        && x2 + y2 == z2 + ark_ed_on_bn254::EdwardsConfig::COEFF_D * t2
+        && p.x * p.y == p.t * p.z
+}
+
+/// The lift `[1/8]P` of `P ∈ G` (one variable-base multiplication).
+pub fn lift_of(p: &G) -> G {
+    vmul(p, &inv8())
+}
+
+impl Ct {
+    pub fn clear8(&self) -> Ct {
+        Ct {
+            a: clear8(&self.a),
+            b: clear8(&self.b),
+        }
+    }
+    pub fn lift_of(&self) -> Ct {
+        Ct {
+            a: lift_of(&self.a),
+            b: lift_of(&self.b),
+        }
+    }
+}
+
+/// Fixed-base tables for `g/8` and `h/8`: `[r](g/8)` is a lift of `[r]g`.
+pub struct LiftKey {
+    pub tg: FixedBase,
+    pub th: FixedBase,
+}
+
+impl LiftKey {
+    pub fn new(h: G) -> Self {
+        LiftKey {
+            tg: FixedBase::new(lift_of(&g())),
+            th: FixedBase::new(lift_of(&h)),
+        }
+    }
+    /// A lift of `Enc(0; r)`.
+    pub fn enc0(&self, r: &F) -> Ct {
+        Ct {
+            a: self.tg.mul(r),
+            b: self.th.mul(r),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -430,5 +507,25 @@ mod tests {
         let bytes = bincode::serialize(&c).unwrap();
         let back: Ct = bincode::deserialize(&bytes).unwrap();
         assert_eq!(back, c);
+    }
+
+    #[test]
+    fn cofactor_image_encoding() {
+        let mut rng = thread_rng();
+        let t2 = GA::new_unchecked(Fb::zero(), -Fb::ONE).into_group();
+        for _ in 0..20 {
+            let p = g() * rand_scalar(&mut rng);
+            let q = lift_of(&p);
+            assert_eq!(clear8(&q), p);
+            // every lift (any torsion offset) encodes the same element
+            assert_eq!(clear8(&(q + t2)), p);
+            // and [8]Q lies in G for an arbitrary curve point Q
+            assert!(in_subgroup(&clear8(&(q + t2))));
+        }
+        assert!(!in_subgroup(&t2) && clear8(&t2).is_zero());
+        let r = rand_scalar(&mut rng);
+        let k = Key::new(g() * rand_scalar(&mut rng));
+        let lk = LiftKey::new(k.h);
+        assert_eq!(lk.enc0(&r).clear8(), k.enc0(&r));
     }
 }

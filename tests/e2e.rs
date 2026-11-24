@@ -422,3 +422,98 @@ fn batched_verification_backends_end_to_end() {
         );
     }
 }
+
+/// T007: transcript format v2 (lifted points, commitment-form proofs,
+/// pre-weighted shares) through the full protocol: co-located tally, five TCP
+/// trustee processes, separate public verifier (format read from the
+/// `WODT2` header), oracle; plus rejection of a corrupted v2 transcript.
+#[test]
+fn v2_format_end_to_end() {
+    let out = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("v2-format");
+    if out.exists() {
+        std::fs::remove_dir_all(&out).unwrap();
+    }
+    let o = wod()
+        .args([
+            "--format",
+            "v2",
+            "experiment",
+            "--n",
+            "8",
+            "--modes",
+            "local,dist",
+            "--reps",
+            "1",
+            "--out",
+        ])
+        .arg(&out)
+        .output()
+        .unwrap();
+    assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+    let result = json(&out.join("n8/results.json"));
+    let runs = result["runs"].as_array().unwrap();
+    assert_eq!(runs.len(), 2);
+    for r in runs {
+        assert_eq!(r["verification"]["accept"], true);
+        assert_eq!(r["oracle_agrees"], true);
+        assert!(r["verification"]["engine_prof"]["jobs"].as_u64().unwrap() > 1000);
+    }
+    let good = out.join("n8/rep0/local");
+    assert_eq!(
+        &std::fs::read(good.join("public/transcript.bin")).unwrap()[..6],
+        b"WODT2\n"
+    );
+    let bad = out.join("v2-tampered");
+    copy_dir(&good, &bad);
+    let p = bad.join("public/transcript.bin");
+    let mut b = std::fs::read(&p).unwrap();
+    let i = b.len() * 3 / 5;
+    b[i] ^= 1;
+    std::fs::write(&p, b).unwrap();
+    let st = wod().args(["verify", "--dir"]).arg(&bad).output().unwrap();
+    assert!(!st.status.success());
+}
+
+/// T007: certified offload (`cert:<backend>`) on the unchanged v1 format, in
+/// the co-located tally, the five trustee processes and the separate verifier.
+#[test]
+fn certified_offload_end_to_end() {
+    let mut specs = vec!["cert:cpu"];
+    if cfg!(feature = "cuda-emu") {
+        specs.push("cert:emu");
+    }
+    for spec in specs {
+        let out = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(spec.replace(':', "-"));
+        if out.exists() {
+            std::fs::remove_dir_all(&out).unwrap();
+        }
+        let o = wod()
+            .args([
+                "--verify-backend",
+                spec,
+                "experiment",
+                "--n",
+                "8",
+                "--modes",
+                "local,dist",
+                "--reps",
+                "1",
+                "--out",
+            ])
+            .arg(&out)
+            .output()
+            .unwrap();
+        assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+        let result = json(&out.join("n8/results.json"));
+        for r in result["runs"].as_array().unwrap() {
+            assert_eq!(r["verification"]["accept"], true);
+            assert_eq!(r["oracle_agrees"], true);
+            assert!(
+                r["verification"]["verify_backend"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("certified(")
+            );
+        }
+    }
+}

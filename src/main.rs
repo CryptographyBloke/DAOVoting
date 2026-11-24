@@ -34,6 +34,12 @@ Experiments:
                  reference/both require --modes local; both alternates paired order
 
 GPU research (T005; see reports/T005.md):
+  --format v1|v2          T007: transcript format for new runs (v2 = lifted points,
+                          commitment-form proofs, pre-weighted shares; the verifier
+                          reads the format from the transcript header)
+  --v2-verify batch|individual   v2 verification: one MSM per message (default) or per relation
+  --v2-coeff random|fs    v2 batch coefficients: verifier randomness (default) or
+                          derived from the message (reproducible)
   --verify-backend SPEC   on any command: verify trustee messages in message-level
                           batches on cpu | cuda[:DEV] | auto:MIN_BATCH[:DEV] | emu
                           (default: original inline verification)
@@ -43,6 +49,9 @@ GPU research (T005; see reports/T005.md):
   wod gpu-bench  --backend SPEC [--sizes 1,16,...] [--reps 5] [--n 8,64] [--out DIR]
                                                      batch sweep + end-to-end CPU vs SPEC
   wod gpu-vectors --check FILE --backend SPEC | --write FILE   deterministic [k]P vectors
+  wod msm-vectors --check FILE --backend SPEC | --write FILE   T007 MSM and lift vectors
+  wod format-bench [--n 8,64,256] [--reps 3] [--out DIR]   T007: v1 vs v2 verification, paired
+  wod proof-sweep  [--sizes 1,...,4096] [--reps 5] [--out DIR]  T007: CSZ verification per batch size
   wod gpu-summary --dir DIR                           summary.md for a reproduce_gpu.ps1 run
 ";
 
@@ -84,11 +93,25 @@ fn print(v: &Value) {
 fn main() -> Result<()> {
     let mut argv: Vec<String> = std::env::args().skip(1).collect();
     // global option, accepted before or after the command
-    let backend = argv.iter().position(|x| x == "--verify-backend").map(|i| {
-        let v = argv.get(i + 1).cloned().unwrap_or_default();
-        argv.drain(i..(i + 2).min(argv.len()));
-        v
-    });
+    let mut take = |flag: &str| {
+        argv.iter().position(|x| x == flag).map(|i| {
+            let v = argv.get(i + 1).cloned().unwrap_or_default();
+            argv.drain(i..(i + 2).min(argv.len()));
+            v
+        })
+    };
+    let backend = take("--verify-backend");
+    // T007 global options, exported so board/trustee/verifier subprocesses inherit them
+    for (flag, var, ok) in [
+        ("--format", "WOD_FORMAT", &["v1", "v2"][..]),
+        ("--v2-verify", "WOD_V2_VERIFY", &["batch", "individual"][..]),
+        ("--v2-coeff", "WOD_V2_COEFF", &["random", "fs"][..]),
+    ] {
+        if let Some(v) = take(flag) {
+            ensure!(ok.contains(&v.as_str()), "{flag} must be one of {ok:?}");
+            unsafe { std::env::set_var(var, &v) };
+        }
+    }
     let cmd = argv.first().cloned().unwrap_or_else(|| "help".into());
     let a = Args(argv);
     if let Some(spec) = backend {
@@ -238,6 +261,54 @@ fn main() -> Result<()> {
                 &json!({"machine": experiment::machine(), "provenance": bench::provenance(), "device_times": dev, "gpu_bench": v}),
             )?;
             println!("wrote {}", out.display());
+        }
+        "format-bench" => {
+            let out = fresh_out(&a, "format_bench.json")?;
+            let ns: Vec<usize> = a
+                .list("--n", "8,64,256")
+                .iter()
+                .map(|n| n.parse())
+                .collect::<Result<_, _>>()?;
+            let v = bench::format_bench(&ns, a.num("--reps", 3)?);
+            write_json(
+                &out,
+                &json!({"machine": experiment::machine(), "provenance": bench::provenance(), "format_bench": v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "proof-sweep" => {
+            let out = fresh_out(&a, "proof_sweep.json")?;
+            let sizes: Vec<usize> = a
+                .list("--sizes", "1,4,16,64,256,1024,4096")
+                .iter()
+                .map(|n| n.parse())
+                .collect::<Result<_, _>>()?;
+            let v = bench::proof_sweep(&sizes, a.num("--reps", 5)?);
+            write_json(
+                &out,
+                &json!({"machine": experiment::machine(), "provenance": bench::provenance(), "proof_sweep": v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "msm-vectors" => {
+            if let Some(f) = a.get("--write") {
+                let v = wod::gpu::make_msm_vectors(20261124);
+                std::fs::write(&f, serde_json::to_string_pretty(&v)? + "\n")?;
+                println!("wrote {} MSM/lift vectors to {f}", v.len());
+            } else {
+                let f = a.req("--check")?;
+                let v: Vec<wod::gpu::MsmVector> = serde_json::from_slice(&std::fs::read(&f)?)?;
+                let b = wod::batch::backend(&a.req("--backend")?)?;
+                let bad = wod::gpu::check_msm_vectors(&*b, &v)?;
+                println!(
+                    "{}: {} vectors, {} mismatches on {}",
+                    f,
+                    v.len(),
+                    bad.len(),
+                    b.name()
+                );
+                ensure!(bad.is_empty(), "MSM vector check failed: {bad:?}");
+            }
         }
         "gpu-summary" => print!("{}", bench::gpu_summary(&PathBuf::from(a.req("--dir")?))?),
         "gpu-vectors" => {
