@@ -15,7 +15,7 @@ use crate::batch::Job;
 #[cfg(any(feature = "gpu", feature = "cuda-emu"))]
 use crate::batch::MulBackend;
 use crate::group::*;
-use ark_ff::{BigInt, Fp};
+use ark_ff::{BigInt, Fp, PrimeField};
 use rayon::prelude::*;
 
 /// Per-process cumulative device timings. Kernel intervals include launch and
@@ -41,12 +41,17 @@ fn fe_words(f: &Fb, out: &mut [u32]) {
     }
 }
 
-fn fe_from(w: &[u32]) -> Fb {
+fn fe_from(w: &[u32]) -> anyhow::Result<Fb> {
+    anyhow::ensure!(w.len() == 8, "invalid field word count");
     let mut l = [0u64; 4];
     for j in 0..4 {
         l[j] = w[2 * j] as u64 | ((w[2 * j + 1] as u64) << 32);
     }
-    Fp(BigInt(l), core::marker::PhantomData)
+    let raw = BigInt(l);
+    // These are Montgomery residues, not canonical integers to convert with
+    // from_bigint. Validate the internal representative before any arithmetic.
+    anyhow::ensure!(raw < Fb::MODULUS, "noncanonical device field residue");
+    Ok(Fp(raw, core::marker::PhantomData))
 }
 
 /// Packs jobs into the kernel's input layout (points, scalars).
@@ -69,15 +74,18 @@ pub fn pack(jobs: &[Job]) -> (Vec<u32>, Vec<u32>) {
 }
 
 /// Unpacks kernel outputs into arkworks projective points.
-pub fn unpack(out: &[u32]) -> Vec<G> {
+pub fn unpack(out: &[u32]) -> anyhow::Result<Vec<G>> {
+    anyhow::ensure!(out.len() % PT_WORDS == 0, "truncated device point");
     out.par_chunks(PT_WORDS)
         .map(|w| {
-            G::new_unchecked(
-                fe_from(&w[0..8]),
-                fe_from(&w[8..16]),
-                fe_from(&w[16..24]),
-                fe_from(&w[24..32]),
-            )
+            let p = G::new_unchecked(
+                fe_from(&w[0..8])?,
+                fe_from(&w[8..16])?,
+                fe_from(&w[16..24])?,
+                fe_from(&w[24..32])?,
+            );
+            anyhow::ensure!(on_curve_ext(&p), "invalid extended device point");
+            Ok(p)
         })
         .collect()
 }
@@ -92,6 +100,14 @@ pub struct DeviceTimes {
     pub unpack: f64,
     pub batches: u64,
     pub jobs: u64,
+    pub msm_calls: u64,
+    pub msm_terms: u64,
+    pub msm_scatter: f64,
+    pub msm_buckets: f64,
+    pub msm_reduce: f64,
+    pub msm_combine: f64,
+    pub msm_peak_buffers_bytes: u64,
+    pub msm_window: u32,
 }
 
 #[cfg(feature = "cuda-emu")]
@@ -128,12 +144,12 @@ impl MulBackend for Emu {
                     (o.len() / PT_WORDS) as u32,
                 )
             });
-        Ok(unpack(&out))
+        unpack(&out)
     }
 }
 
 #[cfg(feature = "gpu")]
-pub use cuda::{Cuda, last_cuda};
+pub use cuda::{Cuda, CudaMsm, last_cuda};
 
 #[cfg(feature = "gpu")]
 mod cuda {
@@ -166,6 +182,9 @@ mod cuda {
     pub struct Cuda {
         stream: Arc<CudaStream>,
         func: CudaFunction,
+        scatter: CudaFunction,
+        buckets: CudaFunction,
+        reduce: CudaFunction,
         block: u32,
         pub info: Arc<CudaInfo>,
         lock: Mutex<()>,
@@ -196,6 +215,9 @@ mod cuda {
                 .context("NVRTC compilation of bjj.cu failed")?;
             let module = ctx.load_module(ptx)?;
             let func = module.load_function("bjj_mul")?;
+            let scatter = module.load_function("bjj_msm_scatter")?;
+            let buckets = module.load_function("bjj_msm_buckets")?;
+            let reduce = module.load_function("bjj_msm_reduce")?;
             let compile_seconds = t.elapsed().as_secs_f64();
             let block = std::env::var("WOD_CUDA_BLOCK")
                 .ok()
@@ -212,6 +234,9 @@ mod cuda {
             Ok(Cuda {
                 stream: ctx.default_stream(),
                 func,
+                scatter,
+                buckets,
+                reduce,
                 block,
                 info,
                 lock: Mutex::new(()),
@@ -245,13 +270,171 @@ mod cuda {
             let out: Vec<u32> = self.stream.clone_dtoh(&d_out)?;
             tm.d2h += t.elapsed().as_secs_f64();
             let t = Instant::now();
-            let r = unpack(&out);
+            let r = unpack(&out)?;
             tm.unpack += t.elapsed().as_secs_f64();
             Ok(r)
+        }
+
+        /// Unsigned-window GPU Pippenger with linked-list buckets. Scalars are
+        /// their canonical integers; no subgroup-dependent sign rewriting.
+        pub fn run_msm(&self, points: &[G], scalars: &[F]) -> Result<G> {
+            use ark_ff::{AdditiveGroup, BigInteger, PrimeField};
+            anyhow::ensure!(points.len() == scalars.len(), "MSM input length mismatch");
+            if points.is_empty() {
+                return Ok(G::default());
+            }
+            anyhow::ensure!(
+                points.len() <= MAX_CHUNK,
+                "GPU MSM prototype limited to 2^20 terms"
+            );
+            let width: u32 = std::env::var("WOD_MSM_WINDOW")
+                .unwrap_or_else(|_| "8".into())
+                .parse()?;
+            anyhow::ensure!((4..=8).contains(&width), "MSM window must be in 4..=8");
+            let bits = scalars
+                .iter()
+                .map(|s| s.into_bigint().num_bits())
+                .max()
+                .unwrap();
+            if bits == 0 {
+                return Ok(G::default());
+            }
+            let windows = bits.div_ceil(width);
+            let count = 1usize << width;
+            let n = points.len();
+            let _guard = self.lock.lock().unwrap();
+            let mut tm = DeviceTimes::default();
+            let t = Instant::now();
+            let jobs: Vec<Job> = points
+                .iter()
+                .zip(scalars)
+                .map(|(p, s)| Job::mul(*p, s))
+                .collect();
+            let (pts, ks) = pack(&jobs);
+            tm.pack = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let d_pts = self.stream.clone_htod(&pts)?;
+            let d_ks = self.stream.clone_htod(&ks)?;
+            let mut heads = self
+                .stream
+                .clone_htod(&vec![-1i32; windows as usize * count])?;
+            let mut next = self.stream.alloc_zeros::<i32>(windows as usize * n)?;
+            let mut sums = self
+                .stream
+                .alloc_zeros::<u32>(windows as usize * count * PT_WORDS)?;
+            let mut out = self
+                .stream
+                .alloc_zeros::<u32>(windows as usize * PT_WORDS)?;
+            self.stream.synchronize()?;
+            tm.h2d = t.elapsed().as_secs_f64();
+            let n32 = n as u32;
+            let cfg = |items: u32| LaunchConfig {
+                grid_dim: (items.div_ceil(128), 1, 1),
+                block_dim: (128, 1, 1),
+                shared_mem_bytes: 0,
+            };
+            let t = Instant::now();
+            let mut b = self.stream.launch_builder(&self.scatter);
+            b.arg(&d_ks)
+                .arg(&mut heads)
+                .arg(&mut next)
+                .arg(&n32)
+                .arg(&width)
+                .arg(&windows);
+            unsafe { b.launch(cfg(n32 * windows)) }?;
+            self.stream.synchronize()?;
+            tm.msm_scatter = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let mut b = self.stream.launch_builder(&self.buckets);
+            b.arg(&d_pts)
+                .arg(&heads)
+                .arg(&next)
+                .arg(&mut sums)
+                .arg(&n32)
+                .arg(&width)
+                .arg(&windows);
+            unsafe { b.launch(cfg(windows * count as u32)) }?;
+            self.stream.synchronize()?;
+            tm.msm_buckets = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let mut b = self.stream.launch_builder(&self.reduce);
+            b.arg(&sums).arg(&mut out).arg(&width);
+            unsafe {
+                b.launch(LaunchConfig {
+                    grid_dim: (windows, 1, 1),
+                    block_dim: (256, 1, 1),
+                    shared_mem_bytes: 0,
+                })
+            }?;
+            self.stream.synchronize()?;
+            tm.msm_reduce = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let words: Vec<u32> = self.stream.clone_dtoh(&out)?;
+            tm.d2h = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let window_sums = unpack(&words)?;
+            anyhow::ensure!(
+                window_sums.len() == windows as usize,
+                "MSM window output length mismatch"
+            );
+            tm.unpack = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let mut result = G::default();
+            for p in window_sums.iter().rev() {
+                for _ in 0..width {
+                    result.double_in_place();
+                }
+                result += p;
+            }
+            tm.msm_combine = t.elapsed().as_secs_f64();
+            let mut all = self.info.times.lock().unwrap();
+            all.pack += tm.pack;
+            all.h2d += tm.h2d;
+            all.d2h += tm.d2h;
+            all.unpack += tm.unpack;
+            all.kernel += tm.msm_scatter + tm.msm_buckets + tm.msm_reduce;
+            all.msm_calls += 1;
+            all.msm_terms += n as u64;
+            all.msm_scatter += tm.msm_scatter;
+            all.msm_buckets += tm.msm_buckets;
+            all.msm_reduce += tm.msm_reduce;
+            all.msm_combine += tm.msm_combine;
+            all.msm_window = width;
+            let bytes =
+                160 * n + 4 * windows as usize * (n + count) + 128 * windows as usize * (count + 1);
+            all.msm_peak_buffers_bytes = all.msm_peak_buffers_bytes.max(bytes as u64);
+            Ok(result)
+        }
+    }
+
+    /// Selectable genuine GPU MSM; scalar-product API remains bjj_mul.
+    pub struct CudaMsm(pub Cuda);
+    impl CudaMsm {
+        pub fn new(dev: usize) -> Result<Self> {
+            Ok(Self(Cuda::new(dev)?))
+        }
+    }
+    impl MulBackend for CudaMsm {
+        fn telemetry(&self) -> serde_json::Value {
+            self.0.telemetry()
+        }
+        fn name(&self) -> String {
+            format!("{} + GPU Pippenger", self.0.name())
+        }
+        fn run(&self, jobs: &[Job]) -> Result<Vec<G>> {
+            self.0.run(jobs)
+        }
+        fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
+            self.0.run_msm(pts, sc)
         }
     }
 
     impl MulBackend for Cuda {
+        fn telemetry(&self) -> serde_json::Value {
+            let i = &self.info;
+            serde_json::json!({"device": {"name": i.device, "compute_capability": i.compute_capability,
+                "total_mem": i.total_mem, "compile_seconds": i.compile_seconds, "times": *i.times.lock().unwrap()}})
+        }
         fn name(&self) -> String {
             let i = &self.info;
             format!(
@@ -455,6 +638,31 @@ pub struct MsmVector {
     pub note: String,
 }
 
+/// All eight representatives of four public canonical points. Unlike
+/// negative scalars modulo q, the integer eight is valid on the full curve.
+pub fn make_secure_lift_vectors() -> Vec<MsmVector> {
+    let mut out = Vec::new();
+    for (pi, p) in [G::default(), g(), g() * F::from(17u64), h_tilde()]
+        .iter()
+        .enumerate()
+    {
+        for (ti, t) in torsion8().iter().enumerate() {
+            out.push(MsmVector {
+                points: vec![enc_point(&(lift_of(p) + t))],
+                scalars: vec![[
+                    "0000000000000008".into(),
+                    "0000000000000000".into(),
+                    "0000000000000000".into(),
+                    "0000000000000000".into(),
+                ]],
+                expected: enc_point(p),
+                note: format!("T008 secure fibre public point {pi}, torsion representative {ti}"),
+            });
+        }
+    }
+    out
+}
+
 pub fn make_msm_vectors(seed: u64) -> Vec<MsmVector> {
     use ark_ec::PrimeGroup;
     use ark_ff::PrimeField;
@@ -547,7 +755,7 @@ mod tests {
     use super::*;
     use ark_ec::twisted_edwards::TECurveConfig;
     use ark_ed_on_bn254::EdwardsConfig;
-    use ark_ff::{Field, PrimeField};
+    use ark_ff::{Field, PrimeField, Zero};
 
     /// Extracts `NAME[8] = {...}` from the kernel source.
     fn kernel_const(name: &str) -> [u32; 8] {
@@ -649,6 +857,52 @@ mod tests {
             .unwrap();
     }
 
+    #[cfg(feature = "gpu")]
+    #[test]
+    #[ignore = "requires a real CUDA device and NVRTC"]
+    fn actual_gpu_pippenger_matches_arkworks() {
+        std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                use rand::SeedableRng;
+                let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(8008);
+                let b = CudaMsm::new(0).unwrap();
+                let pool: Vec<G> = (0..64).map(|_| g() * rand_scalar(&mut rng)).collect();
+                for n in [0, 1, 2, 7, 256, 1024, 81920] {
+                    let pts: Vec<G> = (0..n)
+                        .map(|i| {
+                            if i % 13 == 0 {
+                                G::default()
+                            } else {
+                                pool[i % 64]
+                            }
+                        })
+                        .collect();
+                    let sc: Vec<F> = (0..n)
+                        .map(|i| match i % 17 {
+                            0 => F::from(0u64),
+                            1 => -F::from(1u64),
+                            2 => F::from(1u64),
+                            _ => rand_scalar(&mut rng),
+                        })
+                        .collect();
+                    assert_eq!(
+                        b.msm(&pts, &sc).unwrap(),
+                        crate::batch::msm_cpu(&pts, &sc),
+                        "n={n}"
+                    );
+                }
+                let p = pool[0];
+                let pts = [p, p, -p, G::default()];
+                let sc = [F::from(1u64), -F::from(1u64), F::from(0u64), F::from(19u64)];
+                assert!(b.msm(&pts, &sc).unwrap().is_zero());
+                assert!(b.msm(&[p], &[]).is_err());
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
     #[test]
     fn pack_unpack_roundtrip() {
         let mut rng = rand::thread_rng();
@@ -656,11 +910,38 @@ mod tests {
             .map(|_| Job::mul(g() * rand_scalar(&mut rng), &rand_scalar(&mut rng)))
             .collect();
         let (pts, _) = pack(&jobs);
-        let back = unpack(&pts);
+        let back = unpack(&pts).unwrap();
         for (j, p) in jobs.iter().zip(back) {
             assert_eq!(j.p, p);
             assert_eq!((j.p.x, j.p.y, j.p.t, j.p.z), (p.x, p.y, p.t, p.z));
         }
+    }
+
+    #[test]
+    fn hostile_raw_device_words_rejected_before_arithmetic() {
+        let (words, _) = pack(&[Job::mul(g(), &F::from(1u64))]);
+        assert!(unpack(&words[..PT_WORDS - 1]).is_err());
+        for raw in [Fb::MODULUS, BigInt([u64::MAX; 4])] {
+            for coordinate in 0..4 {
+                let mut bad = words.clone();
+                for (i, limb) in raw.0.iter().enumerate() {
+                    bad[coordinate * 8 + i * 2] = *limb as u32;
+                    bad[coordinate * 8 + i * 2 + 1] = (*limb >> 32) as u32;
+                }
+                assert!(unpack(&bad).is_err());
+            }
+        }
+        let mut zero_z = words.clone();
+        zero_z[24..32].fill(0);
+        assert!(unpack(&zero_z).is_err());
+        let mut off_curve = words.clone();
+        off_curve[0..8].fill(0);
+        assert!(unpack(&off_curve).is_err());
+        let t2: G = GA::new_unchecked(Fb::zero(), -Fb::from(1u64)).into();
+        let alternative = lift_of(&g()) + t2;
+        let (w, _) = pack(&[Job::mul(alternative, &F::from(1u64))]);
+        let decoded = unpack(&w).unwrap();
+        assert_eq!(clear8(&decoded[0]), g());
     }
 
     /// Same kernel source on the host vs the arkworks reference, including
@@ -741,5 +1022,21 @@ mod tests {
         );
         #[cfg(feature = "cuda-emu")]
         assert!(check_msm_vectors(&Emu, &file).unwrap().is_empty());
+    }
+
+    #[test]
+    fn secure_fibre_vectors_cover_all_rational_representatives() {
+        let file: Vec<MsmVector> =
+            serde_json::from_str(include_str!("../tests/vectors/t008_lifts_v1.json")).unwrap();
+        assert_eq!(file.len(), 32);
+        assert_eq!(
+            serde_json::to_value(&file).unwrap(),
+            serde_json::to_value(make_secure_lift_vectors()).unwrap()
+        );
+        assert!(
+            check_msm_vectors(&crate::batch::Cpu, &file)
+                .unwrap()
+                .is_empty()
+        );
     }
 }

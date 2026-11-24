@@ -11,6 +11,8 @@ use std::path::Path;
 const MAGIC: &[u8; 6] = b"WODT1\n";
 /// Transcript format v2 (T007): lifted points and commitment-form proofs.
 const MAGIC_V2: &[u8; 6] = b"WODT2\n";
+const MAGIC_V3: &[u8; 6] = b"WODT3\n";
+const MAGIC_V4: &[u8; 6] = b"WODT4\n";
 
 pub struct Writer {
     w: BufWriter<std::fs::File>,
@@ -34,10 +36,11 @@ impl Writer {
             bytes: 0,
             msgs: 0,
         };
-        w.raw(if crate::tally::default_v2() {
-            MAGIC_V2
-        } else {
-            MAGIC
+        w.raw(match crate::tally::default_format() {
+            2 => MAGIC_V2,
+            3 => MAGIC_V3,
+            4 => MAGIC_V4,
+            _ => MAGIC,
         })?;
         w.raw(setup_hash)?;
         w.raw(board_hash)?;
@@ -72,6 +75,7 @@ pub struct Reader {
     pub board_hash: [u8; 32],
     /// format v2 (header `WODT2`)
     pub v2: bool,
+    pub version: u8,
     remaining: u64,
 }
 
@@ -84,7 +88,7 @@ impl Reader {
         let mut hdr = [0u8; 70];
         r.read_exact(&mut hdr)?;
         ensure!(
-            &hdr[..6] == MAGIC || &hdr[..6] == MAGIC_V2,
+            [&MAGIC[..], &MAGIC_V2[..], &MAGIC_V3[..], &MAGIC_V4[..]].contains(&&hdr[..6]),
             "not a transcript file"
         );
         let mut h = Sha256::new();
@@ -95,7 +99,16 @@ impl Reader {
             h,
             setup_hash: hdr[6..38].try_into()?,
             board_hash: hdr[38..70].try_into()?,
-            v2: &hdr[..6] == MAGIC_V2,
+            v2: &hdr[..6] != MAGIC,
+            version: if &hdr[..6] == MAGIC_V2 {
+                2
+            } else if &hdr[..6] == MAGIC_V3 {
+                3
+            } else if &hdr[..6] == MAGIC_V4 {
+                4
+            } else {
+                1
+            },
             remaining: file_len - 70,
         })
     }

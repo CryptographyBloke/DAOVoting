@@ -34,14 +34,16 @@ Experiments:
                  reference/both require --modes local; both alternates paired order
 
 GPU research (T005; see reports/T005.md):
-  --format v1|v2          T007: transcript format for new runs (v2 = lifted points,
+  --format v1|v2|v3|v4    transcript format for new runs (v2 = historical lifts,
                           commitment-form proofs, pre-weighted shares; the verifier
                           reads the format from the transcript header)
+                          v3 = secure randomized lifts; v4 = validated affine wire points
+  --lift-policy canonical|randomized   v3/v4 honest producer policy (default randomized)
   --v2-verify batch|individual   v2 verification: one MSM per message (default) or per relation
   --v2-coeff random|fs    v2 batch coefficients: verifier randomness (default) or
                           derived from the message (reproducible)
   --verify-backend SPEC   on any command: verify trustee messages in message-level
-                          batches on cpu | cuda[:DEV] | auto:MIN_BATCH[:DEV] | emu
+                          batches on cpu | cuda[:DEV] | cuda-msm[:DEV] | auto:MIN_BATCH[:DEV] | auto-msm:N[:DEV] | cert:SPEC | emu
                           (default: original inline verification)
   wod profile    [--n 8,64,256,1024] [--groth-reps 5] [--out DIR]   CPU hotspot profile
   wod gpu-check  [--arch compute_89] [--device 0]    build features, NVRTC compile, device info,
@@ -52,6 +54,10 @@ GPU research (T005; see reports/T005.md):
   wod msm-vectors --check FILE --backend SPEC | --write FILE   T007 MSM and lift vectors
   wod format-bench [--n 8,64,256] [--reps 3] [--out DIR]   T007: v1 vs v2 verification, paired
   wod proof-sweep  [--sizes 1,...,4096] [--reps 5] [--out DIR]  T007: CSZ verification per batch size
+  wod secure-bench [--n 8,64] [--reps 3] [--configs LIST] [--out DIR]  T008 paired engine comparison
+  wod mixed-proof-sweep [--sizes 1,4,...,16384] [--reps 3] [--backends cpu,cuda-msm] [--out DIR]
+  wod msm-sweep [--sizes 1,4,...,81920] [--reps 3] [--backends cpu,cuda,cuda-msm] [--out DIR]
+  wod codec-bench [--points 81920] [--reps 3] [--out DIR]  validated compressed/affine comparison
   wod gpu-summary --dir DIR                           summary.md for a reproduce_gpu.ps1 run
 ";
 
@@ -103,7 +109,12 @@ fn main() -> Result<()> {
     let backend = take("--verify-backend");
     // T007 global options, exported so board/trustee/verifier subprocesses inherit them
     for (flag, var, ok) in [
-        ("--format", "WOD_FORMAT", &["v1", "v2"][..]),
+        ("--format", "WOD_FORMAT", &["v1", "v2", "v3", "v4"][..]),
+        (
+            "--lift-policy",
+            "WOD_LIFT_POLICY",
+            &["canonical", "randomized"][..],
+        ),
         ("--v2-verify", "WOD_V2_VERIFY", &["batch", "individual"][..]),
         ("--v2-coeff", "WOD_V2_COEFF", &["random", "fs"][..]),
     ] {
@@ -276,6 +287,56 @@ fn main() -> Result<()> {
             )?;
             println!("wrote {}", out.display());
         }
+        "secure-bench" => {
+            let out = fresh_out(&a, "secure_bench.json")?;
+            let ns = a
+                .list("--n", "8,64")
+                .iter()
+                .map(|n| n.parse())
+                .collect::<Result<Vec<usize>, _>>()?;
+            let names = a.list("--configs", "v1-inline,v1-cpu,v1-gpu,v1-certified,v2-individual,v2-cpu,v2-gpu,v3-canonical,v3-cpu,v3-gpu-msm,v4-cpu,v4-gpu-msm");
+            let v = bench::secure_bench(&ns, a.num("--reps", 3)?, &names);
+            write_json(
+                &out,
+                &json!({"machine":experiment::machine(),"provenance":bench::provenance(),"secure_bench":v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "mixed-proof-sweep" | "msm-sweep" => {
+            let out = fresh_out(
+                &a,
+                if cmd == "msm-sweep" {
+                    "msm_sweep.json"
+                } else {
+                    "mixed_proof_sweep.json"
+                },
+            )?;
+            let sizes = a
+                .list("--sizes", "1,4,16,64,256,1024,4096,16384")
+                .iter()
+                .map(|n| n.parse())
+                .collect::<Result<Vec<usize>, _>>()?;
+            let specs = a.list("--backends", "cpu");
+            let v = if cmd == "msm-sweep" {
+                bench::msm_sweep(&sizes, a.num("--reps", 3)?, &specs)
+            } else {
+                bench::mixed_proof_sweep(&sizes, a.num("--reps", 3)?, &specs)
+            };
+            write_json(
+                &out,
+                &json!({"machine":experiment::machine(),"provenance":bench::provenance(),"results":v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
+        "codec-bench" => {
+            let out = fresh_out(&a, "codec_bench.json")?;
+            let v = bench::codec_bench(a.num("--points", 81920)?, a.num("--reps", 3)?);
+            write_json(
+                &out,
+                &json!({"machine":experiment::machine(),"provenance":bench::provenance(),"codec":v}),
+            )?;
+            println!("wrote {}", out.display());
+        }
         "proof-sweep" => {
             let out = fresh_out(&a, "proof_sweep.json")?;
             let sizes: Vec<usize> = a
@@ -292,7 +353,11 @@ fn main() -> Result<()> {
         }
         "msm-vectors" => {
             if let Some(f) = a.get("--write") {
-                let v = wod::gpu::make_msm_vectors(20261124);
+                let v = if a.get("--suite").as_deref() == Some("secure-lifts") {
+                    wod::gpu::make_secure_lift_vectors()
+                } else {
+                    wod::gpu::make_msm_vectors(20261124)
+                };
                 std::fs::write(&f, serde_json::to_string_pretty(&v)? + "\n")?;
                 println!("wrote {} MSM/lift vectors to {f}", v.len());
             } else {

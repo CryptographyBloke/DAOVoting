@@ -126,6 +126,31 @@ assumption: sampling or public inputs alone do not make a malicious GPU safe.
 Independent CPU replay protects the final experimental acceptance decision;
 it cannot retroactively undo online trustee actions after faulty verification.
 
+## Secure cofactor research
+
+`research/secure-cofactor-gpu` preserves V1 and historical T007 `--format v2`
+for comparison. V2 has a representation-level privacy defect under malicious
+torsion-tagged predecessor lifts; use it only for diagnostic experiments.
+`--format v3` independently randomizes each outgoing lift over the complete
+rational kernel of [8], using a separate random tape. The slower reference is
+`--lift-policy canonical`. `--format v4` uses the same repair with validated
+uncompressed affine message points. New signatures bind the format version;
+public verification derives it from the transcript header.
+
+`cuda` retains per-term device multiplication; `cuda-msm` selects the experimental
+GPU Pippenger, and `auto-msm:N` keeps smaller MSMs on the CPU. GPU MSM integrity
+is a device/driver assumption. `cert:cuda` certifies V1 public scalar products
+before use; its MSM method intentionally remains trusted CPU Pippenger.
+Neither mechanism exports trustee secrets.
+
+Run `reproduce_gpu.ps1 -CofactorResearch -ResearchPhase Validate` for device
+checks, or select `Msm`, `Proofs`, `Codec`, `Engine`, `Protocol`, or `All`.
+Full paired protocol measurements require genuine pre-claim `-PreparedInputs`;
+`-Large` explicitly enables n=256/1024 and `-TrusteeComparison` adds the local
+five-process comparison. Each batch has fresh paths and requires independent
+individual CPU verification and oracle agreement. The research report is
+[T008](reports/T008.md); frozen manuscript and historical evidence stay unchanged.
+
 ## Optional EVM reproduction
 
 `contracts/WodAdmission.sol` and `tests/evm_local.cjs` support local EVM validation. `tests/evm_arbitrum.cjs` runs the separate Arbitrum Sepolia admission and receipt experiment. Setup, local validation, cost estimation, and the explicitly opt-in broadcast procedure are documented in [docs/ARBITRUM_SEPOLIA.md](docs/ARBITRUM_SEPOLIA.md).

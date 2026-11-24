@@ -1,0 +1,482 @@
+[
+  {
+    "points": [
+      "0100000000000000000000000000000000000000000000000000000000000000"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 0"
+  },
+  {
+    "points": [
+      "77d6d0af811efdaba0b534826dc591b72c94a64b7d12c16314d3721121b7ab0a"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 1"
+  },
+  {
+    "points": [
+      "0000000000000000000000000000000000000000000000000000000000000000"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 2"
+  },
+  {
+    "points": [
+      "8a292f4012d7e497f0ba84f7da22a27030c4da3539338f5415cdbecf5197b825"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 3"
+  },
+  {
+    "points": [
+      "000000f093f5e1439170b97948e833285d588181b64550b829a031e1724e6430"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 4"
+  },
+  {
+    "points": [
+      "8a292f4012d7e497f0ba84f7da22a27030c4da3539338f5415cdbecf5197b8a5"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 5"
+  },
+  {
+    "points": [
+      "0000000000000000000000000000000000000000000000000000000000000080"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 6"
+  },
+  {
+    "points": [
+      "77d6d0af811efdaba0b534826dc591b72c94a64b7d12c16314d3721121b7ab8a"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "0100000000000000000000000000000000000000000000000000000000000000",
+    "note": "T008 secure fibre public point 0, torsion representative 7"
+  },
+  {
+    "points": [
+      "4a9235bad3c668a757db08a69d53c1cbd6f1bf40e73571f7f8957b0764c8a006"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 0"
+  },
+  {
+    "points": [
+      "38c838bdd442b231563668c4a3f9352c4801a52613ccaad7f3a04de2503fc30f"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 1"
+  },
+  {
+    "points": [
+      "c4dbf6d744a76b7b46160c5a1fe0fde48aa0703e56c7775466943ab4143fe82c"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 2"
+  },
+  {
+    "points": [
+      "000000f42e78e9f26c144b5b36ee26de450221e148343c4a1f38e528d63a4b24"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 3"
+  },
+  {
+    "points": [
+      "b76dca35c02e799c3995b0d3aa94725c8666c140cf0fdfc0300ab6d90e86c3a9"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 4"
+  },
+  {
+    "points": [
+      "c937c732bfb22f123b3a51b5a4eefdfb1457dc5aa379a5e035ffe3fe210fa1a0"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 5"
+  },
+  {
+    "points": [
+      "3d2409184f4e76c84a5aad1f29083643d2b71043607ed863c30bf72c5e0f7c83"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 6"
+  },
+  {
+    "points": [
+      "010000fc647df850245c6e1e12fa0c4a175660a06d11146e0a684cb89c13198c"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "8b7d2d877a253c4b7733e1b91f05e0fcedf96bd11c2e572549b2a0f7037279a5",
+    "note": "T008 secure fibre public point 1, torsion representative 7"
+  },
+  {
+    "points": [
+      "ac516756b73a7c8fa80c432b7a6ad7223d3403592649ec3d12375da1f8e24c26"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 0"
+  },
+  {
+    "points": [
+      "f7f04fa1334d59ef12f4636e10ecca6498de007fe8ffa907138c927ea0f70319"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 1"
+  },
+  {
+    "points": [
+      "70382e3bdad80efc0261cb33c1b3814ee685564b93dc978a0c0dd00e2c5f52a0"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 2"
+  },
+  {
+    "points": [
+      "a96835b03f97c468b07602c790138ec8056cb59361f6bee5963e260e6d3394ae"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 3"
+  },
+  {
+    "points": [
+      "55ae9899dcba65b4e863764ece7d5c0520247e2890fc637a1769d43f7a6b178a"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 4"
+  },
+  {
+    "points": [
+      "0a0fb04e60a888547e7c550b38fc68c3c4798002ce45a6b016149f62d2566097"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 5"
+  },
+  {
+    "points": [
+      "91c7d1b4b91cd3478e0fee458734b2d976d22a362369b82d1d9361d246ef1110"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 6"
+  },
+  {
+    "points": [
+      "5897ca3f545e1ddbe0f9b6b2b7d4a55f57eccbed544f91d292610bd3051bd001"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "3153c1da87e13085b53a042a4255416a3db2355fa64cadc79c757275eb04942a",
+    "note": "T008 secure fibre public point 2, torsion representative 7"
+  },
+  {
+    "points": [
+      "c5c501a02c79144bc8ebcb7e17a314567168b1d91c694df2c212726b804e4d19"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 0"
+  },
+  {
+    "points": [
+      "e45ff1c2a425a172ec22098c057b6b0a2380ec12fcf9a3dff8895f1ea66a4304"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 1"
+  },
+  {
+    "points": [
+      "b7bbec9b1beda8ca2449b94adf3e2666a26dee2d08dab1399804afa638bba9ae"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 2"
+  },
+  {
+    "points": [
+      "4e203c856c93ab1abffb8075fabb7c7acc6757f37a963f17d28731136be6d92f"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 3"
+  },
+  {
+    "points": [
+      "3c3afe4f677ccdf8c884edfa30451fd2ebefcfa799dc02c6668dbf75f2ff1697"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 4"
+  },
+  {
+    "points": [
+      "1da00e2defcf40d1a44db0ed426dc81d3ad8946eba4bacd83016d2c2cce320ac"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 5"
+  },
+  {
+    "points": [
+      "4a441354780839796c27002f69a90dc2baea9253ae6b9e7e919b823a3a93ba01"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 6"
+  },
+  {
+    "points": [
+      "b3dfc36a27623629d27438044e2cb7ad90f0298e3baf10a1571800ce07688a80"
+    ],
+    "scalars": [
+      [
+        "0000000000000008",
+        "0000000000000000",
+        "0000000000000000",
+        "0000000000000000"
+      ]
+    ],
+    "expected": "54ff6e7d63b7f27075259bfee1f139368c8eac98f1397418c9a5722b89129223",
+    "note": "T008 secure fibre public point 3, torsion representative 7"
+  }
+]

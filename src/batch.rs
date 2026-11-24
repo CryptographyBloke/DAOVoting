@@ -62,15 +62,22 @@ pub fn eval_all(jobs: &[Job]) -> Vec<G> {
 pub trait MulBackend: Send + Sync {
     fn name(&self) -> String;
     fn run(&self, jobs: &[Job]) -> Result<Vec<G>>;
+    /// Per-instance counters; avoids confusing separate GPU contexts in
+    /// paired benchmarks. CPU-only backends have no device counters.
+    fn telemetry(&self) -> serde_json::Value {
+        serde_json::Value::Null
+    }
     /// Multi-scalar multiplication `Σ [s_i]P_i` (v2 batch verification).
     /// Default: arkworks' Pippenger on the CPU; device backends may override.
     fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
+        anyhow::ensure!(pts.len() == sc.len(), "MSM input length mismatch");
         Ok(msm_cpu(pts, sc))
     }
 }
 
 /// CPU reference MSM (arkworks Pippenger over normalised bases).
 pub fn msm_cpu(pts: &[G], sc: &[F]) -> G {
+    assert_eq!(pts.len(), sc.len(), "MSM input length mismatch");
     use ark_ec::{CurveGroup, VariableBaseMSM};
     if pts.is_empty() {
         return G::default();
@@ -112,6 +119,9 @@ pub struct Adaptive {
 }
 
 impl MulBackend for Adaptive {
+    fn telemetry(&self) -> serde_json::Value {
+        self.big.telemetry()
+    }
     fn name(&self) -> String {
         format!(
             "adaptive(>= {} -> {}, else cpu)",
@@ -139,8 +149,11 @@ impl MulBackend for Adaptive {
 /// host. Correct for any backend; it does not use Pippenger amortisation
 /// (a dedicated GPU MSM kernel is future work, T007 §13).
 pub fn msm_via_jobs(b: &dyn MulBackend, pts: &[G], sc: &[F]) -> Result<G> {
+    anyhow::ensure!(pts.len() == sc.len(), "MSM input length mismatch");
     let jobs: Vec<Job> = pts.iter().zip(sc).map(|(p, s)| Job::mul(*p, s)).collect();
-    Ok(b.run(&jobs)?.into_par_iter().sum())
+    let result = b.run(&jobs)?;
+    anyhow::ensure!(result.len() == jobs.len(), "MSM output length mismatch");
+    Ok(result.into_par_iter().sum())
 }
 
 /// Certified offload (T007): accepts results of an untrusted backend `inner`
@@ -155,8 +168,12 @@ pub fn msm_via_jobs(b: &dyn MulBackend, pts: &[G], sc: &[F]) -> Result<G> {
 ///   the outputs are fixed (one MSM of `2N` terms).
 ///
 /// Any failed check falls back to exact CPU recomputation of the batch, so a
-/// faulty device can only cost time; honest results are bit-for-bit the
+/// faulty device can cause a wrong result only within the aggregate check's
+/// error bound; honest results are bit-for-bit the
 /// mathematical values (canonical elements of `G`, or `O` for members).
+/// Proof-job bases must already be in G. The protocol establishes this through
+/// subgroup certificates for received points and trusted group operations.
+/// This is not a general certificate for arbitrary nonmember proof-job bases.
 pub struct Certified {
     pub inner: Arc<dyn MulBackend>,
     pub stats: Mutex<CertStats>,
@@ -169,6 +186,8 @@ pub struct CertStats {
     pub fallbacks: u64,
     pub seconds_device: f64,
     pub seconds_check: f64,
+    pub seconds_msm: f64,
+    pub seconds_fallback: f64,
 }
 
 impl Certified {
@@ -181,8 +200,16 @@ impl Certified {
 
     /// Checks device outputs `l` for `jobs`; returns the certified results.
     pub fn check(jobs: &[Job], l: &[G]) -> Option<Vec<G>> {
+        Self::check_timed(jobs, l, &mut 0.0)
+    }
+
+    fn check_timed(jobs: &[Job], l: &[G], msm_seconds: &mut f64) -> Option<Vec<G>> {
         use ark_ff::Zero;
-        if l.len() != jobs.len() || !l.par_iter().all(on_curve_ext) {
+        // A simulated or hostile device can construct Fp internals directly.
+        // Establish their range before invoking the curve equations.
+        let valid =
+            |p: &G| [p.x, p.y, p.t, p.z].iter().all(|f| f.0 < Fb::MODULUS) && on_curve_ext(p);
+        if l.len() != jobs.len() || !l.par_iter().all(valid) {
             return None;
         }
         let q: Vec<G> = l.par_iter().map(clear8).collect();
@@ -205,9 +232,12 @@ impl Certified {
                 pts.push(q[i]);
                 sc.push(a);
                 pts.push(-jobs[i].p);
-                sc.push(a * F::from_bigint(jobs[i].k).unwrap_or_default());
+                sc.push(a * F::from_le_bytes_mod_order(&jobs[i].k.to_bytes_le()));
             }
-            if !msm_cpu(&pts, &sc).is_zero() {
+            let t = Instant::now();
+            let sum = msm_cpu(&pts, &sc);
+            *msm_seconds += t.elapsed().as_secs_f64();
+            if !sum.is_zero() {
                 return None;
             }
         }
@@ -221,6 +251,9 @@ impl Certified {
 }
 
 impl MulBackend for Certified {
+    fn telemetry(&self) -> serde_json::Value {
+        serde_json::json!({"cert": *self.stats.lock().unwrap(), "inner": self.inner.telemetry()})
+    }
     fn name(&self) -> String {
         format!("certified({})", self.inner.name())
     }
@@ -233,7 +266,7 @@ impl MulBackend for Certified {
                 let k = if j.k == F::MODULUS {
                     inv8()
                 } else {
-                    F::from_bigint(j.k).unwrap_or_default() * inv8()
+                    F::from_le_bytes_mod_order(&j.k.to_bytes_le()) * inv8()
                 };
                 Job::mul(j.p, &k)
             })
@@ -242,19 +275,27 @@ impl MulBackend for Certified {
         let out = self.inner.run(&lifted);
         let td = t.elapsed().as_secs_f64();
         let t = Instant::now();
-        let checked = out.ok().and_then(|l| Self::check(jobs, &l));
+        let mut msm_seconds = 0.0;
+        let checked = out
+            .ok()
+            .and_then(|l| Self::check_timed(jobs, &l, &mut msm_seconds));
+        let check_seconds = t.elapsed().as_secs_f64();
         let mut st = self.stats.lock().unwrap();
         st.batches += 1;
         st.jobs += jobs.len() as u64;
         st.seconds_device += td;
+        st.seconds_check += check_seconds;
+        st.seconds_msm += msm_seconds;
         let r = match checked {
             Some(r) => r,
             None => {
                 st.fallbacks += 1;
-                Cpu.run(jobs)?
+                let t = Instant::now();
+                let result = Cpu.run(jobs)?;
+                st.seconds_fallback += t.elapsed().as_secs_f64();
+                result
             }
         };
-        st.seconds_check += t.elapsed().as_secs_f64();
         Ok(r)
     }
     fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
@@ -288,6 +329,9 @@ impl Recorder {
 }
 
 impl MulBackend for Recorder {
+    fn telemetry(&self) -> serde_json::Value {
+        self.inner.telemetry()
+    }
     fn name(&self) -> String {
         self.inner.name()
     }
@@ -326,20 +370,37 @@ pub fn default_name() -> String {
         .unwrap_or_else(|| "inline".into())
 }
 
+pub fn default_telemetry() -> serde_json::Value {
+    default_backend()
+        .map(|b| b.telemetry())
+        .unwrap_or(serde_json::Value::Null)
+}
+
 /// Backend from a CLI spec: `cpu`, `cuda[:DEVICE]`, `emu`, or
 /// `auto:MIN_BATCH[:DEVICE]` (CUDA for batches >= MIN_BATCH, CPU otherwise).
 #[cfg(feature = "gpu")]
 struct LazyCuda {
     device: usize,
+    pippenger: bool,
     inner: OnceLock<std::result::Result<Arc<crate::gpu::Cuda>, String>>,
 }
 
 #[cfg(feature = "gpu")]
 impl MulBackend for LazyCuda {
+    fn telemetry(&self) -> serde_json::Value {
+        match self.inner.get() {
+            Some(Ok(b)) => b.telemetry(),
+            _ => serde_json::Value::Null,
+        }
+    }
     fn name(&self) -> String {
         match self.inner.get() {
+            Some(Ok(b)) if self.pippenger => format!("{} + GPU Pippenger", b.name()),
             Some(Ok(b)) => b.name(),
-            _ => format!("lazy-cuda(device {})", self.device),
+            _ => format!(
+                "lazy-cuda(device {}, pippenger {})",
+                self.device, self.pippenger
+            ),
         }
     }
     fn run(&self, jobs: &[Job]) -> Result<Vec<G>> {
@@ -354,20 +415,34 @@ impl MulBackend for LazyCuda {
         }
     }
     fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
-        msm_via_jobs(self, pts, sc)
+        if self.pippenger {
+            let b = self.inner.get_or_init(|| {
+                crate::gpu::Cuda::new(self.device)
+                    .map(Arc::new)
+                    .map_err(|e| format!("{e:#}"))
+            });
+            match b {
+                Ok(b) => b.run_msm(pts, sc),
+                Err(e) => bail!("CUDA initialization: {e}"),
+            }
+        } else {
+            msm_via_jobs(self, pts, sc)
+        }
     }
 }
 
-fn adaptive_cuda(device: usize) -> Result<Arc<dyn MulBackend>> {
+fn adaptive_cuda(device: usize, pippenger: bool) -> Result<Arc<dyn MulBackend>> {
     #[cfg(feature = "gpu")]
     {
         Ok(Arc::new(LazyCuda {
             device,
+            pippenger,
             inner: OnceLock::new(),
         }))
     }
     #[cfg(not(feature = "gpu"))]
     {
+        let _ = pippenger;
         cuda(device)
     }
 }
@@ -378,13 +453,14 @@ pub fn backend(spec: &str) -> Result<Arc<dyn MulBackend>> {
     Ok(match parts[0] {
         "cpu" => Arc::new(Cpu),
         "cuda" => cuda(dev(1)?.unwrap_or(0))?,
-        "auto" => {
+        "cuda-msm" => cuda_msm(dev(1)?.unwrap_or(0))?,
+        "auto" | "auto-msm" => {
             let min_batch = parts
                 .get(1)
                 .ok_or_else(|| anyhow::anyhow!("auto:MIN_BATCH"))?
                 .parse()?;
             Arc::new(Adaptive {
-                big: adaptive_cuda(dev(2)?.unwrap_or(0))?,
+                big: adaptive_cuda(dev(2)?.unwrap_or(0), parts[0] == "auto-msm")?,
                 min_batch,
             })
         }
@@ -394,9 +470,18 @@ pub fn backend(spec: &str) -> Result<Arc<dyn MulBackend>> {
             Certified::new(backend(rest)?)
         }
         _ => bail!(
-            "unknown verification backend `{spec}` (cpu | cuda[:dev] | auto:N[:dev] | emu | cert:<backend>)"
+            "unknown verification backend `{spec}` (cpu | cuda[:dev] | cuda-msm[:dev] | auto:N[:dev] | auto-msm:N[:dev] | emu | cert:<backend>)"
         ),
     })
+}
+
+#[cfg(feature = "gpu")]
+fn cuda_msm(dev: usize) -> Result<Arc<dyn MulBackend>> {
+    Ok(Arc::new(crate::gpu::CudaMsm::new(dev)?))
+}
+#[cfg(not(feature = "gpu"))]
+fn cuda_msm(dev: usize) -> Result<Arc<dyn MulBackend>> {
+    cuda(dev)
 }
 
 #[cfg(feature = "gpu")]
@@ -449,7 +534,7 @@ mod tests {
         assert_eq!(r, eval_all(&jobs));
     }
 
-    /// A device that lies: corrupts one result per batch in a chosen way.
+    /// Every intended job uses a valid subgroup base; each fault is isolated.
     struct Faulty(u8);
     impl MulBackend for Faulty {
         fn name(&self) -> String {
@@ -461,17 +546,24 @@ mod tests {
                 ark_ed_on_bn254::EdwardsAffine::new_unchecked(Fb::from(0u64), -Fb::from(1u64))
                     .into();
             match self.0 {
-                0 => r[0] += g(),         // wrong multiple
-                1 => r[0] += t2,          // torsion offset
-                2 => r[1] = G::default(), // "certificate" for a torsion point
-                _ => {
+                0 => r[0] += g(),
+                1 => r.iter_mut().for_each(|p| *p += t2), // equivalent lifts
+                2 => r[1] = G::default(),                 // wrong certificate of valid nonzero base
+                3 => {
                     r[0] = G::new_unchecked(
                         Fb::from(1u64),
                         Fb::from(2u64),
                         Fb::from(3u64),
                         Fb::from(4u64),
                     )
-                } // off curve
+                }
+                4 => {
+                    r.pop();
+                }
+                5 => r.push(G::default()),
+                6 => r[0].z = Fb::from(0u64),
+                7 => r[0].x = ark_ff::Fp(Fb::MODULUS, core::marker::PhantomData),
+                _ => bail!("device failure"),
             }
             Ok(r)
         }
@@ -479,30 +571,58 @@ mod tests {
 
     #[test]
     fn certified_offload_detects_faulty_devices() {
-        let mut rng = thread_rng();
-        let t2: G =
-            ark_ed_on_bn254::EdwardsAffine::new_unchecked(Fb::from(0u64), -Fb::from(1u64)).into();
-        let p = g() * rand_scalar(&mut rng);
+        let p = g() * F::from(17u64);
         let jobs = vec![
-            Job::mul(p, &rand_scalar(&mut rng)),
-            Job::subgroup(p + t2), // not in G
-            Job::subgroup(p),      // in G
-            Job::mul(g(), &rand_scalar(&mut rng)),
+            Job::mul(p, &F::from(9u64)),
+            Job::subgroup(p),
+            Job::mul(g(), &F::from(3u64)),
         ];
         let want = Cpu.run(&jobs).unwrap();
-        // honest device: certified, no fallback
-        let c = Certified::new(Arc::new(Cpu));
-        assert_eq!(c.run(&jobs).unwrap(), want);
-        assert_eq!(c.stats.lock().unwrap().fallbacks, 1); // the torsion point has no certificate
-        let honest = vec![jobs[0], jobs[2], jobs[3]];
-        let c = Certified::new(Arc::new(Cpu));
-        assert_eq!(c.run(&honest).unwrap(), Cpu.run(&honest).unwrap());
-        assert_eq!(c.stats.lock().unwrap().fallbacks, 0);
-        // lying devices: results stay correct, every lie is detected
-        for mode in 0..4 {
+        let honest = Certified::new(Arc::new(Cpu));
+        assert_eq!(honest.run(&jobs).unwrap(), want);
+        assert_eq!(honest.stats.lock().unwrap().fallbacks, 0);
+        for mode in [0, 2, 3, 4, 5, 6, 7, 8] {
             let c = Certified::new(Arc::new(Faulty(mode)));
             assert_eq!(c.run(&jobs).unwrap(), want, "mode {mode}");
-            assert!(c.stats.lock().unwrap().fallbacks >= 1);
+            assert_eq!(c.stats.lock().unwrap().fallbacks, 1, "mode {mode}");
         }
+        // Adding torsion changes the representation, not the decoded product.
+        let c = Certified::new(Arc::new(Faulty(1)));
+        assert_eq!(c.run(&jobs).unwrap(), want);
+        assert_eq!(c.stats.lock().unwrap().fallbacks, 0);
+    }
+
+    #[test]
+    fn certified_nonmember_subgroup_job_falls_back_exactly() {
+        let t2: G =
+            ark_ed_on_bn254::EdwardsAffine::new_unchecked(Fb::from(0u64), -Fb::from(1u64)).into();
+        let jobs = vec![Job::subgroup(g() + t2)];
+        let c = Certified::new(Arc::new(Cpu));
+        assert_eq!(c.run(&jobs).unwrap(), Cpu.run(&jobs).unwrap());
+        assert!(!c.run(&jobs).unwrap()[0].is_zero());
+        assert_eq!(c.stats.lock().unwrap().fallbacks, 2);
+    }
+
+    #[test]
+    fn certified_raw_scalar_boundaries_are_reduced_not_zeroed() {
+        let mut qp1 = F::MODULUS;
+        qp1.add_with_carry(&BigInt::from(1u64));
+        let jobs: Vec<Job> = [BigInt::from(0u64), qp1, BigInt([u64::MAX; 4])]
+            .into_iter()
+            .map(|k| Job {
+                p: g() * F::from(7u64),
+                k,
+            })
+            .collect();
+        let c = Certified::new(Arc::new(Cpu));
+        assert_eq!(c.run(&jobs).unwrap(), Cpu.run(&jobs).unwrap());
+        assert_eq!(c.stats.lock().unwrap().fallbacks, 0);
+    }
+
+    #[test]
+    fn msm_job_lengths_are_checked() {
+        assert!(msm_via_jobs(&Cpu, &[g()], &[]).is_err());
+        assert!(msm_via_jobs(&Faulty(4), &[g()], &[F::from(1u64)]).is_err());
+        assert!(msm_via_jobs(&Faulty(5), &[g()], &[F::from(1u64)]).is_err());
     }
 }

@@ -101,6 +101,7 @@ pub struct TrusteeStats {
     #[serde(default)]
     pub engine_prof: crate::tally::Prof,
     pub device_times: Option<serde_json::Value>,
+    pub verification_telemetry: serde_json::Value,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -290,7 +291,7 @@ async fn board(p: &Paths, listener: std::net::TcpListener, rtt_ms: u64) -> Resul
                 let m: Msg = bincode::deserialize(&body)?;
                 ensure!(m.from as usize == id, "sender mismatch");
                 ensure!(m.ctr == ctr[id], "bad counter from trustee {id}");
-                m.verify_sig(&vks[id], &s.ctx)?;
+                m.verify_sig_format(&vks[id], &s.ctx, crate::tally::default_format())?;
                 ctr[id] += 1;
                 tw.append_frame(&body)?;
                 let now = Instant::now();
@@ -475,6 +476,7 @@ pub fn run_trustee(p: &Paths, id: usize, addr: &str, rtt_ms: u64) -> Result<Trus
     st.verify_backend = crate::batch::default_name();
     st.engine_prof = eng.prof.clone();
     st.device_times = crate::gpu::device_snapshot();
+    st.verification_telemetry = crate::batch::default_telemetry();
     out_tx.send((
         Instant::now(),
         (K_STATS, Arc::new(serde_json::to_vec(&st)?)),

@@ -119,6 +119,8 @@ pub struct TallyStats {
     pub seconds_gates: f64,
     pub seconds_produce: f64,
     pub device_times: Option<serde_json::Value>,
+    pub verification_telemetry: serde_json::Value,
+    pub transcript_format: u8,
     pub seconds_release: f64,
     pub seconds_tally: f64,
     pub messages: u64,
@@ -191,6 +193,8 @@ pub fn stage_tally_local(p: &Paths, scheduler: Scheduler) -> Result<TallyStats> 
         seconds_gates: g,
         seconds_produce: produce_seconds,
         device_times: crate::gpu::device_snapshot(),
+        verification_telemetry: crate::batch::default_telemetry(),
+        transcript_format: eng.format(),
         seconds_release: decision_complete - g,
         seconds_tally: total,
         messages,
@@ -248,6 +252,8 @@ pub fn stage_tally_dist(
     let b = b?;
     Ok(TallyStats {
         mode: "dist".into(),
+        transcript_format: crate::tally::default_format(),
+        verification_telemetry: crate::batch::default_telemetry(),
         rtt_ms,
         seconds_gates: b.seconds_gates,
         seconds_release: b.seconds_release,

@@ -44,6 +44,11 @@ pub struct Report {
     pub verify_backend: String,
     pub engine_prof: crate::tally::Prof,
     pub device_times: Option<serde_json::Value>,
+    pub verification_telemetry: serde_json::Value,
+    pub transcript_format: u8,
+    pub threshold: u64,
+    pub trustees: usize,
+    pub shamir_degree: usize,
     pub error: Option<String>,
 }
 
@@ -81,6 +86,9 @@ fn verify_with_events(p: &Paths, events: Option<&[Event]>) -> Report {
 
 fn run(p: &Paths, r: &mut Report, supplied: Option<&[Event]>) -> Result<()> {
     let setup: Setup = read_bin(&p.public("setup.bin"))?;
+    r.threshold = setup.tau;
+    r.trustees = setup.a;
+    r.shamir_degree = setup.t;
     let events: Vec<Event> = match supplied {
         Some(events) => events.to_vec(),
         None => read_bin(&p.public("ledger.bin"))?,
@@ -131,7 +139,8 @@ fn run(p: &Paths, r: &mut Report, supplied: Option<&[Event]>) -> Result<()> {
     let circ = Arc::new(Circuit::build(setup.n, setup.l_vote, setup.tau));
     let mut eng = Engine::new(pp, circ.clone(), &inputs)?;
     // the transcript header fixes the format; no flag is trusted
-    eng.v2 = tr.v2;
+    eng.select_format(tr.version);
+    r.transcript_format = tr.version;
     while let Some(m) = tr.next()? {
         ensure!(!eng.finished(), "messages after the release");
         eng.process(&m, true)?;
@@ -144,6 +153,7 @@ fn run(p: &Paths, r: &mut Report, supplied: Option<&[Event]>) -> Result<()> {
     r.verify_backend = crate::batch::default_name();
     r.engine_prof = eng.prof.clone();
     r.device_times = crate::gpu::device_snapshot();
+    r.verification_telemetry = crate::batch::default_telemetry();
     ensure!(r.backend, "tally incomplete");
     r.decision = eng.result;
 

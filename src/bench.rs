@@ -994,7 +994,7 @@ mod gpu_summary_tests {
 fn setv2(individual: bool, b: Option<Arc<dyn MulBackend>>) -> impl Fn(&mut Engine) {
     move |e: &mut Engine| {
         e.set_batch_backend(b.clone());
-        e.v2 = true;
+        e.select_format(2);
         e.v2_individual = individual;
         e.v2_coeff_fs = false;
     }
@@ -1236,4 +1236,655 @@ pub fn proof_sweep(sizes: &[usize], reps: usize) -> Value {
     }
     json!({"reps": reps, "rows": rows,
            "bytes": {"csz_v1": bincode::serialize(&insts[0].p1).unwrap().len(), "csz_v2": bincode::serialize(&insts[0].p2).unwrap().len()}})
+}
+
+/// T008 proof algebra comparison. Points are already curve-validated in memory;
+/// wire parsing is deliberately measured by codec_bench and complete replay.
+pub fn mixed_proof_sweep(sizes: &[usize], reps: usize, specs: &[String]) -> Value {
+    use crate::sigma::{Acc, Bases, Csz2, Dleq2, Rels, Zkp02};
+    use ark_ff::{BigInteger, PrimeField, Zero};
+    use rand::{Rng, SeedableRng};
+    use rand_chacha::ChaCha20Rng;
+    use rayon::prelude::*;
+    #[derive(Clone, serde::Serialize)]
+    enum Case {
+        C {
+            x0: Ct,
+            y0: Ct,
+            x: Ct,
+            y: Ct,
+            #[serde(with = "crate::group::arkser_fast")]
+            e: G,
+            old: Csz,
+            new: Csz2,
+        },
+        Z {
+            a: [Ct; 2],
+            old: Zkp0,
+            new: Zkp02,
+        },
+        D {
+            #[serde(with = "crate::group::arkser_fast")]
+            u: G,
+            #[serde(with = "crate::group::arkser_fast")]
+            w: G,
+            old: Dleq,
+            new: Dleq2,
+        },
+    }
+    impl Case {
+        fn transform(&mut self, mut point: impl FnMut(&mut G)) {
+            let mut ct = |c: &mut Ct| {
+                point(&mut c.a);
+                point(&mut c.b);
+            };
+            match self {
+                Case::C { x, y, e, new, .. } => {
+                    ct(x);
+                    ct(y);
+                    for c in &mut new.c {
+                        ct(c);
+                    }
+                    point(e);
+                    for p in &mut new.ce {
+                        point(p);
+                    }
+                }
+                Case::Z { a, new, .. } => {
+                    for c in a {
+                        ct(c);
+                    }
+                    for c in &mut new.e {
+                        ct(c);
+                    }
+                }
+                Case::D { w, new, .. } => {
+                    point(w);
+                    point(&mut new.e1);
+                    point(&mut new.e2);
+                }
+            }
+        }
+        fn canonical(&self) -> Self {
+            let mut c = self.clone();
+            c.transform(|p| *p = clear8(p));
+            c
+        }
+        fn rels(&self, key: &Key, ctx: &[u8; 32], label: u64, wb: &G) -> Rels {
+            match self {
+                Case::C {
+                    x0,
+                    y0,
+                    x,
+                    y,
+                    e,
+                    new,
+                    ..
+                } => new
+                    .rels(
+                        key,
+                        ctx,
+                        label,
+                        &CszStmt {
+                            x0,
+                            y0,
+                            x1: x,
+                            y1: y,
+                            e,
+                        },
+                    )
+                    .unwrap(),
+                Case::Z { a, new, .. } => new.rels(ctx, label, a).unwrap(),
+                Case::D { u, w, new, .. } => new.rels(ctx, label, wb, u, w),
+            }
+        }
+        fn v1(
+            &self,
+            key: &Key,
+            ht: &FixedBase,
+            tw: &FixedBase,
+            ctx: &[u8; 32],
+            label: u64,
+            wb: &G,
+        ) -> bool {
+            match self {
+                Case::C {
+                    x0,
+                    y0,
+                    x,
+                    y,
+                    e,
+                    old,
+                    ..
+                } => {
+                    [x.a, x.b, y.a, y.b, *e].iter().all(in_subgroup)
+                        && old.verify(
+                            key,
+                            ht,
+                            ctx,
+                            label,
+                            &CszStmt {
+                                x0,
+                                y0,
+                                x1: x,
+                                y1: y,
+                                e,
+                            },
+                        )
+                }
+                Case::Z { a, old, .. } => {
+                    a.iter().flat_map(|c| [c.a, c.b]).all(|p| in_subgroup(&p))
+                        && old.verify(key, ctx, label, a)
+                }
+                Case::D { u, w, old, .. } => {
+                    in_subgroup(w) && old.verify(&key.tg, tw, ctx, label, wb, u, w)
+                }
+            }
+        }
+    }
+    assert!(reps > 0 && !sizes.is_empty());
+    let mut rng = OsRng;
+    let ctx = sha256(&[b"wod/t008/proof-sweep"]);
+    let key = Key::new(g() * rand_scalar(&mut rng));
+    let lk = LiftKey::new(key.h);
+    let ht = FixedBase::new(h_tilde());
+    let ht8 = FixedBase::new(lift_of(&h_tilde()));
+    let secret = rand_scalar(&mut rng);
+    let wb = key.tg.mul(&secret);
+    let tw = FixedBase::new(wb);
+    let bases = Bases {
+        g: &key.tg,
+        h: &key.th,
+        ht: &ht,
+        w: Some(&tw),
+    };
+    let max = *sizes.iter().max().unwrap();
+    assert!(max > 0);
+    let mut pools = Vec::new();
+    let mut generation = Vec::new();
+    for family in 0..3usize {
+        let start = Instant::now();
+        let samples: Vec<_> = (0..max)
+            .into_par_iter()
+            .map(|i| {
+                let mut rng = OsRng;
+                let label = ((family as u64) << 48) | i as u64;
+                let (case, t1, t2) = match family {
+                    0 => {
+                        let x0 = key.enc(&F::from(i as u64), &rand_scalar(&mut rng));
+                        let y0 = key.enc(&F::from(1u64), &rand_scalar(&mut rng));
+                        let sign = if i % 2 == 0 { 1 } else { -1 };
+                        let r1 = rand_scalar(&mut rng);
+                        let r2 = rand_scalar(&mut rng);
+                        let x = x0.lift_of().small(sign).add(&lk.enc0(&r1));
+                        let y = y0.lift_of().small(sign).add(&lk.enc0(&r2));
+                        let e = ht8.mul(&r1);
+                        let (xc, yc, ec) = (x.clear8(), y.clear8(), clear8(&e));
+                        let st = CszStmt {
+                            x0: &x0,
+                            y0: &y0,
+                            x1: &xc,
+                            y1: &yc,
+                            e: &ec,
+                        };
+                        let t = Instant::now();
+                        let old = Csz::prove(&key, &ht, &ctx, label, &st, sign, &r1, &r2, &mut rng);
+                        let t1 = t.elapsed().as_secs_f64();
+                        let t = Instant::now();
+                        let new = Csz2::prove(
+                            &key, &lk, &ht8, &ctx, label, &st, sign, &r1, &r2, &mut rng,
+                        );
+                        let t2 = t.elapsed().as_secs_f64();
+                        (
+                            Case::C {
+                                x0,
+                                y0,
+                                x,
+                                y,
+                                e,
+                                old,
+                                new,
+                            },
+                            t1,
+                            t2,
+                        )
+                    }
+                    1 => {
+                        let rs = [rand_scalar(&mut rng), rand_scalar(&mut rng)];
+                        let a = rs.map(|r| lk.enc0(&r));
+                        let ac = a.map(|c| c.clear8());
+                        let t = Instant::now();
+                        let old = Zkp0::prove(&key, &ctx, label, &ac, &rs, &mut rng);
+                        let t1 = t.elapsed().as_secs_f64();
+                        let t = Instant::now();
+                        let new = Zkp02::prove(&key, &lk, &ctx, label, &ac, &rs, &mut rng);
+                        let t2 = t.elapsed().as_secs_f64();
+                        (Case::Z { a, old, new }, t1, t2)
+                    }
+                    _ => {
+                        let u = g() * rand_scalar(&mut rng);
+                        let w = vmul(&u, &secret);
+                        let t = Instant::now();
+                        let old = Dleq::prove(&key.tg, &ctx, label, &secret, &wb, &u, &w, &mut rng);
+                        let t1 = t.elapsed().as_secs_f64();
+                        let t = Instant::now();
+                        let (w, new) =
+                            Dleq2::prove(&key.tg, &lk, &ctx, label, &secret, &wb, &u, &mut rng);
+                        let t2 = t.elapsed().as_secs_f64();
+                        (Case::D { u, w, old, new }, t1, t2)
+                    }
+                };
+                let t = Instant::now();
+                let mut secure = case.clone();
+                secure.transform(|p| randomize_lift(p, &mut rng));
+                let refresh = t.elapsed().as_secs_f64();
+                let canonical = case.canonical();
+                (case, secure, canonical, t1, t2, refresh)
+            })
+            .collect();
+        generation.push(json!({"family":(["csz","zkp0","dleq"][family]),"instances":max,"prepare_wall_seconds":start.elapsed().as_secs_f64(),
+            "public_instance_sha256":hex::encode(sha256(&[&bincode::serialize(&samples.iter().map(|s|&s.0).collect::<Vec<_>>()).unwrap()])),
+            "v1_proof_worker_seconds":med(samples.iter().map(|s|s.3).collect()),"commitment_proof_worker_seconds":med(samples.iter().map(|s|s.4).collect()),
+            "representation_refresh_worker_seconds":med(samples.iter().map(|s|s.5).collect()),
+            "proof_bytes":match &samples[0].0 {
+                Case::C{old,new,..}=>json!({"v1":bincode::serialize(old).unwrap().len(),"commitment_form":bincode::serialize(new).unwrap().len()}),
+                Case::Z{old,new,..}=>json!({"v1":bincode::serialize(old).unwrap().len(),"commitment_form":bincode::serialize(new).unwrap().len()}),
+                Case::D{old,new,..}=>json!({"v1":bincode::serialize(old).unwrap().len(),"commitment_form":bincode::serialize(new).unwrap().len()})
+            }}));
+        pools.push(samples);
+    }
+    let cpu_start = Instant::now();
+    let cpu_backend = crate::batch::backend("cpu").unwrap();
+    let mut targets = vec![(
+        "cpu".to_string(),
+        cpu_backend,
+        cpu_start.elapsed().as_secs_f64(),
+    )];
+    for spec in specs {
+        if spec == "cpu" {
+            continue;
+        }
+        let t = Instant::now();
+        let b = crate::batch::backend(spec).unwrap();
+        targets.push((spec.clone(), b, t.elapsed().as_secs_f64()));
+    }
+    let init: Vec<_> = targets
+        .iter()
+        .map(|(s, _, t)| json!({"backend":s,"initialization_seconds":t}))
+        .collect();
+    let mut output = Vec::new();
+    for family in 0..4usize {
+        for &n in sizes {
+            let selected: Vec<_> = (0..n)
+                .map(|i| {
+                    if family == 3 {
+                        (i % 3, i / 3)
+                    } else {
+                        (family, i)
+                    }
+                })
+                .collect();
+            let mut all = Vec::new();
+            let methods: Vec<String> = ["v1-individual", "lift-individual", "secure-individual"]
+                .iter()
+                .map(|s| s.to_string())
+                .chain(targets.iter().map(|(s, _, _)| format!("secure-batch-{s}")))
+                .collect();
+            for rep in 0..reps {
+                let seed: [u8; 32] = rng.r#gen();
+                let order: Vec<_> = (0..methods.len())
+                    .map(|i| methods[(i + rep + family) % methods.len()].clone())
+                    .collect();
+                for method in &order {
+                    let telemetry_before = method
+                        .strip_prefix("secure-batch-")
+                        .map(|spec| {
+                            targets
+                                .iter()
+                                .find(|(s, _, _)| s == spec)
+                                .unwrap()
+                                .1
+                                .telemetry()
+                        })
+                        .unwrap_or(Value::Null);
+                    let total = Instant::now();
+                    let mut decode = 0.0;
+                    let mut relation = 0.0;
+                    let mut accumulation = 0.0;
+                    let mut msm = 0.0;
+                    let mut fixed = 0.0;
+                    let mut individual = 0.0;
+                    let mut rows = 0;
+                    let mut terms = 0;
+                    let mut bitstats = Value::Null;
+                    if method == "v1-individual" {
+                        let t = Instant::now();
+                        assert!(selected.par_iter().all(|&(f, i)| pools[f][i].2.v1(
+                            &key,
+                            &ht,
+                            &tw,
+                            &ctx,
+                            ((f as u64) << 48) | i as u64,
+                            &wb
+                        )));
+                        individual = t.elapsed().as_secs_f64();
+                    } else {
+                        let secure = method != "lift-individual";
+                        let t = Instant::now();
+                        let canonical: Vec<_> = selected
+                            .par_iter()
+                            .map(|&(f, i)| {
+                                if secure {
+                                    pools[f][i].1.canonical()
+                                } else {
+                                    pools[f][i].0.canonical()
+                                }
+                            })
+                            .collect();
+                        decode = t.elapsed().as_secs_f64();
+                        let t = Instant::now();
+                        let relations: Vec<_> = canonical
+                            .par_iter()
+                            .zip(&selected)
+                            .map(|(c, &(f, i))| {
+                                c.rels(&key, &ctx, ((f as u64) << 48) | i as u64, &wb)
+                            })
+                            .collect();
+                        relation = t.elapsed().as_secs_f64();
+                        rows = relations.iter().map(|r| r.rows.len()).sum();
+                        if method.ends_with("individual") {
+                            let t = Instant::now();
+                            assert!(relations.par_iter().all(|r| r.check_each(&bases)));
+                            individual = t.elapsed().as_secs_f64();
+                        } else {
+                            let t = Instant::now();
+                            let acc = relations
+                                .par_iter()
+                                .enumerate()
+                                .map(|(i, r)| {
+                                    let mut random = ChaCha20Rng::from_seed(sha256(&[
+                                        b"wod/t008/proof-coefficients",
+                                        &seed,
+                                        &(i as u64).to_be_bytes(),
+                                    ]));
+                                    let mut a = Acc::default();
+                                    a.add(r, &mut random);
+                                    a
+                                })
+                                .reduce(Acc::default, |mut a, b| {
+                                    a.merge(b);
+                                    a
+                                });
+                            accumulation = t.elapsed().as_secs_f64();
+                            let t = Instant::now();
+                            let constant = acc.fixed_part(&bases);
+                            fixed = t.elapsed().as_secs_f64();
+                            let spec = method.strip_prefix("secure-batch-").unwrap();
+                            let b = &targets.iter().find(|(s, _, _)| s == spec).unwrap().1;
+                            let t = Instant::now();
+                            let sum = b.msm(&acc.pts, &acc.sc).unwrap();
+                            msm = t.elapsed().as_secs_f64();
+                            assert!((constant + sum).is_zero());
+                            terms = acc.pts.len();
+                            // Instrumentation is outside the timed verification boundary.
+                            let verified_elapsed = total.elapsed().as_secs_f64();
+                            let positive = acc
+                                .sc
+                                .iter()
+                                .filter(|s| s.into_bigint().num_bits() <= 128)
+                                .count();
+                            let negative = acc
+                                .sc
+                                .iter()
+                                .filter(|s| (-**s).into_bigint().num_bits() <= 128)
+                                .count();
+                            bitstats = json!({"unsigned_bits_le128":positive,"negative_magnitude_bits_le128":negative,"other_terms":terms-positive-negative,"max_unsigned_bits":acc.sc.iter().map(|s|s.into_bigint().num_bits()).max().unwrap_or(0),"max_min_signed_magnitude_bits":acc.sc.iter().map(|s|s.into_bigint().num_bits().min((-*s).into_bigint().num_bits())).max().unwrap_or(0)});
+                            all.push(json!({"rep":rep,"method":method,"execution_order":order,"total_seconds":verified_elapsed,"canonical_decode_seconds":decode,"relation_seconds":relation,"accumulate_seconds":accumulation,"fixed_seconds":fixed,"msm_seconds":msm,"individual_seconds":individual,"relations":rows,"msm_terms":terms,"scalar_distribution":bitstats,"backend_telemetry_before":telemetry_before,"backend_telemetry_after":b.telemetry(),"accept":true}));
+                            continue;
+                        }
+                    }
+                    all.push(json!({"rep":rep,"method":method,"execution_order":order,"total_seconds":total.elapsed().as_secs_f64(),"canonical_decode_seconds":decode,"relation_seconds":relation,"accumulate_seconds":accumulation,"fixed_seconds":fixed,"msm_seconds":msm,"individual_seconds":individual,"relations":rows,"msm_terms":terms,"scalar_distribution":bitstats,"accept":true}));
+                }
+            }
+            let summary:Vec<_>=methods.iter().map(|m|json!({"method":m,"seconds":med(all.iter().filter(|r|r["method"]==m.as_str()).map(|r|r["total_seconds"].as_f64().unwrap()).collect())})).collect();
+            eprintln!(
+                "mixed-proof-sweep family={} proofs={n}: PASS",
+                ["csz", "zkp0", "dleq", "mixed"][family]
+            );
+            output.push(json!({"family":(["csz","zkp0","dleq","mixed"][family]),"proofs":n,"summary":summary,"runs":all}));
+        }
+    }
+    json!({"scope":"Proof algebra only: validated in-memory points; no serialization/decompression/signatures/admission. V1 subgroup checks cover new received statement points (CSZ5/ZKP04/DLEQ1); setup/prior bases already validated. Individual equation checker is the reference.","reps":reps,"generation":generation,"initialization":init,"results":output,"equations_per_proof":{"csz":10,"zkp0":4,"dleq":2},"v1_variable_multiplications_per_proof":{"csz":10,"zkp0":4,"dleq":2},"received_point_counts":{"v1":[5,4,1],"commitment_form":[15,8,3]}})
+}
+
+/// Separately measures point codec/validation/cofactor-clear cost. Input is
+/// already a lifted public point; every receiver explicitly validates the
+/// on-curve affine representation before clear8, with exact byte consumption.
+pub fn codec_bench(n: usize, reps: usize) -> Value {
+    use rayon::prelude::*;
+    assert!(n > 0 && reps > 0);
+    let mut rng = OsRng;
+    let pool: Vec<G> = (0..256).map(|_| g() * rand_scalar(&mut rng)).collect();
+    let mut points: Vec<G> = (0..n).map(|i| pool[i % pool.len()]).collect();
+    points
+        .par_iter_mut()
+        .for_each(|p| randomize_lift(p, &mut OsRng));
+    let want: Vec<G> = points.par_iter().map(clear8).collect();
+    let mut all = Vec::new();
+    for rep in 0..reps {
+        let t = Instant::now();
+        let normalized = G::normalize_batch(&points);
+        let normalization = t.elapsed().as_secs_f64();
+        let mut modes = vec![false, true];
+        if rep % 2 == 1 {
+            modes.reverse();
+        }
+        for wide in &modes {
+            let t = Instant::now();
+            let bytes: Vec<Vec<u8>> = normalized
+                .par_iter()
+                .map(|p| {
+                    let mut b = Vec::new();
+                    if *wide {
+                        p.serialize_uncompressed(&mut b).unwrap();
+                    } else {
+                        p.serialize_compressed(&mut b).unwrap();
+                    }
+                    b
+                })
+                .collect();
+            let encode = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let decoded: Vec<G> = bytes
+                .par_iter()
+                .map(|b| {
+                    let mut slice = &b[..];
+                    let p = if *wide {
+                        crate::group::GA::deserialize_uncompressed_unchecked(&mut slice).unwrap()
+                    } else {
+                        crate::group::GA::deserialize_compressed_unchecked(&mut slice).unwrap()
+                    };
+                    assert!(slice.is_empty() && p.is_on_curve());
+                    G::from(p)
+                })
+                .collect();
+            let decode = t.elapsed().as_secs_f64();
+            let t = Instant::now();
+            let canonical: Vec<G> = decoded.par_iter().map(clear8).collect();
+            let cofactor = t.elapsed().as_secs_f64();
+            assert_eq!(canonical, want);
+            all.push(json!({"rep":rep,"wire":if *wide {"uncompressed-affine"}else{"compressed"},"order":modes,"points":n,"bytes":bytes.iter().map(Vec::len).sum::<usize>(),"batch_normalize_seconds":normalization,"encode_seconds":encode,"decode_validate_seconds":decode,"cofactor_seconds":cofactor,"decode_and_clear_seconds":decode+cofactor,"equal":true}));
+        }
+    }
+    json!({"scope":"Public lifted point codec only. Normalization measured once per pair and separate from encode. Canonical field parsing, exact byte length, on-curve, then clear8; subgroup checks are intentionally replaced by image decoding.","n":n,"reps":reps,"peak_rss_bytes":crate::experiment::peak_rss_bytes(),"runs":all})
+}
+
+#[cfg(test)]
+mod t008_bench_tests {
+    use super::*;
+    #[test]
+    fn heterogeneous_proof_and_codec_smoke() {
+        let proofs = mixed_proof_sweep(&[1, 4], 1, &[]);
+        assert_eq!(proofs["results"].as_array().unwrap().len(), 8);
+        for row in proofs["results"].as_array().unwrap() {
+            assert!(
+                row["runs"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|r| r["accept"] == true)
+            );
+        }
+        let codec = codec_bench(16, 1);
+        assert_eq!(codec["runs"][0]["bytes"], 16 * 32);
+        assert_eq!(codec["runs"][1]["bytes"], 16 * 64);
+        assert!(
+            codec["runs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|r| r["equal"] == true)
+        );
+    }
+}
+
+/// Same-election engine experiments. Full public admission/file replay is a
+/// separate CLI measurement. Every fresh tally gets individual CPU replay.
+pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
+    use crate::tally::LiftPolicy;
+    let (pp, keys) = committee();
+    let mut output = Vec::new();
+    for &n in ns {
+        let (circ, inputs, want) = election(&pp, n);
+        let mut runs = Vec::new();
+        for rep in 0..reps {
+            let order: Vec<_> = (0..names.len())
+                .map(|i| names[(i + rep) % names.len()].clone())
+                .collect();
+            for name in &order {
+                let (version, individual, canonical, spec) = match name.as_str() {
+                    "v1-inline" => (1, false, false, "inline"),
+                    "v1-cpu" => (1, false, false, "cpu"),
+                    "v1-gpu" => (1, false, false, "auto:4096:0"),
+                    "v1-certified" => (1, false, false, "cert:auto:4096:0"),
+                    "v2-individual" => (2, true, false, "inline"),
+                    "v2-cpu" => (2, false, false, "cpu"),
+                    "v2-gpu" => (2, false, false, "auto:4096:0"),
+                    "v3-canonical" => (3, false, true, "cpu"),
+                    "v3-individual" => (3, true, false, "inline"),
+                    "v3-cpu" => (3, false, false, "cpu"),
+                    "v3-gpu" => (3, false, false, "auto:4096:0"),
+                    "v3-gpu-msm" => (3, false, false, "auto-msm:4096:0"),
+                    "v4-cpu" => (4, false, false, "cpu"),
+                    "v4-gpu-msm" => (4, false, false, "auto-msm:4096:0"),
+                    _ => panic!("unknown secure-bench configuration {name}"),
+                };
+                let init = Instant::now();
+                let backend = if spec == "inline" {
+                    None
+                } else {
+                    Some(crate::batch::backend(spec).unwrap())
+                };
+                let init_seconds = init.elapsed().as_secs_f64();
+                let cfg = |e: &mut Engine| {
+                    e.select_format(version);
+                    if canonical {
+                        e.lift_policy = LiftPolicy::Canonical;
+                    }
+                    e.v2_individual = individual;
+                    e.v2_coeff_fs = false;
+                    e.set_batch_backend(backend.clone());
+                };
+                let telemetry = || {
+                    backend
+                        .as_ref()
+                        .map(|b| b.telemetry())
+                        .unwrap_or(Value::Null)
+                };
+                eprintln!("secure-bench n={n} rep={rep} {name}: tally");
+                let before = telemetry();
+                let (log, tally) = tally_cfg(&pp, &keys, &circ, &inputs, &cfg);
+                assert_eq!(tally["decision"], json!(want));
+                let after_tally = telemetry();
+                let replay = replay_cfg(&pp, &circ, &inputs, &log, &cfg);
+                assert_eq!(replay["accepted"], true);
+                let after_replay = telemetry();
+                let reference = replay_cfg(&pp, &circ, &inputs, &log, &|e: &mut Engine| {
+                    e.select_format(version);
+                    e.v2_individual = version >= 2;
+                    e.set_batch_backend(None);
+                });
+                assert_eq!(reference["accepted"], true);
+                assert_eq!(reference["decision"], json!(want));
+                assert_eq!(reference["output"], tally["output"]);
+                runs.push(json!({"rep":rep,"configuration":name,"format":version,"canonical_reference":canonical,
+                    "backend":spec,"execution_order":order,"initialization_seconds":init_seconds,
+                    "tally":tally,"replay":replay,"independent_cpu_individual":reference,
+                    "telemetry_before":before,"telemetry_after_tally":after_tally,"telemetry_after_replay":after_replay}));
+            }
+        }
+        output.push(json!({"n":n,"threshold":circ.tau,"gates":circ.n_gates(),"runs":runs}));
+    }
+    json!({"scope":"Engine only, genuine encrypted inputs and trustee proofs. Setup/Groth16/admission/file IO excluded. Independent CPU individual verification outside selected timings.","reps":reps,"results":output})
+}
+
+/// Controlled real MSM backend sweep, including all packing/transfer/reduction
+/// costs. Initialization and the correctness/warmup call are recorded separately.
+pub fn msm_sweep(sizes: &[usize], reps: usize, specs: &[String]) -> Value {
+    use ark_ff::{BigInteger, PrimeField};
+    use rand::{Rng, SeedableRng};
+    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(20261124008);
+    let tb = FixedBase::new(g());
+    let max = *sizes.iter().max().unwrap();
+    let points: Vec<G> = (0..max).map(|_| tb.mul(&rand_scalar(&mut rng))).collect();
+    let scalars: Vec<F> = (0..max)
+        .map(|i| match i % 4 {
+            0 => F::from(rng.r#gen::<u128>()),
+            1 => -F::from(rng.r#gen::<u128>()),
+            _ => rand_scalar(&mut rng),
+        })
+        .collect();
+    let mut targets = Vec::new();
+    let mut initialization = Vec::new();
+    for s in specs {
+        let t = Instant::now();
+        let b = crate::batch::backend(s).unwrap();
+        initialization.push(json!({"backend":s,"seconds":t.elapsed().as_secs_f64()}));
+        targets.push((s, b));
+    }
+    let mut rows = Vec::new();
+    for &n in sizes {
+        let (p, s) = (&points[..n], &scalars[..n]);
+        let expected = crate::batch::msm_cpu(p, s);
+        for (_, b) in &targets {
+            assert_eq!(b.msm(p, s).unwrap(), expected);
+        }
+        let mut samples = Vec::new();
+        for rep in 0..reps {
+            let order: Vec<_> = (0..targets.len())
+                .map(|i| (i + rep) % targets.len())
+                .collect();
+            for &idx in &order {
+                let (spec, b) = &targets[idx];
+                let before = b.telemetry();
+                let t = Instant::now();
+                let got = b.msm(p, s).unwrap();
+                let elapsed = t.elapsed().as_secs_f64();
+                assert_eq!(got, expected);
+                samples.push(json!({"rep":rep,"backend":spec,"seconds":elapsed,"equal":true,
+                    "execution_order":order.iter().map(|i|targets[*i].0).collect::<Vec<_>>(),"telemetry_before":before,"telemetry_after":b.telemetry()}));
+            }
+        }
+        let short = s
+            .iter()
+            .filter(|s| s.into_bigint().num_bits() <= 128)
+            .count();
+        let short_negative = s
+            .iter()
+            .filter(|s| (-**s).into_bigint().num_bits() <= 128)
+            .count();
+        eprintln!("msm-sweep n={n}: all backends PASS");
+        rows.push(json!({"terms":n,"unsigned_short_128":short,"negative_short_128":short_negative,"samples":samples}));
+    }
+    json!({"scope":"Real MSM; mixed positive128/negative128/fullwidth scalars, same bases/scalars per backend, warmup equality check outside measured repetitions.","public_input_seed":20261124008u64,"reps":reps,"initialization":initialization,"rows":rows})
 }

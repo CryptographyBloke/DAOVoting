@@ -25,7 +25,10 @@ param(
     [switch] $SkipBuild,
     [switch] $ProtocolOnly,
     [string] $PreparedInputs = "", # optional existing, genuine admitted elections; read-only
-    [ValidateRange(1, 256)][int] $Threads = 24
+    [ValidateRange(1, 256)][int] $Threads = 24,
+    [switch] $CofactorResearch,
+    [ValidateSet('Validate','Msm','Proofs','Codec','Protocol','Engine','All')][string] $ResearchPhase = 'Validate',
+    [switch] $TrusteeComparison
 )
 
 $ErrorActionPreference = "Stop"
@@ -81,7 +84,8 @@ foreach ($t in "cargo", "rustc", "git", "nvidia-smi") {
 }
 $rev = (git rev-parse --short=12 HEAD).Trim()
 $stamp = (Get-Date).ToString("yyyyMMdd-HHmmss")
-$Out = Join-Path $PSScriptRoot "results\local\t005-gpu-$stamp-$rev"
+$prefix = if ($CofactorResearch) { 't008-cofactor' } else { 't005-gpu' }
+$Out = Join-Path $PSScriptRoot "results\local\$prefix-$stamp-$rev"
 if (Test-Path $Out) { throw "output directory exists: $Out" }
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $Out 'logs') | Out-Null
@@ -182,6 +186,177 @@ $cpuJob = Start-Job -ScriptBlock {
     }
 } -ArgumentList $wod, (Join-Path $Out 'cpu_monitor.csv')
 try {
+    if ($CofactorResearch) {
+        # This branch deliberately returns through both existing finally blocks.
+        # It does not enter or change the historical T005/T006 workflow below.
+        function PublicCopy([string]$source, [string]$dest) {
+            if (Test-Path -LiteralPath $dest) { throw "refuse replay output collision: $dest" }
+            New-Item -ItemType Directory -Path (Join-Path $dest 'public') -Force | Out-Null
+            foreach ($f in @('setup.bin','ledger.bin','transcript.bin','claim.json')) {
+                Copy-Item -LiteralPath (Join-Path $source "public/$f") -Destination (Join-Path $dest "public/$f")
+            }
+        }
+        function PublicHashes([string]$dir) {
+            $hashes = @{}
+            Get-ChildItem -LiteralPath (Join-Path $dir 'public') -File | ForEach-Object {
+                $hashes[$_.Name] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            return $hashes
+        }
+        function ResearchFlags($config) {
+            return @('--format',$config.format,'--lift-policy',$config.policy,
+                '--v2-verify',$config.verify,'--v2-coeff','random','--verify-backend',$config.backend)
+        }
+        function CheckPublic($v, [int]$n, $decision) {
+            if (-not $v.accept -or $v.ballots -ne $n -or $v.gates_verified -ne (17*$n-2) -or $v.decision -ne $decision) {
+                throw 'independent public verification rejected'
+            }
+            foreach ($predicate in @('chain','snapshot','backend','binding','hash','bit','claim')) {
+                if (-not $v.$predicate) { throw "acceptance predicate failed: $predicate" }
+            }
+        }
+        function ResearchTally($config, [int]$n, [int]$rep, [string]$mode, [string]$base, $order) {
+            $dir = Join-Path $Out "protocol/n$n/rep$rep/$mode-$($config.name)"
+            if (Test-Path -LiteralPath $dir) { throw "refuse tally collision: $dir" }
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            New-Item -ItemType Directory -Path (Join-Path $dir 'public') | Out-Null
+            foreach ($f in @('setup.bin','ledger.bin')) {
+                Copy-Item -LiteralPath (Join-Path $base "public/$f") -Destination (Join-Path $dir "public/$f")
+            }
+            Copy-Item -LiteralPath (Join-Path $base 'private') -Destination (Join-Path $dir 'private') -Recurse
+            New-Item -ItemType Directory -Path (Join-Path $dir 'work') | Out-Null
+            $flags = ResearchFlags $config
+            Write-Host "T008 tally n=$n rep=$rep mode=$mode config=$($config.name)"
+            $started = [DateTimeOffset]::UtcNow.ToString('o')
+            $tally = RunJson $wod ($flags + @('tally','--dir',$dir,'--mode',$mode,'--threads-per-trustee','4')) (Join-Path $dir 'work/tally.json')
+            $copy = Join-Path $dir 'work/individual-cpu'
+            PublicCopy $dir $copy
+            $cpu = RunJson $wod @('--verify-backend','inline','--v2-verify','individual','verify','--dir',$copy) (Join-Path $dir 'public/cpu-verifier.json')
+            CheckPublic $cpu $n $tally.decision
+            Native $wod @('oracle','--dir',$dir) (Join-Path $dir 'private/oracle-cli.log') | Out-Host
+            $oracle = Get-Content (Join-Path $dir 'private/oracle.json') -Raw | ConvertFrom-Json
+            if ($oracle.bit -ne $tally.decision) { throw 'plaintext oracle disagreed after CPU verification' }
+            $inputHashes = @{}
+            foreach ($f in @('setup.bin','ledger.bin')) {
+                $inputHashes[$f] = (Get-FileHash -LiteralPath (Join-Path $base "public/$f") -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+            $result = [ordered]@{source_commit=$machine.source_revision;source_dirty=$machine.source_dirty;machine=$machine;
+                n=$n;rep=$rep;mode=$mode;config=$config;execution_order=$order;started_utc=$started;completed_utc=[DateTimeOffset]::UtcNow.ToString('o');
+                directory=$dir;parameters=@{threshold=$cpu.threshold;trustees=$cpu.trustees;shamir_degree=$cpu.shamir_degree;decryption_threshold=5;injected_rtt_ms=0};
+                prepared_input_sha256=$inputHashes;tally=$tally;verification=$cpu;oracle_agrees=$true;public_sha256=(PublicHashes $dir)}
+            WriteJson $result (Join-Path $dir 'public/manifest.json')
+            return $result
+        }
+        $researchN = @($TallyN -split ',' | ForEach-Object { [int]$_ } | Where-Object { $_ -le 64 -or $Large })
+        if ($researchN.Count -eq 0) { throw 'no electorate sizes selected; use -Large for n>=256' }
+        if ($researchN | Where-Object { $_ -notin @(8,64,256,1024) }) { throw 'research supports n=8,64,256,1024' }
+        $researchResults = [ordered]@{phase=$ResearchPhase;machine=$machine;parameters=@{n=$researchN;large=[bool]$Large;
+            reps=$Reps;public_replay_reps=3;trustee_comparison=[bool]$TrusteeComparison;threads_per_trustee=4}}
+        if ($ResearchPhase -in @('Validate','All')) {
+            Step 'T008 scalar/MSM/lift vectors and device memory validation'
+            foreach ($backend in @("cuda:$Device","cuda-msm:$Device","cert:cuda:$Device")) {
+                Native $wod @('msm-vectors','--check','tests/vectors/t007_msm_v1.json','--backend',$backend) (Join-Path $Out 'logs/msm-vectors.log') | Out-Host
+                Native $wod @('msm-vectors','--check','tests/vectors/t008_lifts_v1.json','--backend',$backend) (Join-Path $Out 'logs/secure-lift-vectors.log') | Out-Host
+            }
+            $sanitizer = Join-Path $cuda 'compute-sanitizer/compute-sanitizer.exe'
+            if (Test-Path -LiteralPath $sanitizer) {
+                Native $sanitizer @('--tool','memcheck','--error-exitcode','99',$wod,'gpu-vectors','--check','tests/vectors/bjj_mul_v1.json','--backend',"cuda:$Device") (Join-Path $Out 'logs/memcheck-scalar.log') | Out-Host
+                Native $sanitizer @('--tool','memcheck','--error-exitcode','99',$wod,'msm-vectors','--check','tests/vectors/t007_msm_v1.json','--backend',"cuda-msm:$Device") (Join-Path $Out 'logs/memcheck-msm.log') | Out-Host
+                $researchResults.compute_sanitizer = 'PASS'
+            } else { $researchResults.compute_sanitizer = 'UNAVAILABLE' }
+            $researchResults.vectors = 'PASS'
+            $researchResults.cert_msm_scope = 'cert:cuda MSM is trusted CPU Pippenger; real GPU product certification is exercised by V1-certified Protocol runs.'
+        }
+        if ($ResearchPhase -in @('Msm','All')) {
+            Native $wod @('msm-sweep','--sizes','1,4,16,64,256,1024,4096,16384,81920','--backends',"cpu,cuda:$Device,cuda-msm:$Device",'--reps',"$Reps",'--out',(Join-Path $Out 'work/msm')) $log | Out-Host
+        }
+        if ($ResearchPhase -in @('Proofs','All')) {
+            Native $wod @('mixed-proof-sweep','--sizes','1,4,16,64,256,1024,4096,16384','--backends',"cpu,cuda:$Device,cuda-msm:$Device",'--reps',"$Reps",'--out',(Join-Path $Out 'work/proofs')) $log | Out-Host
+        }
+        if ($ResearchPhase -in @('Codec','All')) {
+            Native $wod @('codec-bench','--points','81920','--reps',"$Reps",'--out',(Join-Path $Out 'work/codec')) $log | Out-Host
+        }
+        if ($ResearchPhase -in @('Engine','All')) {
+            foreach ($n in $researchN) {
+                $nr = if ($n -le 64) { 3 } else { 1 }
+                Native $wod @('secure-bench','--n',"$n",'--reps',"$nr",'--configs','v1-cpu,v3-cpu,v3-gpu-msm,v4-cpu,v4-gpu-msm','--out',(Join-Path $Out "work/engine-n$n")) $log | Out-Host
+            }
+        }
+        if ($ResearchPhase -in @('Protocol','All')) {
+            if (-not $PreparedInputs -or -not (Test-Path -LiteralPath $PreparedInputs -PathType Container)) { throw 'Protocol phase requires -PreparedInputs with genuine pre-claim bases' }
+            $configs = @(
+                [pscustomobject]@{name='v1-cpu';format='v1';policy='randomized';backend='cpu';verify='batch'},
+                [pscustomobject]@{name='v2-legacy';format='v2';policy='randomized';backend='cpu';verify='batch'},
+                [pscustomobject]@{name='v3-canonical';format='v3';policy='canonical';backend='cpu';verify='batch'},
+                [pscustomobject]@{name='v3-randomized';format='v3';policy='randomized';backend='cpu';verify='batch'},
+                [pscustomobject]@{name='v4-randomized';format='v4';policy='randomized';backend='cpu';verify='batch'})
+            $protocol = @(); $replay = @(); $trustees = @(); $ni = 0
+            foreach ($n in $researchN) {
+                $bases = @(Get-ChildItem -LiteralPath $PreparedInputs -Recurse -Directory -Filter base | Where-Object { $_.FullName -match "[\\/]n$n[\\/]rep0[\\/]base$" })
+                if ($bases.Count -ne 1) { throw "need one unclaimed original base for n=$n" }
+                $base = $bases[0].FullName
+                foreach ($f in @('transcript.bin','claim.json')) {
+                    if (Test-Path -LiteralPath (Join-Path $base "public/$f")) { throw 'PreparedInputs must be a pre-claim base' }
+                }
+                $order = @(0..4 | ForEach-Object { $configs[($_+$ni)%5] })
+                foreach ($config in $order) {
+                    $case = ResearchTally $config $n 0 'local' $base @($order.name)
+                    $protocol += $case
+                    # Canonical A is the producer-overhead reference; its exact
+                    # individual CPU replay above is mandatory, without pooling
+                    # it into the principal randomized-representation samples.
+                    if ($config.name -eq 'v3-canonical') { continue }
+                    $policies = if ($config.format -eq 'v1') { @('inline','cpu',"auto:4096:$Device","cert:auto:4096:$Device") }
+                        elseif ($config.format -eq 'v2') { @('individual','cpu',"auto:4096:$Device") }
+                        elseif ($config.format -eq 'v3') { @('individual','cpu',"auto:4096:$Device","auto-msm:4096:$Device") }
+                        else { @('cpu',"auto-msm:4096:$Device") }
+                    for ($rep=0; $rep -lt 3; $rep++) {
+                        $rotation = @(0..($policies.Count-1) | ForEach-Object { $policies[($_+$rep+$ni)%$policies.Count] })
+                        foreach ($spec in $rotation) {
+                            $name = $spec -replace ':','-'
+                            $dir = Join-Path $Out "replay/n$n/$($config.name)/rep$rep/$name"
+                            PublicCopy $case.directory $dir
+                            $verification = if ($spec -eq 'individual') { 'individual' } else { 'batch' }
+                            $backend = if ($spec -eq 'individual') { 'inline' } else { $spec }
+                            Write-Host "T008 replay n=$n rep=$rep format=$($config.name) backend=$spec"
+                            $started = [DateTimeOffset]::UtcNow.ToString('o')
+                            $v = RunJson $wod @('--v2-verify',$verification,'--v2-coeff','random','--verify-backend',$backend,'verify','--dir',$dir) (Join-Path $dir 'public/replay.json')
+                            CheckPublic $v $n $case.tally.decision
+                            $row = [ordered]@{source_commit=$machine.source_revision;source_dirty=$machine.source_dirty;machine=$machine;
+                                n=$n;rep=$rep;config=$config;backend=$backend;verification_method=$verification;execution_order=$rotation;
+                                started_utc=$started;completed_utc=[DateTimeOffset]::UtcNow.ToString('o');
+                                fixture_manifest_sha256=(Get-FileHash -LiteralPath (Join-Path $case.directory 'public/manifest.json') -Algorithm SHA256).Hash.ToLowerInvariant();
+                                report=$v;oracle_agrees=$true;public_sha256=(PublicHashes $dir)}
+                            WriteJson $row (Join-Path $dir 'public/manifest.json'); $replay += $row
+                        }
+                    }
+                }
+                if ($TrusteeComparison) {
+                    $dist = @($configs[0],
+                        [pscustomobject]@{name='v1-cert';format='v1';policy='randomized';backend="cert:auto:4096:$Device";verify='batch'},
+                        $configs[3],
+                        [pscustomobject]@{name='v3-auto-msm';format='v3';policy='randomized';backend="auto-msm:4096:$Device";verify='batch'},
+                        $configs[4],
+                        [pscustomobject]@{name='v4-auto-msm';format='v4';policy='randomized';backend="auto-msm:4096:$Device";verify='batch'})
+                    $nr = if ($n -le 64) { 3 } else { 1 }
+                    for ($rep=0; $rep -lt $nr; $rep++) {
+                        $rotation = @(0..($dist.Count-1) | ForEach-Object { $dist[($_+$rep+$ni)%$dist.Count] })
+                        foreach ($config in $rotation) { $trustees += ResearchTally $config $n $rep 'dist' $base @($rotation.name) }
+                    }
+                }
+                $ni++
+            }
+            WriteJson $protocol (Join-Path $Out 'protocol-results.json')
+            WriteJson $replay (Join-Path $Out 'public-replay-results.json')
+            WriteJson $trustees (Join-Path $Out 'trustee-results.json')
+            $researchResults.protocol_runs = $protocol.Count; $researchResults.replay_runs = $replay.Count; $researchResults.trustee_runs = $trustees.Count
+        }
+        $researchResults.status = 'complete'
+        $researchResults.completed_utc = [DateTimeOffset]::UtcNow.ToString('o')
+        WriteJson $researchResults (Join-Path $Out 'manifest.json')
+        Write-Host "T008 completed: $Out" -ForegroundColor Green
+        return
+    }
     if (-not $ProtocolOnly) {
     # 5. Batch-size sweep and end-to-end engine comparison ------------------------
     Step "5. CPU vs GPU: batch sweep and end-to-end tally/replay (n = $TallyN)"

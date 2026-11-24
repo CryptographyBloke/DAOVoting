@@ -218,6 +218,64 @@ extern "C" __global__ void bjj_mul(const u32 *in, const u32 *k, u32 *out, u32 n)
     u32 i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < n) bjj_mul_one(in + 32 * (u64)i, k + 8 * (u64)i, out + 32 * (u64)i);
 }
+
+// T008 unsigned-window Pippenger prototype. Scatter is integer-only; each
+// nonzero bucket has one owner, so no curve-coordinate atomic operation is
+// needed. Kernels execute in one stream: all links are complete before use.
+extern "C" __global__ void bjj_msm_scatter(const u32 *ks, int *heads,
+    int *next, u32 n, u32 width, u32 windows) {
+    u64 index = (u64)blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= (u64)n * windows) return;
+    u32 w = (u32)(index / n), i = (u32)(index % n);
+    u32 bit = w * width, word = bit >> 5, shift = bit & 31;
+    u32 digit = ks[8 * (u64)i + word] >> shift;
+    if (shift + width > 32 && word < 7)
+        digit |= ks[8 * (u64)i + word + 1] << (32 - shift);
+    digit &= (1u << width) - 1;
+    if (digit) next[index] = atomicExch(heads + w * (1u << width) + digit, (int)i);
+}
+
+extern "C" __global__ void bjj_msm_buckets(const u32 *pts, const int *heads,
+    const int *next, u32 *out, u32 n, u32 width, u32 windows) {
+    u32 index = blockIdx.x * blockDim.x + threadIdx.x;
+    u32 count = 1u << width;
+    if (index >= count * windows) return;
+    u32 w = index / count, digit = index % count;
+    pt acc = pt_identity();
+    if (digit) {
+        int i = heads[index];
+        while (i >= 0) {
+            pt p; pt_load(p, pts + 32 * (u64)i);
+            acc = pt_add(acc, p);
+            i = next[(u64)w * n + i];
+        }
+    }
+    pt_store(acc, out + 32 * (u64)index);
+}
+
+// Weighted bucket sums and an on-device tree reduction per window. Uses
+// exactly 32 KiB shared memory; host performs only the final window Horner sum.
+extern "C" __global__ void bjj_msm_reduce(const u32 *buckets, u32 *out, u32 width) {
+    __shared__ pt partial[256];
+    u32 w = blockIdx.x, t = threadIdx.x, count = 1u << width;
+    pt acc = pt_identity();
+    if (t < count && t) {
+        pt p; pt_load(p, buckets + 32 * ((u64)w * count + t));
+        u32 k = t;
+        while (k) {
+            if (k & 1) acc = pt_add(acc, p);
+            k >>= 1;
+            if (k) p = pt_dbl(p);
+        }
+    }
+    partial[t] = acc;
+    __syncthreads();
+    for (u32 stride = 128; stride; stride >>= 1) {
+        if (t < stride) partial[t] = pt_add(partial[t], partial[t + stride]);
+        __syncthreads();
+    }
+    if (!t) pt_store(partial[0], out + 32 * (u64)w);
+}
 #else
 extern "C" void bjj_mul_host(const u32 *in, const u32 *k, u32 *out, u32 n) {
     for (u32 i = 0; i < n; ++i) bjj_mul_one(in + 32 * (u64)i, k + 8 * (u64)i, out + 32 * (u64)i);

@@ -88,6 +88,42 @@ pub enum Item {
 }
 
 impl Item {
+    /// Refresh every transmitted lift independently. Canonical values, proof
+    /// challenges and canonical commit/reveal bindings are unchanged.
+    fn randomize_lifts<R: RngCore + CryptoRng>(&mut self, rng: &mut R) {
+        let mut ct = |c: &mut Ct| {
+            randomize_lift(&mut c.a, rng);
+            randomize_lift(&mut c.b, rng);
+        };
+        match self {
+            Item::Mask2 { x, y, e, proof, .. } => {
+                ct(x);
+                ct(y);
+                for c in &mut proof.c {
+                    ct(c);
+                }
+                randomize_lift(e, rng);
+                for p in &mut proof.ce {
+                    randomize_lift(p, rng);
+                }
+            }
+            Item::Reveal2 { r, proof, .. } => {
+                for c in r {
+                    ct(c);
+                }
+                for c in &mut proof.e {
+                    ct(c);
+                }
+            }
+            Item::Dec2 { w, proof, .. } => {
+                randomize_lift(w, rng);
+                randomize_lift(&mut proof.e1, rng);
+                randomize_lift(&mut proof.e2, rng);
+            }
+            Item::Commit { .. } => {}
+            _ => unreachable!("representation refresh only applies to lifted proofs"),
+        }
+    }
     /// Every group element carried by the item lies in the prime-order
     /// subgroup (decoding only guarantees an on-curve point).
     pub fn points_valid(&self) -> bool {
@@ -187,15 +223,33 @@ fn msg_digest(ctx: &[u8; 32], from: u8, ctr: u64, body: &[u8]) -> [u8; 32] {
     sha256(&[b"wod/msg/v1", ctx, &[from], &ctr.to_be_bytes(), body])
 }
 
+fn msg_digest_format(ctx: &[u8; 32], from: u8, ctr: u64, body: &[u8], version: u8) -> [u8; 32] {
+    match version {
+        3 => sha256(&[b"wod/msg/v3", ctx, &[from], &ctr.to_be_bytes(), body]),
+        4 => sha256(&[b"wod/msg/v4", ctx, &[from], &ctr.to_be_bytes(), body]),
+        _ => msg_digest(ctx, from, ctr, body),
+    }
+}
+
 impl Msg {
     pub fn sign(sk: &SigningKey, ctx: &[u8; 32], from: u8, ctr: u64, items: &[Item]) -> Msg {
+        Self::sign_format(sk, ctx, from, ctr, items, 1)
+    }
+    pub fn sign_format(
+        sk: &SigningKey,
+        ctx: &[u8; 32],
+        from: u8,
+        ctr: u64,
+        items: &[Item],
+        version: u8,
+    ) -> Msg {
         let enc: Vec<Vec<u8>> = items
             .par_iter()
-            .map(|i| bincode::serialize(i).unwrap())
+            .map(|i| message_wire(version == 4, || bincode::serialize(i).unwrap()))
             .collect();
         let body = bincode::serialize(&enc).unwrap();
         let sig = sk
-            .sign(&msg_digest(ctx, from, ctr, &body))
+            .sign(&msg_digest_format(ctx, from, ctr, &body, version))
             .to_bytes()
             .to_vec();
         Msg {
@@ -206,8 +260,14 @@ impl Msg {
         }
     }
     pub fn verify_sig(&self, vk: &VerifyingKey, ctx: &[u8; 32]) -> Result<()> {
+        self.verify_sig_format(vk, ctx, 1)
+    }
+    pub fn verify_sig_format(&self, vk: &VerifyingKey, ctx: &[u8; 32], version: u8) -> Result<()> {
         let sig = Signature::from_slice(&self.sig)?;
-        vk.verify(&msg_digest(ctx, self.from, self.ctr, &self.body), &sig)?;
+        vk.verify(
+            &msg_digest_format(ctx, self.from, self.ctr, &self.body, version),
+            &sig,
+        )?;
         Ok(())
     }
 }
@@ -239,9 +299,34 @@ pub struct V2Pub {
 /// Transcript format selected for new runs: v2 iff `WOD_FORMAT=v2` (set by
 /// the CLI flag `--format v2` and inherited by subprocesses).
 pub fn default_v2() -> bool {
-    std::env::var("WOD_FORMAT")
-        .map(|v| v == "v2")
-        .unwrap_or(false)
+    default_format() >= 2
+}
+
+pub fn default_format() -> u8 {
+    match std::env::var("WOD_FORMAT").as_deref() {
+        Ok("v2") => 2,
+        Ok("v3") => 3,
+        Ok("v4") => 4,
+        _ => 1,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LiftPolicy {
+    Legacy,
+    Canonical,
+    Randomized,
+}
+
+fn default_lift_policy() -> LiftPolicy {
+    if default_format() < 3 {
+        LiftPolicy::Legacy
+    } else if std::env::var("WOD_LIFT_POLICY").as_deref() == Ok("canonical") {
+        LiftPolicy::Canonical
+    } else {
+        LiftPolicy::Randomized
+    }
 }
 
 impl Public {
@@ -265,15 +350,21 @@ impl Public {
         Public::new(self.key.h, self.hi.clone(), self.vks.clone(), ctx)
     }
     pub fn v2(&self) -> &V2Pub {
-        self.v2.get_or_init(|| {
-            let wb: Vec<G> = self.hi.iter().zip(&self.lam).map(|(h, l)| *h * l).collect();
-            V2Pub {
-                lk: LiftKey::new(self.key.h),
-                tht8: FixedBase::new(lift_of(&h_tilde())),
-                tw: wb.iter().map(|w| FixedBase::new(*w)).collect(),
-                wb,
-            }
-        })
+        if let Some(public) = self.v2.get() {
+            return public;
+        }
+        // Never hold OnceLock's initialization guard across Rayon work:
+        // normalize_batch can steal a second caller waiting on this lock.
+        // Producers/processors prewarm outside item parallelism. Concurrent
+        // cold callers may duplicate public precomputation, then publish once.
+        let wb: Vec<G> = self.hi.iter().zip(&self.lam).map(|(h, l)| *h * l).collect();
+        let public = V2Pub {
+            lk: LiftKey::new(self.key.h),
+            tht8: FixedBase::new(lift_of(&h_tilde())),
+            tw: wb.iter().map(|w| FixedBase::new(*w)).collect(),
+            wb,
+        };
+        self.v2.get_or_init(|| public)
     }
     fn label(slot: u32, who: usize) -> u64 {
         ((slot as u64) << 8) | who as u64
@@ -301,7 +392,7 @@ struct Slot {
     done: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
 pub enum Act {
     Mask(u32),
     Commit(u32),
@@ -333,6 +424,10 @@ pub struct Engine {
     pub prof: Prof,
     /// transcript format v2 (lifted points, commitment-form proofs)
     pub v2: bool,
+    /// v3/v4 repair: subgroup reference or independently uniform torsion.
+    pub lift_policy: LiftPolicy,
+    /// v4: validated uncompressed affine message points (experimental).
+    pub wide_points: bool,
     /// v2 only: verify every relation separately instead of one MSM per message
     pub v2_individual: bool,
     /// v2 only: derive batch coefficients from the message (reproducible)
@@ -344,6 +439,8 @@ pub struct Engine {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Prof {
     pub decode: f64,
+    /// Subset of decode: cofactor-image canonicalization (not additive to decode).
+    pub cofactor_decode: f64,
     pub signature: f64,
     /// inline path: subgroup checks + proof verification
     pub verify_inline: f64,
@@ -438,6 +535,8 @@ impl Engine {
             pending_finish: Vec::new(),
             prof: Prof::default(),
             v2: default_v2(),
+            lift_policy: default_lift_policy(),
+            wide_points: default_format() == 4,
             v2_individual: std::env::var("WOD_V2_VERIFY")
                 .map(|v| v == "individual")
                 .unwrap_or(false),
@@ -482,6 +581,31 @@ impl Engine {
     /// Verify through message-level batches on `backend` (public data only).
     pub fn set_batch_backend(&mut self, backend: Option<Arc<dyn MulBackend>>) {
         self.batch = backend;
+    }
+
+    pub fn format(&self) -> u8 {
+        if !self.v2 {
+            1
+        } else if self.lift_policy == LiftPolicy::Legacy {
+            2
+        } else if self.wide_points {
+            4
+        } else {
+            3
+        }
+    }
+
+    /// Public verification derives format exclusively from the signed
+    /// transcript header. Producer-only canonical/randomized policies share
+    /// the same v3 predicate and have identical canonical semantics.
+    pub fn select_format(&mut self, version: u8) {
+        self.v2 = version >= 2;
+        self.lift_policy = if version >= 3 {
+            LiftPolicy::Randomized
+        } else {
+            LiftPolicy::Legacy
+        };
+        self.wide_points = version == 4;
     }
 
     pub fn release_slot(&self) -> u32 {
@@ -864,6 +988,11 @@ impl Engine {
     /// With `verify = false` only the signature and ordering are checked
     /// (used by a publisher that relies on the trustees' and verifier's checks).
     pub fn process(&mut self, msg: &Msg, verify: bool) -> Result<()> {
+        // Initializers build affine tables using Rayon batch inversion.
+        // Warm before any per-item Rayon work can block on the same OnceLock.
+        if self.v2 {
+            self.pp.v2();
+        }
         let from = msg.from as usize;
         ensure!(from < self.pp.a, "unknown sender");
         ensure!(
@@ -871,13 +1000,13 @@ impl Engine {
             "replayed or reordered message"
         );
         let t = Instant::now();
-        msg.verify_sig(&self.pp.vks[from], &self.pp.ctx)?;
+        msg.verify_sig_format(&self.pp.vks[from], &self.pp.ctx, self.format())?;
         self.prof.signature += t.elapsed().as_secs_f64();
         let t = Instant::now();
         let enc: Vec<Vec<u8>> = bincode::deserialize(&msg.body)?;
         let mut items: Vec<Item> = enc
             .par_iter()
-            .map(|b| bincode::deserialize(b))
+            .map(|b| message_wire(self.wide_points, || bincode::deserialize(b)))
             .collect::<Result<_, _>>()?;
         ensure!(
             items
@@ -885,11 +1014,15 @@ impl Engine {
                 .all(|it| it.is_v2().unwrap_or(self.v2) == self.v2),
             "item of the wrong transcript format"
         );
+        let cofactor_start = Instant::now();
         let lifts: Vec<Option<(Ct, Ct)>> = if self.v2 {
             items.par_iter_mut().map(|it| it.canonicalize()).collect()
         } else {
             vec![None; items.len()]
         };
+        if self.v2 {
+            self.prof.cofactor_decode += cofactor_start.elapsed().as_secs_f64();
+        }
         self.prof.decode += t.elapsed().as_secs_f64();
         let mut seen = HashSet::new();
         let mut starts = 0;
@@ -1064,7 +1197,11 @@ impl Engine {
         }
         let seed: [u8; 32] = if self.v2_coeff_fs {
             sha256(&[
-                b"wod/v2/batch-coefficients",
+                if self.lift_policy == LiftPolicy::Legacy {
+                    b"wod/v2/batch-coefficients"
+                } else {
+                    b"wod/v3/batch-coefficients"
+                },
                 &pp.ctx,
                 &[from as u8],
                 &msg.ctr.to_be_bytes(),
@@ -1077,7 +1214,16 @@ impl Engine {
             .par_iter()
             .enumerate()
             .map(|(i, r)| {
-                let mut rng = ChaCha20Rng::from_seed(sha256(&[&seed, &(i as u64).to_be_bytes()]));
+                let key = if self.lift_policy == LiftPolicy::Legacy {
+                    sha256(&[&seed, &(i as u64).to_be_bytes()])
+                } else {
+                    sha256(&[
+                        b"wod/v3/relation-coefficients",
+                        &seed,
+                        &(i as u64).to_be_bytes(),
+                    ])
+                };
+                let mut rng = ChaCha20Rng::from_seed(key);
                 let mut a = Acc::default();
                 a.add(r, &mut rng);
                 a
@@ -1120,6 +1266,8 @@ pub struct Trustee {
     sk: SigningKey,
     ctr: u64,
     rng: ChaCha20Rng,
+    /// Independent random tape: never reused for a witness/proof nonce.
+    representation_rng: Option<ChaCha20Rng>,
     reveals: HashMap<u32, Item>,
     sent: HashSet<Act>,
 }
@@ -1137,6 +1285,7 @@ impl Trustee {
             sk,
             ctr: 0,
             rng: ChaCha20Rng::from_entropy(),
+            representation_rng: None,
             reveals: HashMap::new(),
             sent: HashSet::new(),
         }
@@ -1209,6 +1358,9 @@ impl Trustee {
                 let s = &eng.slots[sid as usize];
                 let ((x0, y0), (lx0, ly0)) = if me == 0 {
                     let (x, y) = (s.x.unwrap(), s.y0.unwrap());
+                    ((x, y), (x.lift_of(), y.lift_of()))
+                } else if eng.lift_policy == LiftPolicy::Canonical {
+                    let (x, y) = s.chain[me - 1];
                     ((x, y), (x.lift_of(), y.lift_of()))
                 } else {
                     (s.chain[me - 1], s.chain_lift[me - 1])
@@ -1350,6 +1502,9 @@ impl Trustee {
     /// Computes all newly enabled contributions in parallel and signs them as
     /// one board message. Returns `None` if nothing is enabled.
     pub fn produce(&mut self, eng: &Engine) -> Option<Msg> {
+        if eng.v2 {
+            eng.pp.v2();
+        }
         let acts: Vec<Act> = eng
             .actions(self.id)
             .into_iter()
@@ -1364,12 +1519,42 @@ impl Trustee {
             self.sent.insert(*a);
             match a {
                 Act::Reveal(sid) => items.push(self.reveals.remove(sid).expect("reveal secret")),
-                _ => todo.push((*a, self.rng.r#gen::<[u8; 32]>())),
+                _ => {
+                    let representation_seed = if eng.lift_policy == LiftPolicy::Randomized {
+                        self.representation_rng
+                            .get_or_insert_with(ChaCha20Rng::from_entropy)
+                            .r#gen::<[u8; 32]>()
+                    } else {
+                        [0; 32]
+                    };
+                    todo.push((*a, self.rng.r#gen::<[u8; 32]>(), representation_seed));
+                }
             }
         }
         let outs: Vec<Out> = todo
             .par_iter()
-            .map(|(a, seed)| self.act(eng, *a, &mut ChaCha20Rng::from_seed(*seed)))
+            .map(|(a, seed, representation_seed)| {
+                let mut out = self.act(eng, *a, &mut ChaCha20Rng::from_seed(*seed));
+                if eng.lift_policy == LiftPolicy::Randomized {
+                    let seed = sha256(&[
+                        b"wod/v3/representation-torsion",
+                        &eng.pp.ctx,
+                        &(self.id as u64).to_be_bytes(),
+                        &self.ctr.to_be_bytes(),
+                        &bincode::serialize(a).unwrap(),
+                        representation_seed,
+                    ]);
+                    let mut rr = ChaCha20Rng::from_seed(seed);
+                    match &mut out {
+                        Out::Item(i) => i.randomize_lifts(&mut rr),
+                        Out::WithReveal(i, rev) => {
+                            i.randomize_lifts(&mut rr);
+                            rev.randomize_lifts(&mut rr);
+                        }
+                    }
+                }
+                out
+            })
             .collect();
         for o in outs {
             match o {
@@ -1380,7 +1565,14 @@ impl Trustee {
                 }
             }
         }
-        let m = Msg::sign(&self.sk, &eng.pp.ctx, self.id as u8, self.ctr, &items);
+        let m = Msg::sign_format(
+            &self.sk,
+            &eng.pp.ctx,
+            self.id as u8,
+            self.ctr,
+            &items,
+            eng.format(),
+        );
         self.ctr += 1;
         Some(m)
     }
@@ -1809,6 +2001,113 @@ mod tests {
                 .to_string()
                 .contains("format")
         );
+    }
+
+    #[test]
+    fn malicious_predecessor_tags_legacy_sign_and_secure_formats_replay() {
+        use ark_ec::PrimeGroup;
+        use ark_ff::PrimeField;
+        let torsion = torsion8()[1];
+        let tag = torsion.mul_bigint(F::MODULUS);
+        assert_ne!(tag, -tag); // an order-two example would miss this leak
+        for (policy, wide) in [
+            (LiftPolicy::Legacy, false),
+            (LiftPolicy::Canonical, false),
+            (LiftPolicy::Randomized, false),
+            (LiftPolicy::Randomized, true),
+        ] {
+            let (_, pp, mut ts) = committee(5);
+            let inputs = [
+                pp.key.enc(&F::from(1u64), &F::from(17u64)),
+                pp.key.enc(&F::from(1u64), &F::from(29u64)),
+            ];
+            let circ = Arc::new(Circuit::single_gate());
+            let mut eng = v2_engine(&pp, &circ, &inputs, false, false);
+            eng.lift_policy = policy;
+            eng.wide_points = wide;
+            let version = eng.format();
+            let first = ts[0].produce(&eng).unwrap();
+            let encoded: Vec<Vec<u8>> = bincode::deserialize(&first.body).unwrap();
+            let mut items: Vec<Item> = encoded
+                .iter()
+                .map(|b| message_wire(wide, || bincode::deserialize(b).unwrap()))
+                .collect();
+            if let Item::Mask2 { x, .. } = &mut items[0] {
+                x.a += torsion;
+            } else {
+                panic!("mask required");
+            }
+            // The adversary changes the representation and signs it. The
+            // canonical statement/proof is unchanged and correctly accepted.
+            let tagged = Msg::sign_format(&ts[0].sk, &pp.ctx, 0, 0, &items, version);
+            eng.process(&tagged, true).unwrap();
+            if policy != LiftPolicy::Randomized {
+                for seed in 0..16u64 {
+                    let mut r = ChaCha20Rng::seed_from_u64(seed);
+                    let sign = if r.clone().r#gen::<bool>() { 1 } else { -1 };
+                    let out = ts[1].act2(&eng, Act::Mask(0), &mut r);
+                    let Out::WithReveal(Item::Mask2 { x, .. }, _) = out else {
+                        panic!("mask required");
+                    };
+                    let observed = x.a.mul_bigint(F::MODULUS);
+                    if policy == LiftPolicy::Legacy {
+                        assert_eq!(observed, small_mul(&tag, sign));
+                    } else {
+                        assert!(observed.is_zero());
+                    }
+                }
+            }
+            let mut log = vec![tagged];
+            log.extend(run_local(&mut eng, &mut ts, true).unwrap());
+            assert_eq!(eng.result, Some(true));
+            for individual in [true, false] {
+                let mut v = v2_engine(&pp, &circ, &inputs, individual, false);
+                v.lift_policy = policy;
+                v.wide_points = wide;
+                for m in &log {
+                    v.process(m, true).unwrap();
+                }
+                assert_eq!(v.result, eng.result);
+            }
+            if policy != LiftPolicy::Legacy {
+                assert!(
+                    log[0]
+                        .verify_sig_format(&pp.vks[0], &pp.ctx, if wide { 3 } else { 4 })
+                        .is_err()
+                );
+                let mut downgraded = v2_engine(&pp, &circ, &inputs, true, false);
+                assert!(downgraded.process(&log[0], true).is_err());
+                let mut bad = items.clone();
+                if let Item::Mask2 { proof, .. } = &mut bad[0] {
+                    proof.a[0] += F::from(1u64);
+                }
+                let bad = Msg::sign_format(&ts[0].sk, &pp.ctx, 0, 0, &bad, version);
+                for individual in [true, false] {
+                    let mut v = v2_engine(&pp, &circ, &inputs, individual, false);
+                    v.lift_policy = policy;
+                    v.wide_points = wide;
+                    assert!(v.process(&bad, true).is_err());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn cold_public_tables_do_not_hold_a_lock_across_rayon_work() {
+        let (_, pp, _) = committee(5);
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(2)
+            .build()
+            .unwrap()
+            .install(|| {
+                (0..8).into_par_iter().for_each(|_| {
+                    assert_eq!(pp.v2().wb.len(), 5);
+                    assert_eq!(
+                        pp.v2().lk.enc0(&F::from(3u64)).clear8(),
+                        pp.key.enc0(&F::from(3u64))
+                    );
+                });
+            });
     }
 
     #[test]

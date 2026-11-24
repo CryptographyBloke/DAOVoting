@@ -517,3 +517,62 @@ fn certified_offload_end_to_end() {
         }
     }
 }
+
+#[test]
+fn secure_lift_formats_public_only_individual_replay() {
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    for format in ["v3", "v4"] {
+        let out =
+            PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("secure-{format}-{nonce}"));
+        let o = wod()
+            .args([
+                "--format",
+                format,
+                "experiment",
+                "--n",
+                "8",
+                "--modes",
+                "local,dist",
+                "--reps",
+                "1",
+                "--out",
+            ])
+            .arg(&out)
+            .output()
+            .unwrap();
+        assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+        for r in json(&out.join("n8/results.json"))["runs"]
+            .as_array()
+            .unwrap()
+        {
+            assert_eq!(r["verification"]["accept"], true);
+            assert_eq!(r["oracle_agrees"], true);
+        }
+        for mode in ["local", "dist-rtt0"] {
+            let original = out.join("n8/rep0").join(mode).join("public");
+            let replay = out.join(format!("public-only-{mode}"));
+            std::fs::create_dir_all(replay.join("public")).unwrap();
+            for file in ["setup.bin", "ledger.bin", "transcript.bin", "claim.json"] {
+                std::fs::copy(original.join(file), replay.join("public").join(file)).unwrap();
+            }
+            let o = wod()
+                .args([
+                    "--verify-backend",
+                    "inline",
+                    "--v2-verify",
+                    "individual",
+                    "verify",
+                    "--dir",
+                ])
+                .arg(&replay)
+                .output()
+                .unwrap();
+            assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+            assert_eq!(json(&replay.join("public/verify.json"))["accept"], true);
+            assert!(!replay.join("private").exists());
+        }
+    }
+}

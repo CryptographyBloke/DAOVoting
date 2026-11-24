@@ -4,8 +4,8 @@
 //! implemented by `ark-ed-on-bn254`. arkworks uses the isomorphic twisted
 //! Edwards form with `a = 1`; circomlib's `Base8` is mapped into that form by
 //! `x' = sqrt(168700) * x` (paper: `g = Base8`).
-//! Points received from the network are validated (on curve + prime-order
-//! subgroup) by `ark-serialize` with `Validate::Yes`.
+//! Network points are curve-validated. V1 checks subgroup membership explicitly;
+//! lifted formats decode with [8] to a prime-order point. Setup uses Validate::Yes.
 
 use ark_ec::{AffineRepr, CurveGroup};
 use ark_ed_on_bn254::{EdwardsAffine, EdwardsProjective, Fq, Fr};
@@ -22,6 +22,35 @@ pub type GA = EdwardsAffine;
 pub type F = Fr;
 /// Base field of BabyJubjub = scalar field of BN254.
 pub type Fb = Fq;
+
+thread_local! { static WIDE_MESSAGE_POINTS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) }; }
+
+/// A per-item serializer scope. It is never active while loading ballots,
+/// setup or ledger data, and restores the previous state even on unwinding.
+pub fn message_wire<T>(wide: bool, f: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            WIDE_MESSAGE_POINTS.with(|v| v.set(self.0));
+        }
+    }
+    let _restore = Restore(WIDE_MESSAGE_POINTS.with(|v| v.replace(wide)));
+    f()
+}
+
+pub trait CurveWire: CanonicalSerialize + CanonicalDeserialize {
+    fn valid_curve(&self) -> bool;
+}
+impl CurveWire for G {
+    fn valid_curve(&self) -> bool {
+        on_curve_ext(self)
+    }
+}
+impl<const N: usize> CurveWire for [G; N] {
+    fn valid_curve(&self) -> bool {
+        self.iter().all(on_curve_ext)
+    }
+}
 
 /// serde adapter for any arkworks `CanonicalSerialize` value (compressed,
 /// validated on deserialization: on-curve and prime-order subgroup checks).
@@ -49,14 +78,30 @@ pub mod arkser {
 pub mod arkser_fast {
     use super::*;
     use serde::{Deserializer, Serializer, de::Error as _};
-    pub fn serialize<T: CanonicalSerialize, S: Serializer>(t: &T, s: S) -> Result<S::Ok, S::Error> {
-        super::arkser::serialize(t, s)
+    pub fn serialize<T: CurveWire, S: Serializer>(t: &T, s: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::Error as _;
+        if WIDE_MESSAGE_POINTS.with(|v| v.get()) {
+            let mut bytes = Vec::new();
+            t.serialize_uncompressed(&mut bytes)
+                .map_err(S::Error::custom)?;
+            s.serialize_bytes(&bytes)
+        } else {
+            super::arkser::serialize(t, s)
+        }
     }
-    pub fn deserialize<'de, T: CanonicalDeserialize, D: Deserializer<'de>>(
-        d: D,
-    ) -> Result<T, D::Error> {
+    pub fn deserialize<'de, T: CurveWire, D: Deserializer<'de>>(d: D) -> Result<T, D::Error> {
         let v: Vec<u8> = serde::Deserialize::deserialize(d)?;
-        T::deserialize_compressed_unchecked(&v[..]).map_err(D::Error::custom)
+        if WIDE_MESSAGE_POINTS.with(|v| v.get()) {
+            let mut input = &v[..];
+            let point =
+                T::deserialize_uncompressed_unchecked(&mut input).map_err(D::Error::custom)?;
+            if !input.is_empty() || !point.valid_curve() {
+                return Err(D::Error::custom("invalid affine curve encoding"));
+            }
+            Ok(point)
+        } else {
+            T::deserialize_compressed_unchecked(&v[..]).map_err(D::Error::custom)
+        }
     }
 }
 
@@ -408,6 +453,38 @@ pub fn lift_of(p: &G) -> G {
     vmul(p, &inv8())
 }
 
+/// The complete *rational* kernel of [8]. A deterministic public search finds
+/// a point of exact order eight by projecting a rational point with [q].
+/// The eight multiples are checked explicitly; no secret material is used.
+pub fn torsion8() -> &'static [G; 8] {
+    static K: OnceLock<[G; 8]> = OnceLock::new();
+    K.get_or_init(|| {
+        for y in 0..1024u64 {
+            if let Some(p) = GA::get_point_from_y_unchecked(Fb::from(y), false) {
+                let t = p.mul_bigint(F::MODULUS);
+                if clear8(&t).is_zero() && !small_mul(&t, 4).is_zero() {
+                    let table = std::array::from_fn(|i| small_mul(&t, i as i64));
+                    for i in 0..8 {
+                        assert!(on_curve_ext(&table[i]) && clear8(&table[i]).is_zero());
+                        for j in 0..i {
+                            assert_ne!(table[i], table[j]);
+                        }
+                    }
+                    return table;
+                }
+            }
+        }
+        panic!("no rational point of order eight found");
+    })
+}
+
+/// Uniform representative in the same cofactor-image fibre. Each invocation
+/// consumes independent three-bit coins from a separate representation CSPRNG.
+/// This is public-point arithmetic, never a replacement for secret nonces.
+pub fn randomize_lift<R: RngCore + CryptoRng>(p: &mut G, rng: &mut R) {
+    *p += torsion8()[(rng.next_u32() & 7) as usize];
+}
+
 impl Ct {
     pub fn clear8(&self) -> Ct {
         Ct {
@@ -527,5 +604,73 @@ mod tests {
         let k = Key::new(g() * rand_scalar(&mut rng));
         let lk = LiftKey::new(k.h);
         assert_eq!(lk.enc0(&r).clear8(), k.enc0(&r));
+    }
+
+    #[test]
+    fn uniform_torsion_masks_the_entire_fibre_for_both_signs() {
+        let k = torsion8();
+        let p = lift_of(&g());
+        for incoming in k {
+            for sign in [-1, 1] {
+                let base = small_mul(&(p + incoming), sign) + g();
+                let image = clear8(&base);
+                let outputs: Vec<G> = k.iter().map(|u| base + u).collect();
+                assert!(outputs.iter().all(|l| clear8(l) == image));
+                // Each fibre contains exactly eight outputs, each with one
+                // preimage of the uniform representation coin.
+                for target in k.iter().map(|u| lift_of(&image) + u) {
+                    assert_eq!(outputs.iter().filter(|x| **x == target).count(), 1);
+                }
+            }
+        }
+        let images = |s: i64| -> Vec<(G, G)> {
+            k.iter()
+                .flat_map(|u| {
+                    k.iter()
+                        .map(move |v| (small_mul(&k[1], s) + u, small_mul(&k[3], s) + v))
+                })
+                .collect()
+        };
+        let plus = images(1);
+        let minus = images(-1);
+        assert_eq!(plus.len(), 64);
+        for point in plus {
+            assert_eq!(minus.iter().filter(|x| **x == point).count(), 1);
+        }
+    }
+
+    #[test]
+    fn wide_message_encoding_validates_curve_fields_and_scope() {
+        let c = Ct {
+            a: g() + torsion8()[1],
+            b: G::zero(),
+        };
+        let normal = bincode::serialize(&c).unwrap();
+        let wide = message_wire(true, || bincode::serialize(&c).unwrap());
+        assert_eq!(wide.len(), normal.len() + 64);
+        assert_eq!(
+            message_wire(true, || bincode::deserialize::<Ct>(&wide)).unwrap(),
+            c
+        );
+        assert_eq!(bincode::serialize(&c).unwrap(), normal); // no ambient codec change
+        let bad = Ct {
+            a: G::new_unchecked(Fb::ONE, Fb::ONE, Fb::ONE, Fb::ONE),
+            b: c.b,
+        };
+        let bytes = message_wire(true, || bincode::serialize(&bad).unwrap());
+        assert!(message_wire(true, || bincode::deserialize::<Ct>(&bytes)).is_err());
+        let mut bad = wide;
+        bad[8..40].copy_from_slice(&Fb::MODULUS.to_bytes_le());
+        assert!(message_wire(true, || bincode::deserialize::<Ct>(&bad)).is_err());
+        let mut extra = message_wire(true, || bincode::serialize(&c).unwrap());
+        extra[..8].copy_from_slice(&65u64.to_le_bytes());
+        extra.insert(72, 0);
+        assert!(message_wire(true, || bincode::deserialize::<Ct>(&extra)).is_err());
+        assert!(
+            message_wire(true, || bincode::deserialize::<Ct>(
+                &extra[..extra.len() - 1]
+            ))
+            .is_err()
+        );
     }
 }
