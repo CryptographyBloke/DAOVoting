@@ -138,7 +138,10 @@ uncompressed affine message points. New signatures bind the format version;
 public verification derives it from the transcript header.
 
 `cuda` retains per-term device multiplication; `cuda-msm` selects the experimental
-GPU Pippenger, and `auto-msm:N` keeps smaller MSMs on the CPU. GPU MSM integrity
+GPU Pippenger, and `auto-msm:N` keeps smaller MSMs on the CPU.
+`cuda-msm-signed` / `auto-msm-signed:N` apply
+signed-magnitude recoding only to bases already known to lie in G; use the
+unsigned backend for arbitrary rational curve points. GPU MSM integrity
 is a device/driver assumption. `cert:cuda` certifies V1 public scalar products
 before use; its MSM method intentionally remains trusted CPU Pippenger.
 Neither mechanism exports trustee secrets.

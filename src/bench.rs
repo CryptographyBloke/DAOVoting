@@ -1775,8 +1775,10 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                     "v3-cpu" => (3, false, false, "cpu"),
                     "v3-gpu" => (3, false, false, "auto:4096:0"),
                     "v3-gpu-msm" => (3, false, false, "auto-msm:4096:0"),
+                    "v3-gpu-signed" => (3, false, false, "auto-msm-signed:4096:0"),
                     "v4-cpu" => (4, false, false, "cpu"),
                     "v4-gpu-msm" => (4, false, false, "auto-msm:4096:0"),
+                    "v4-gpu-signed" => (4, false, false, "auto-msm-signed:4096:0"),
                     _ => panic!("unknown secure-bench configuration {name}"),
                 };
                 let init = Instant::now();

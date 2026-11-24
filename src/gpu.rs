@@ -34,6 +34,31 @@ pub const KERNEL_SRC: &str = include_str!("gpu/bjj.cu");
 pub const PT_WORDS: usize = 32;
 pub const K_WORDS: usize = 8;
 
+/// Signed-magnitude recoding is valid only for prime-order bases: qP = O
+/// implies [q-k]P = -[k]P. It is NOT an equivalent integer operation on the
+/// whole cofactor curve. V3/V4 relation bases satisfy this via image decoding.
+#[cfg(any(feature = "gpu", test))]
+fn msm_jobs(points: &[G], scalars: &[F], signed: bool) -> Vec<Job> {
+    debug_assert_eq!(points.len(), scalars.len());
+    points
+        .par_iter()
+        .zip(scalars)
+        .map(|(p, s)| {
+            let k = s.into_bigint();
+            if signed {
+                let negative = (-*s).into_bigint();
+                if negative < k {
+                    return Job {
+                        p: -*p,
+                        k: negative,
+                    };
+                }
+            }
+            Job { p: *p, k }
+        })
+        .collect()
+}
+
 fn fe_words(f: &Fb, out: &mut [u32]) {
     for (j, l) in f.0.0.iter().enumerate() {
         out[2 * j] = *l as u32;
@@ -108,6 +133,9 @@ pub struct DeviceTimes {
     pub msm_combine: f64,
     pub msm_peak_buffers_bytes: u64,
     pub msm_window: u32,
+    pub msm_signed_calls: u64,
+    pub msm_negated_terms: u64,
+    pub msm_short_terms: u64,
 }
 
 #[cfg(feature = "cuda-emu")]
@@ -278,6 +306,18 @@ mod cuda {
         /// Unsigned-window GPU Pippenger with linked-list buckets. Scalars are
         /// their canonical integers; no subgroup-dependent sign rewriting.
         pub fn run_msm(&self, points: &[G], scalars: &[F]) -> Result<G> {
+            self.run_msm_impl(points, scalars, false)
+        }
+
+        /// Signed-magnitude variant. Every base MUST be in the q-order group;
+        /// this precondition is established by V3/V4 image decoding, not by
+        /// this backend. Scalar Job::run and unsigned run_msm keep full-curve
+        /// integer semantics and remain the reference for arbitrary torsion.
+        pub fn run_msm_signed(&self, points: &[G], scalars: &[F]) -> Result<G> {
+            self.run_msm_impl(points, scalars, true)
+        }
+
+        fn run_msm_impl(&self, points: &[G], scalars: &[F], signed: bool) -> Result<G> {
             use ark_ff::{AdditiveGroup, BigInteger, PrimeField};
             anyhow::ensure!(points.len() == scalars.len(), "MSM input length mismatch");
             if points.is_empty() {
@@ -291,25 +331,26 @@ mod cuda {
                 .unwrap_or_else(|_| "8".into())
                 .parse()?;
             anyhow::ensure!((4..=8).contains(&width), "MSM window must be in 4..=8");
-            let bits = scalars
-                .iter()
-                .map(|s| s.into_bigint().num_bits())
-                .max()
-                .unwrap();
+            let _guard = self.lock.lock().unwrap();
+            let mut tm = DeviceTimes::default();
+            let t = Instant::now();
+            let jobs = msm_jobs(points, scalars, signed);
+            let bits = jobs.iter().map(|j| j.k.num_bits()).max().unwrap();
             if bits == 0 {
                 return Ok(G::default());
             }
             let windows = bits.div_ceil(width);
             let count = 1usize << width;
             let n = points.len();
-            let _guard = self.lock.lock().unwrap();
-            let mut tm = DeviceTimes::default();
-            let t = Instant::now();
-            let jobs: Vec<Job> = points
-                .iter()
-                .zip(scalars)
-                .map(|(p, s)| Job::mul(*p, s))
-                .collect();
+            let negated = if signed {
+                jobs.iter()
+                    .zip(scalars)
+                    .filter(|(j, s)| j.k != s.into_bigint())
+                    .count()
+            } else {
+                0
+            };
+            let short = jobs.iter().filter(|j| j.k.num_bits() <= 128).count();
             let (pts, ks) = pack(&jobs);
             tm.pack = t.elapsed().as_secs_f64();
             let t = Instant::now();
@@ -400,6 +441,9 @@ mod cuda {
             all.msm_reduce += tm.msm_reduce;
             all.msm_combine += tm.msm_combine;
             all.msm_window = width;
+            all.msm_signed_calls += u64::from(signed);
+            all.msm_negated_terms += negated as u64;
+            all.msm_short_terms += short as u64;
             let bytes =
                 160 * n + 4 * windows as usize * (n + count) + 128 * windows as usize * (count + 1);
             all.msm_peak_buffers_bytes = all.msm_peak_buffers_bytes.max(bytes as u64);
@@ -408,10 +452,13 @@ mod cuda {
     }
 
     /// Selectable genuine GPU MSM; scalar-product API remains bjj_mul.
-    pub struct CudaMsm(pub Cuda);
+    pub struct CudaMsm(pub Cuda, bool);
     impl CudaMsm {
         pub fn new(dev: usize) -> Result<Self> {
-            Ok(Self(Cuda::new(dev)?))
+            Ok(Self(Cuda::new(dev)?, false))
+        }
+        pub fn new_signed(dev: usize) -> Result<Self> {
+            Ok(Self(Cuda::new(dev)?, true))
         }
     }
     impl MulBackend for CudaMsm {
@@ -419,13 +466,25 @@ mod cuda {
             self.0.telemetry()
         }
         fn name(&self) -> String {
-            format!("{} + GPU Pippenger", self.0.name())
+            format!(
+                "{} + GPU Pippenger{}",
+                self.0.name(),
+                if self.1 {
+                    " signed-magnitude (prime-order bases)"
+                } else {
+                    ""
+                }
+            )
         }
         fn run(&self, jobs: &[Job]) -> Result<Vec<G>> {
             self.0.run(jobs)
         }
         fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
-            self.0.run_msm(pts, sc)
+            if self.1 {
+                self.0.run_msm_signed(pts, sc)
+            } else {
+                self.0.run_msm(pts, sc)
+            }
         }
     }
 
@@ -915,6 +974,131 @@ mod tests {
             assert_eq!(j.p, p);
             assert_eq!((j.p.x, j.p.y, j.p.t, j.p.z), (p.x, p.y, p.t, p.z));
         }
+    }
+
+    #[test]
+    fn signed_msm_recode_requires_prime_order_bases() {
+        use ark_ff::{BigInteger, One, Zero};
+        let pts = [g(), g() * F::from(17u64), G::zero(), h_tilde()];
+        let sc = [
+            -F::one(),
+            -F::from(u128::MAX),
+            F::zero(),
+            F::from(u128::MAX),
+        ];
+        let jobs = msm_jobs(&pts, &sc, true);
+        let result: G = crate::batch::Cpu.run(&jobs).unwrap().into_iter().sum();
+        assert_eq!(result, crate::batch::msm_cpu(&pts, &sc));
+        assert_eq!(jobs[0].k, BigInt::from(1u64));
+        assert_eq!(jobs[1].k.num_bits(), 128);
+        assert!(msm_jobs(&[], &[], true).is_empty());
+        // The signed variant's qP=0 precondition is essential, not merely
+        // a performance hint. Unsigned jobs retain exact full-curve semantics.
+        let torsion = torsion8()[1];
+        let raw = msm_jobs(&[torsion], &[-F::one()], false);
+        let recoded = msm_jobs(&[torsion], &[-F::one()], true);
+        assert_ne!(crate::batch::eval(&raw[0]), crate::batch::eval(&recoded[0]));
+    }
+
+    #[cfg(feature = "gpu")]
+    #[test]
+    #[ignore = "requires a real CUDA device and NVRTC"]
+    fn actual_gpu_signed_pippenger_matches_arkworks() {
+        std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                use rand::SeedableRng;
+                let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(8009);
+                let b = CudaMsm::new_signed(0).unwrap();
+                let pool: Vec<G> = (0..64).map(|_| g() * rand_scalar(&mut rng)).collect();
+                for n in [0, 1, 4, 256, 1024, 81920] {
+                    let pts: Vec<G> = (0..n)
+                        .map(|i| {
+                            if i % 11 == 0 {
+                                G::default()
+                            } else {
+                                pool[i % 64]
+                            }
+                        })
+                        .collect();
+                    let sc: Vec<F> = (0..n)
+                        .map(|i| match i % 5 {
+                            0 => F::from(0u64),
+                            1 => -F::from(1u64),
+                            2 => -F::from(u128::MAX),
+                            3 => F::from(u128::MAX),
+                            _ => rand_scalar(&mut rng),
+                        })
+                        .collect();
+                    assert_eq!(
+                        b.msm(&pts, &sc).unwrap(),
+                        crate::batch::msm_cpu(&pts, &sc),
+                        "n={n}"
+                    );
+                }
+                assert!(
+                    b.msm(&[pool[0], pool[0]], &[F::from(1u64), -F::from(1u64)])
+                        .unwrap()
+                        .is_zero()
+                );
+                assert!(b.msm(&[pool[0]], &[]).is_err());
+                let torsion = torsion8()[1];
+                let sc = [-F::from(1u64)];
+                assert_eq!(
+                    b.0.run_msm(&[torsion], &sc).unwrap(),
+                    crate::batch::msm_cpu(&[torsion], &sc)
+                );
+                assert_ne!(
+                    b.msm(&[torsion], &sc).unwrap(),
+                    crate::batch::msm_cpu(&[torsion], &sc)
+                );
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    #[cfg(feature = "gpu")]
+    #[test]
+    #[ignore = "requires a real CUDA device and NVRTC"]
+    fn actual_cuda_certified_products_match_cpu() {
+        std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                use ark_ff::BigInteger;
+                use rand::SeedableRng;
+                let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(8010);
+                let mut jobs: Vec<Job> = (0..128)
+                    .map(|_| Job::mul(g() * rand_scalar(&mut rng), &rand_scalar(&mut rng)))
+                    .collect();
+                let mut qp1 = F::MODULUS;
+                qp1.add_with_carry(&BigInt::from(1u64));
+                for k in [
+                    BigInt::from(0u64),
+                    (-F::from(1u64)).into_bigint(),
+                    qp1,
+                    BigInt([u64::MAX; 4]),
+                ] {
+                    jobs.push(Job {
+                        p: g() * F::from(17u64),
+                        k,
+                    });
+                }
+                jobs.push(Job::subgroup(g()));
+                jobs.push(Job::subgroup(G::default()));
+                let certified =
+                    crate::batch::Certified::new(std::sync::Arc::new(Cuda::new(0).unwrap()));
+                assert_eq!(
+                    certified.run(&jobs).unwrap(),
+                    crate::batch::Cpu.run(&jobs).unwrap()
+                );
+                let stats = certified.stats.lock().unwrap();
+                assert_eq!(stats.fallbacks, 0);
+                assert_eq!(stats.batches, 1);
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
 
     #[test]

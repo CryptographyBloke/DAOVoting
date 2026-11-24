@@ -254,9 +254,13 @@ try {
             reps=$Reps;public_replay_reps=3;trustee_comparison=[bool]$TrusteeComparison;threads_per_trustee=4}}
         if ($ResearchPhase -in @('Validate','All')) {
             Step 'T008 scalar/MSM/lift vectors and device memory validation'
-            foreach ($backend in @("cuda:$Device","cuda-msm:$Device","cert:cuda:$Device")) {
+            foreach ($backend in @("cuda:$Device","cuda-msm:$Device","cuda-msm-signed:$Device","cert:cuda:$Device")) {
                 Native $wod @('msm-vectors','--check','tests/vectors/t007_msm_v1.json','--backend',$backend) (Join-Path $Out 'logs/msm-vectors.log') | Out-Host
-                Native $wod @('msm-vectors','--check','tests/vectors/t008_lifts_v1.json','--backend',$backend) (Join-Path $Out 'logs/secure-lift-vectors.log') | Out-Host
+                if ($backend -notlike 'cuda-msm-signed:*') {
+                    # Raw lift vectors include nonmembers; signed recoding's
+                    # contract instead requires canonical subgroup bases.
+                    Native $wod @('msm-vectors','--check','tests/vectors/t008_lifts_v1.json','--backend',$backend) (Join-Path $Out 'logs/secure-lift-vectors.log') | Out-Host
+                }
             }
             $sanitizer = Join-Path $cuda 'compute-sanitizer/compute-sanitizer.exe'
             if (Test-Path -LiteralPath $sanitizer) {
@@ -268,10 +272,10 @@ try {
             $researchResults.cert_msm_scope = 'cert:cuda MSM is trusted CPU Pippenger; real GPU product certification is exercised by V1-certified Protocol runs.'
         }
         if ($ResearchPhase -in @('Msm','All')) {
-            Native $wod @('msm-sweep','--sizes','1,4,16,64,256,1024,4096,16384,81920','--backends',"cpu,cuda:$Device,cuda-msm:$Device",'--reps',"$Reps",'--out',(Join-Path $Out 'work/msm')) $log | Out-Host
+            Native $wod @('msm-sweep','--sizes','1,4,16,64,256,1024,4096,16384,81920','--backends',"cpu,cuda:$Device,cuda-msm:$Device,cuda-msm-signed:$Device",'--reps',"$Reps",'--out',(Join-Path $Out 'work/msm')) $log | Out-Host
         }
         if ($ResearchPhase -in @('Proofs','All')) {
-            Native $wod @('mixed-proof-sweep','--sizes','1,4,16,64,256,1024,4096,16384','--backends',"cpu,cuda:$Device,cuda-msm:$Device",'--reps',"$Reps",'--out',(Join-Path $Out 'work/proofs')) $log | Out-Host
+            Native $wod @('mixed-proof-sweep','--sizes','1,4,16,64,256,1024,4096,16384','--backends',"cpu,cuda:$Device,cuda-msm:$Device,cuda-msm-signed:$Device",'--reps',"$Reps",'--out',(Join-Path $Out 'work/proofs')) $log | Out-Host
         }
         if ($ResearchPhase -in @('Codec','All')) {
             Native $wod @('codec-bench','--points','81920','--reps',"$Reps",'--out',(Join-Path $Out 'work/codec')) $log | Out-Host
@@ -279,7 +283,7 @@ try {
         if ($ResearchPhase -in @('Engine','All')) {
             foreach ($n in $researchN) {
                 $nr = if ($n -le 64) { 3 } else { 1 }
-                Native $wod @('secure-bench','--n',"$n",'--reps',"$nr",'--configs','v1-cpu,v3-cpu,v3-gpu-msm,v4-cpu,v4-gpu-msm','--out',(Join-Path $Out "work/engine-n$n")) $log | Out-Host
+                Native $wod @('secure-bench','--n',"$n",'--reps',"$nr",'--configs','v1-cpu,v3-cpu,v3-gpu-msm,v3-gpu-signed,v4-cpu,v4-gpu-msm,v4-gpu-signed','--out',(Join-Path $Out "work/engine-n$n")) $log | Out-Host
             }
         }
         if ($ResearchPhase -in @('Protocol','All')) {
@@ -308,8 +312,8 @@ try {
                     if ($config.name -eq 'v3-canonical') { continue }
                     $policies = if ($config.format -eq 'v1') { @('inline','cpu',"auto:4096:$Device","cert:auto:4096:$Device") }
                         elseif ($config.format -eq 'v2') { @('individual','cpu',"auto:4096:$Device") }
-                        elseif ($config.format -eq 'v3') { @('individual','cpu',"auto:4096:$Device","auto-msm:4096:$Device") }
-                        else { @('cpu',"auto-msm:4096:$Device") }
+                        elseif ($config.format -eq 'v3') { @('individual','cpu',"auto:4096:$Device","auto-msm:4096:$Device","auto-msm-signed:4096:$Device") }
+                        else { @('cpu',"auto-msm:4096:$Device","auto-msm-signed:4096:$Device") }
                     for ($rep=0; $rep -lt 3; $rep++) {
                         $rotation = @(0..($policies.Count-1) | ForEach-Object { $policies[($_+$rep+$ni)%$policies.Count] })
                         foreach ($spec in $rotation) {
@@ -335,9 +339,9 @@ try {
                     $dist = @($configs[0],
                         [pscustomobject]@{name='v1-cert';format='v1';policy='randomized';backend="cert:auto:4096:$Device";verify='batch'},
                         $configs[3],
-                        [pscustomobject]@{name='v3-auto-msm';format='v3';policy='randomized';backend="auto-msm:4096:$Device";verify='batch'},
+                        [pscustomobject]@{name='v3-signed-msm';format='v3';policy='randomized';backend="auto-msm-signed:4096:$Device";verify='batch'},
                         $configs[4],
-                        [pscustomobject]@{name='v4-auto-msm';format='v4';policy='randomized';backend="auto-msm:4096:$Device";verify='batch'})
+                        [pscustomobject]@{name='v4-signed-msm';format='v4';policy='randomized';backend="auto-msm-signed:4096:$Device";verify='batch'})
                     $nr = if ($n -le 64) { 3 } else { 1 }
                     for ($rep=0; $rep -lt $nr; $rep++) {
                         $rotation = @(0..($dist.Count-1) | ForEach-Object { $dist[($_+$rep+$ni)%$dist.Count] })

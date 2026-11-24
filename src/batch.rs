@@ -382,6 +382,7 @@ pub fn default_telemetry() -> serde_json::Value {
 struct LazyCuda {
     device: usize,
     pippenger: bool,
+    signed: bool,
     inner: OnceLock<std::result::Result<Arc<crate::gpu::Cuda>, String>>,
 }
 
@@ -395,11 +396,19 @@ impl MulBackend for LazyCuda {
     }
     fn name(&self) -> String {
         match self.inner.get() {
-            Some(Ok(b)) if self.pippenger => format!("{} + GPU Pippenger", b.name()),
+            Some(Ok(b)) if self.pippenger => format!(
+                "{} + GPU Pippenger{}",
+                b.name(),
+                if self.signed {
+                    " signed-magnitude (prime-order bases)"
+                } else {
+                    ""
+                }
+            ),
             Some(Ok(b)) => b.name(),
             _ => format!(
-                "lazy-cuda(device {}, pippenger {})",
-                self.device, self.pippenger
+                "lazy-cuda(device {}, pippenger {}, signed {})",
+                self.device, self.pippenger, self.signed
             ),
         }
     }
@@ -422,6 +431,7 @@ impl MulBackend for LazyCuda {
                     .map_err(|e| format!("{e:#}"))
             });
             match b {
+                Ok(b) if self.signed => b.run_msm_signed(pts, sc),
                 Ok(b) => b.run_msm(pts, sc),
                 Err(e) => bail!("CUDA initialization: {e}"),
             }
@@ -431,18 +441,19 @@ impl MulBackend for LazyCuda {
     }
 }
 
-fn adaptive_cuda(device: usize, pippenger: bool) -> Result<Arc<dyn MulBackend>> {
+fn adaptive_cuda(device: usize, pippenger: bool, signed: bool) -> Result<Arc<dyn MulBackend>> {
     #[cfg(feature = "gpu")]
     {
         Ok(Arc::new(LazyCuda {
             device,
             pippenger,
+            signed,
             inner: OnceLock::new(),
         }))
     }
     #[cfg(not(feature = "gpu"))]
     {
-        let _ = pippenger;
+        let _ = (pippenger, signed);
         cuda(device)
     }
 }
@@ -453,14 +464,19 @@ pub fn backend(spec: &str) -> Result<Arc<dyn MulBackend>> {
     Ok(match parts[0] {
         "cpu" => Arc::new(Cpu),
         "cuda" => cuda(dev(1)?.unwrap_or(0))?,
-        "cuda-msm" => cuda_msm(dev(1)?.unwrap_or(0))?,
-        "auto" | "auto-msm" => {
+        "cuda-msm" => cuda_msm(dev(1)?.unwrap_or(0), false)?,
+        "cuda-msm-signed" => cuda_msm(dev(1)?.unwrap_or(0), true)?,
+        "auto" | "auto-msm" | "auto-msm-signed" => {
             let min_batch = parts
                 .get(1)
                 .ok_or_else(|| anyhow::anyhow!("auto:MIN_BATCH"))?
                 .parse()?;
             Arc::new(Adaptive {
-                big: adaptive_cuda(dev(2)?.unwrap_or(0), parts[0] == "auto-msm")?,
+                big: adaptive_cuda(
+                    dev(2)?.unwrap_or(0),
+                    parts[0] != "auto",
+                    parts[0] == "auto-msm-signed",
+                )?,
                 min_batch,
             })
         }
@@ -470,17 +486,22 @@ pub fn backend(spec: &str) -> Result<Arc<dyn MulBackend>> {
             Certified::new(backend(rest)?)
         }
         _ => bail!(
-            "unknown verification backend `{spec}` (cpu | cuda[:dev] | cuda-msm[:dev] | auto:N[:dev] | auto-msm:N[:dev] | emu | cert:<backend>)"
+            "unknown verification backend `{spec}` (cpu | cuda[:dev] | cuda-msm[:dev] | cuda-msm-signed[:dev] | auto:N[:dev] | auto-msm:N[:dev] | auto-msm-signed:N[:dev] | emu | cert:<backend>)"
         ),
     })
 }
 
 #[cfg(feature = "gpu")]
-fn cuda_msm(dev: usize) -> Result<Arc<dyn MulBackend>> {
-    Ok(Arc::new(crate::gpu::CudaMsm::new(dev)?))
+fn cuda_msm(dev: usize, signed: bool) -> Result<Arc<dyn MulBackend>> {
+    Ok(Arc::new(if signed {
+        crate::gpu::CudaMsm::new_signed(dev)?
+    } else {
+        crate::gpu::CudaMsm::new(dev)?
+    }))
 }
 #[cfg(not(feature = "gpu"))]
-fn cuda_msm(dev: usize) -> Result<Arc<dyn MulBackend>> {
+fn cuda_msm(dev: usize, signed: bool) -> Result<Arc<dyn MulBackend>> {
+    let _ = signed;
     cuda(dev)
 }
 
