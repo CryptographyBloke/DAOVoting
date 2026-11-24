@@ -9,6 +9,8 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::Path;
 
 const MAGIC: &[u8; 6] = b"WODT1\n";
+/// Transcript format v2 (T007): lifted points and commitment-form proofs.
+const MAGIC_V2: &[u8; 6] = b"WODT2\n";
 
 pub struct Writer {
     w: BufWriter<std::fs::File>,
@@ -32,7 +34,11 @@ impl Writer {
             bytes: 0,
             msgs: 0,
         };
-        w.raw(MAGIC)?;
+        w.raw(if crate::tally::default_v2() {
+            MAGIC_V2
+        } else {
+            MAGIC
+        })?;
         w.raw(setup_hash)?;
         w.raw(board_hash)?;
         Ok(w)
@@ -64,6 +70,8 @@ pub struct Reader {
     h: Sha256,
     pub setup_hash: [u8; 32],
     pub board_hash: [u8; 32],
+    /// format v2 (header `WODT2`)
+    pub v2: bool,
     remaining: u64,
 }
 
@@ -75,7 +83,10 @@ impl Reader {
         let mut r = BufReader::with_capacity(1 << 20, file);
         let mut hdr = [0u8; 70];
         r.read_exact(&mut hdr)?;
-        ensure!(&hdr[..6] == MAGIC, "not a transcript file");
+        ensure!(
+            &hdr[..6] == MAGIC || &hdr[..6] == MAGIC_V2,
+            "not a transcript file"
+        );
         let mut h = Sha256::new();
         h.update(b"wod/transcript/v1");
         h.update(hdr);
@@ -84,6 +95,7 @@ impl Reader {
             h,
             setup_hash: hdr[6..38].try_into()?,
             board_hash: hdr[38..70].try_into()?,
+            v2: &hdr[..6] == MAGIC_V2,
             remaining: file_len - 70,
         })
     }

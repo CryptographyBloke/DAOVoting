@@ -108,6 +108,9 @@ impl MulBackend for Emu {
     fn name(&self) -> String {
         "emu(bjj.cu as host C++)".into()
     }
+    fn msm(&self, pts: &[G], sc: &[crate::group::F]) -> anyhow::Result<G> {
+        crate::batch::msm_via_jobs(self, pts, sc)
+    }
     fn run(&self, jobs: &[Job]) -> anyhow::Result<Vec<G>> {
         let (pts, ks) = pack(jobs);
         let mut out = vec![0u32; jobs.len() * PT_WORDS];
@@ -255,6 +258,9 @@ mod cuda {
                 "cuda({}, sm_{}{}, block {})",
                 i.device, i.compute_capability.0, i.compute_capability.1, self.block
             )
+        }
+        fn msm(&self, pts: &[G], sc: &[crate::group::F]) -> Result<G> {
+            crate::batch::msm_via_jobs(self, pts, sc)
         }
         fn run(&self, jobs: &[Job]) -> Result<Vec<G>> {
             let _g = self.lock.lock().unwrap();
@@ -438,6 +444,104 @@ pub fn nvrtc_sass_report(sm: &str) -> anyhow::Result<(String, usize)> {
     Ok((log, size))
 }
 
+/// T007 deterministic MSM vectors (`Σ [s_i]P_i`, canonical encodings) and
+/// lift vectors (`[1/8]P`), for CPU/GPU comparison of `MulBackend::msm`.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct MsmVector {
+    pub points: Vec<String>,
+    /// little-endian 64-bit limbs of each scalar (canonical, < q), hex
+    pub scalars: Vec<[String; 4]>,
+    pub expected: String,
+    pub note: String,
+}
+
+pub fn make_msm_vectors(seed: u64) -> Vec<MsmVector> {
+    use ark_ec::PrimeGroup;
+    use ark_ff::PrimeField;
+    use rand::{Rng, SeedableRng};
+    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(seed);
+    let hexk = |s: &F| s.into_bigint().0.map(|l| format!("{l:016x}"));
+    let mut v = Vec::new();
+    for (n, short) in [
+        (1usize, false),
+        (2, false),
+        (7, true),
+        (64, false),
+        (333, true),
+        (1024, true),
+    ] {
+        let pts: Vec<G> = (0..n).map(|_| g() * F::from(rng.r#gen::<u128>())).collect();
+        let sc: Vec<F> = (0..n)
+            .map(|i| {
+                if short && i % 2 == 0 {
+                    F::from(rng.r#gen::<u128>())
+                } else {
+                    F::from_le_bytes_mod_order(&rng.r#gen::<[u8; 32]>())
+                }
+            })
+            .collect();
+        let want: G = pts
+            .iter()
+            .zip(&sc)
+            .map(|(p, s)| p.mul_bigint(s.into_bigint()))
+            .sum();
+        v.push(MsmVector {
+            points: pts.iter().map(enc_point).collect(),
+            scalars: sc.iter().map(hexk).collect(),
+            expected: enc_point(&want),
+            note: format!(
+                "msm n={n}{}",
+                if short {
+                    " (mixed 128/253-bit scalars)"
+                } else {
+                    ""
+                }
+            ),
+        });
+    }
+    for i in 0..8 {
+        let p = g() * F::from(rng.r#gen::<u64>() + i);
+        v.push(MsmVector {
+            points: vec![enc_point(&p)],
+            scalars: vec![hexk(&inv8())],
+            expected: enc_point(&p.mul_bigint(inv8().into_bigint())),
+            note: format!("lift [1/8]P #{i}"),
+        });
+    }
+    v
+}
+
+pub fn check_msm_vectors(
+    b: &dyn crate::batch::MulBackend,
+    vs: &[MsmVector],
+) -> anyhow::Result<Vec<usize>> {
+    use ark_ff::PrimeField;
+    let mut bad = Vec::new();
+    for (i, v) in vs.iter().enumerate() {
+        let pts: Vec<G> = v
+            .points
+            .iter()
+            .map(|p| dec_point(p))
+            .collect::<anyhow::Result<_>>()?;
+        let sc: Vec<F> = v
+            .scalars
+            .iter()
+            .map(|k| {
+                let mut l = [0u64; 4];
+                for j in 0..4 {
+                    l[j] = u64::from_str_radix(&k[j], 16)?;
+                }
+                F::from_bigint(BigInt(l)).ok_or_else(|| anyhow::anyhow!("scalar >= q"))
+            })
+            .collect::<anyhow::Result<_>>()?;
+        anyhow::ensure!(pts.len() == sc.len(), "vector {i}: length mismatch");
+        if enc_point(&b.msm(&pts, &sc)?) != v.expected {
+            bad.push(i);
+        }
+    }
+    Ok(bad)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -606,5 +710,36 @@ mod tests {
                 && !got[2 * t2_index + 1].is_zero()
                 && !got[2 * (t2_index + 1) + 1].is_zero()
         );
+    }
+
+    #[test]
+    fn t007_msm_vectors_match() {
+        let file: Vec<MsmVector> =
+            serde_json::from_str(include_str!("../tests/vectors/t007_msm_v1.json")).unwrap();
+        let fresh = make_msm_vectors(20261124);
+        assert_eq!(file.len(), fresh.len());
+        for (a, b) in file.iter().zip(&fresh) {
+            assert_eq!(
+                (&a.points, &a.scalars, &a.expected),
+                (&b.points, &b.scalars, &b.expected),
+                "{}",
+                a.note
+            );
+        }
+        assert!(
+            check_msm_vectors(&crate::batch::Cpu, &file)
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            check_msm_vectors(
+                &*crate::batch::Certified::new(std::sync::Arc::new(crate::batch::Cpu)),
+                &file
+            )
+            .unwrap()
+            .is_empty()
+        );
+        #[cfg(feature = "cuda-emu")]
+        assert!(check_msm_vectors(&Emu, &file).unwrap().is_empty());
     }
 }

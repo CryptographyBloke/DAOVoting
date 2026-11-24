@@ -355,10 +355,22 @@ fn tally_once(
     inputs: &[Ct],
     b: Option<Arc<dyn MulBackend>>,
 ) -> (Vec<crate::tally::Msg>, Value) {
+    tally_cfg(pp, keys, circ, inputs, &|e: &mut Engine| {
+        e.set_batch_backend(b.clone())
+    })
+}
+
+fn tally_cfg(
+    pp: &Arc<Public>,
+    keys: &[(F, SigningKey)],
+    circ: &Arc<Circuit>,
+    inputs: &[Ct],
+    cfg: &dyn Fn(&mut Engine),
+) -> (Vec<crate::tally::Msg>, Value) {
     let t0 = Instant::now();
     let mut ts = trustees(keys);
     let mut eng = Engine::new(pp.clone(), circ.clone(), inputs).unwrap();
-    eng.set_batch_backend(b);
+    cfg(&mut eng);
     let (mut prod, mut proc) = (0.0, 0.0);
     let mut log = Vec::new();
     while !eng.finished() {
@@ -377,9 +389,13 @@ fn tally_once(
         }
         assert!(progressed, "protocol stalled");
     }
+    let bytes: usize = log
+        .iter()
+        .map(|m| bincode::serialize(m).unwrap().len())
+        .sum();
     let v = json!({
         "seconds_total": t0.elapsed().as_secs_f64(), "seconds_produce": prod, "seconds_process": proc,
-        "messages": log.len(), "gates": eng.gates_done, "decision": eng.result,
+        "messages": log.len(), "items": eng.n_items, "transcript_message_bytes": bytes, "gates": eng.gates_done, "decision": eng.result,
         "output": format!("{:?}", eng.output_ct().map(|c| (c.a.into_affine(), c.b.into_affine()))), "prof": eng.prof,
     });
     (log, v)
@@ -393,9 +409,21 @@ fn replay(
     log: &[crate::tally::Msg],
     b: Option<Arc<dyn MulBackend>>,
 ) -> Value {
+    replay_cfg(pp, circ, inputs, log, &|e: &mut Engine| {
+        e.set_batch_backend(b.clone())
+    })
+}
+
+fn replay_cfg(
+    pp: &Arc<Public>,
+    circ: &Arc<Circuit>,
+    inputs: &[Ct],
+    log: &[crate::tally::Msg],
+    cfg: &dyn Fn(&mut Engine),
+) -> Value {
     let t0 = Instant::now();
     let mut eng = Engine::new(pp.clone(), circ.clone(), inputs).unwrap();
-    eng.set_batch_backend(b);
+    cfg(&mut eng);
     for m in log {
         eng.process(m, true).unwrap();
     }
@@ -959,4 +987,253 @@ mod gpu_summary_tests {
         assert!(prepared_protocol_summary(&json!([bad])).is_err());
         assert!(prepared_protocol_summary(&json!([])).is_err());
     }
+}
+
+// ---------------------------------------------------------------- T007
+
+fn setv2(individual: bool, b: Option<Arc<dyn MulBackend>>) -> impl Fn(&mut Engine) {
+    move |e: &mut Engine| {
+        e.set_batch_backend(b.clone());
+        e.v2 = true;
+        e.v2_individual = individual;
+        e.v2_coeff_fs = false;
+    }
+}
+
+/// Paired engine-level comparison of verification architectures on the same
+/// election inputs (real trustees, proofs and verification; encrypted input
+/// bits instead of Groth16 ballots): v1 inline, v1 batched CPU, v2 individual,
+/// v2 batch (one MSM per message); public replay additionally with the
+/// certified-offload backend (device = CPU, to measure the check overhead).
+pub fn format_bench(ns: &[usize], reps: usize) -> Value {
+    use crate::batch::Certified;
+    let (pp, keys) = committee();
+    let mut out = Vec::new();
+    for &n in ns {
+        let (circ, inputs, want) = election(&pp, n);
+        let mut runs = Vec::new();
+        for r in 0..reps {
+            // batched configurations use `--verify-backend` if given (CPU otherwise)
+            let dev = crate::batch::default_backend();
+            let v1i = |e: &mut Engine| e.set_batch_backend(None);
+            let d1 = dev.clone().unwrap_or_else(|| Arc::new(Cpu));
+            let v1b = move |e: &mut Engine| e.set_batch_backend(Some(d1.clone()));
+            let (v2i, v2b) = (setv2(true, None), setv2(false, dev.clone()));
+            let mut cfgs: Vec<(&str, &dyn Fn(&mut Engine))> = vec![
+                ("v1_inline", &v1i),
+                ("v1_batched_cpu", &v1b),
+                ("v2_individual", &v2i),
+                ("v2_batch", &v2b),
+            ];
+            if r % 2 == 1 {
+                cfgs.reverse();
+            }
+            let mut row = serde_json::Map::new();
+            let (mut log1, mut log2) = (None, None);
+            for (name, cfg) in &cfgs {
+                eprintln!("format-bench n={n} rep={r}: tally {name}");
+                let (log, t) = tally_cfg(&pp, &keys, &circ, &inputs, *cfg);
+                assert_eq!(t["decision"], json!(want));
+                if name.starts_with("v1") {
+                    log1.get_or_insert(log);
+                } else {
+                    log2.get_or_insert(log);
+                }
+                row.insert(format!("tally_{name}"), t);
+            }
+            let (log1, log2) = (log1.unwrap(), log2.unwrap());
+            for (name, cfg) in &cfgs {
+                eprintln!("format-bench n={n} rep={r}: replay {name}");
+                let lg = if name.starts_with("v1") { &log1 } else { &log2 };
+                let v = replay_cfg(&pp, &circ, &inputs, lg, *cfg);
+                assert_eq!(v["accepted"], json!(true));
+                row.insert(format!("replay_{name}"), v);
+            }
+            let cert = Certified::new(Arc::new(Cpu));
+            let c2 = cert.clone();
+            let v = replay_cfg(&pp, &circ, &inputs, &log1, &move |e: &mut Engine| {
+                e.set_batch_backend(Some(c2.clone()))
+            });
+            assert_eq!(v["accepted"], json!(true));
+            row.insert(
+                "replay_v1_certified_cpu".into(),
+                json!({"replay": v, "cert": *cert.stats.lock().unwrap()}),
+            );
+            runs.push(Value::Object(row));
+        }
+        out.push(json!({"n": n, "gates": circ.n_gates(), "runs": runs}));
+    }
+    json!({"reps": reps, "batched_backend": crate::batch::default_name(), "results": out})
+}
+
+/// CSZ verification only, for `k` independent proofs: v1 (5 subgroup checks +
+/// 10 multiplications each), v2 individual (cofactor-image decode of 15 points
+/// + 10 multiplications) and v2 batch (decode + one MSM); medians of `reps`.
+pub fn proof_sweep(sizes: &[usize], reps: usize) -> Value {
+    use crate::sigma::{Acc, Bases, Csz, Csz2, CszStmt};
+    use rayon::prelude::*;
+    let mut rng = OsRng;
+    let k = Key::new(g() * rand_scalar(&mut rng));
+    let lk = LiftKey::new(k.h);
+    let (tht, tht8) = (
+        FixedBase::new(h_tilde()),
+        FixedBase::new(lift_of(&h_tilde())),
+    );
+    let max = *sizes.iter().max().unwrap_or(&1);
+    struct Inst {
+        x0: Ct,
+        y0: Ct,
+        x1: Ct,
+        y1: Ct,
+        e: G,
+        p1: Csz,
+        p2: Csz2,
+        l: (Ct, Ct, G),
+    }
+    let insts: Vec<Inst> = (0..max)
+        .into_par_iter()
+        .map(|i| {
+            let mut rng = OsRng;
+            let x0 = k.enc(&F::from(i as u64), &rand_scalar(&mut rng));
+            let y0 = k.enc(&F::from(1u64), &rand_scalar(&mut rng));
+            let s: i64 = if i % 2 == 0 { 1 } else { -1 };
+            let (r1, r2) = (rand_scalar(&mut rng), rand_scalar(&mut rng));
+            let (lx1, ly1, le) = (
+                x0.lift_of().small(s).add(&lk.enc0(&r1)),
+                y0.lift_of().small(s).add(&lk.enc0(&r2)),
+                tht8.mul(&r1),
+            );
+            let (x1, y1, e) = (lx1.clear8(), ly1.clear8(), clear8(&le));
+            let st = CszStmt {
+                x0: &x0,
+                y0: &y0,
+                x1: &x1,
+                y1: &y1,
+                e: &e,
+            };
+            let p1 = Csz::prove(&k, &tht, &[0; 32], i as u64, &st, s, &r1, &r2, &mut rng);
+            let p2 = Csz2::prove(
+                &k, &lk, &tht8, &[0; 32], i as u64, &st, s, &r1, &r2, &mut rng,
+            );
+            Inst {
+                x0,
+                y0,
+                x1,
+                y1,
+                e,
+                p1,
+                p2,
+                l: (lx1, ly1, le),
+            }
+        })
+        .collect();
+    let b = Bases {
+        g: &k.tg,
+        h: &k.th,
+        ht: &tht,
+        w: None,
+    };
+    let mut rows = Vec::new();
+    for &n in sizes {
+        let set = &insts[..n];
+        let timed = |f: &dyn Fn() -> bool| {
+            let mut v: Vec<f64> = (0..reps)
+                .map(|_| {
+                    let t = Instant::now();
+                    assert!(f());
+                    t.elapsed().as_secs_f64()
+                })
+                .collect();
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            v[v.len() / 2]
+        };
+        let v1 = timed(&|| {
+            set.par_iter().enumerate().all(|(i, x)| {
+                [x.x1.a, x.x1.b, x.y1.a, x.y1.b, x.e]
+                    .iter()
+                    .all(in_subgroup)
+                    && x.p1.verify(
+                        &k,
+                        &tht,
+                        &[0; 32],
+                        i as u64,
+                        &CszStmt {
+                            x0: &x.x0,
+                            y0: &x.y0,
+                            x1: &x.x1,
+                            y1: &x.y1,
+                            e: &x.e,
+                        },
+                    )
+            })
+        });
+        let decode = |x: &Inst| {
+            let (x1, y1, e) = (x.l.0.clear8(), x.l.1.clear8(), clear8(&x.l.2));
+            let p = Csz2 {
+                c: x.p2.c.map(|c| c.clear8()),
+                ce: x.p2.ce.map(|c| clear8(&c)),
+                ..x.p2.clone()
+            };
+            (x1, y1, e, p)
+        };
+        let v2i = timed(&|| {
+            set.par_iter().enumerate().all(|(i, x)| {
+                let (x1, y1, e, p) = decode(x);
+                p.rels(
+                    &k,
+                    &[0; 32],
+                    i as u64,
+                    &CszStmt {
+                        x0: &x.x0,
+                        y0: &x.y0,
+                        x1: &x1,
+                        y1: &y1,
+                        e: &e,
+                    },
+                )
+                .map(|r| r.check_each(&b))
+                .unwrap_or(false)
+            })
+        });
+        let v2b = timed(&|| {
+            use ark_ff::Zero;
+            let acc = set
+                .par_iter()
+                .enumerate()
+                .map(|(i, x)| {
+                    let (x1, y1, e, p) = decode(x);
+                    let r = p
+                        .rels(
+                            &k,
+                            &[0; 32],
+                            i as u64,
+                            &CszStmt {
+                                x0: &x.x0,
+                                y0: &x.y0,
+                                x1: &x1,
+                                y1: &y1,
+                                e: &e,
+                            },
+                        )
+                        .unwrap();
+                    let mut a = Acc::default();
+                    a.add(&r, &mut rand::thread_rng());
+                    a
+                })
+                .reduce(Acc::default, |mut a, b| {
+                    a.merge(b);
+                    a
+                });
+            (acc.fixed_part(&b) + crate::batch::msm_cpu(&acc.pts, &acc.sc)).is_zero()
+        });
+        eprintln!(
+            "proof-sweep {n:>5}: v1 {v1:.4}s  v2-ind {v2i:.4}s  v2-batch {v2b:.4}s  S(v1/v2b) {:.2}",
+            v1 / v2b
+        );
+        rows.push(json!({"proofs": n, "v1_s": v1, "v2_individual_s": v2i, "v2_batch_s": v2b,
+            "v1_us_per_proof": 1e6 * v1 / n as f64, "v2_individual_us_per_proof": 1e6 * v2i / n as f64, "v2_batch_us_per_proof": 1e6 * v2b / n as f64,
+            "speedup_v1_over_v2_batch": v1 / v2b, "speedup_v1_over_v2_individual": v1 / v2i}));
+    }
+    json!({"reps": reps, "rows": rows,
+           "bytes": {"csz_v1": bincode::serialize(&insts[0].p1).unwrap().len(), "csz_v2": bincode::serialize(&insts[0].p2).unwrap().len()}})
 }

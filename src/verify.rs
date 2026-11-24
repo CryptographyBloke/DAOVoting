@@ -130,6 +130,8 @@ fn run(p: &Paths, r: &mut Report, supplied: Option<&[Event]>) -> Result<()> {
     ));
     let circ = Arc::new(Circuit::build(setup.n, setup.l_vote, setup.tau));
     let mut eng = Engine::new(pp, circ.clone(), &inputs)?;
+    // the transcript header fixes the format; no flag is trusted
+    eng.v2 = tr.v2;
     while let Some(m) = tr.next()? {
         ensure!(!eng.finished(), "messages after the release");
         eng.process(&m, true)?;
