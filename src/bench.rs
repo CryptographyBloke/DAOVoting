@@ -1839,6 +1839,9 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                     Some(crate::batch::backend(spec).unwrap())
                 };
                 let init_seconds = init.elapsed().as_secs_f64();
+                let recorder = backend.clone().map(Recorder::new);
+                let backend: Option<Arc<dyn MulBackend>> =
+                    recorder.as_ref().map(|b| b.clone() as Arc<dyn MulBackend>);
                 let cfg = |e: &mut Engine| {
                     e.select_format(version);
                     if canonical {
@@ -1860,9 +1863,11 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                 let (log, tally) = tally_cfg(&pp, &keys, &circ, &inputs, &cfg);
                 assert_eq!(tally["decision"], json!(want));
                 let after_tally = telemetry();
+                let tally_batches = recorder.as_ref().map(|r| histogram(&r.take()));
                 let replay = replay_cfg(&pp, &circ, &inputs, &log, &cfg);
                 assert_eq!(replay["accepted"], true);
                 let after_replay = telemetry();
+                let replay_batches = recorder.as_ref().map(|r| histogram(&r.take()));
                 let reference = replay_cfg(&pp, &circ, &inputs, &log, &|e: &mut Engine| {
                     e.select_format(version);
                     e.v2_individual = version >= 2;
@@ -1874,6 +1879,7 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                 runs.push(json!({"rep":rep,"configuration":name,"format":version,"canonical_reference":canonical,
                     "backend":spec,"execution_order":order,"initialization_seconds":init_seconds,
                     "tally":tally,"replay":replay,"independent_cpu_individual":reference,
+                    "tally_batches":tally_batches,"replay_batches":replay_batches,"oracle_agrees":true,
                     "telemetry_before":before,"telemetry_after_tally":after_tally,"telemetry_after_replay":after_replay}));
             }
         }

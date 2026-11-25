@@ -329,6 +329,9 @@ impl Recorder {
 }
 
 impl MulBackend for Recorder {
+    fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
+        self.inner.msm(pts, sc)
+    }
     fn telemetry(&self) -> serde_json::Value {
         self.inner.telemetry()
     }

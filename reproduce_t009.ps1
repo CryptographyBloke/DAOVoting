@@ -3,6 +3,7 @@
 # Output: results\local\t009-<timestamp>-<rev>\ (ignored by git; no private
 # material is produced by these commands: all inputs are generated in memory).
 param(
+    [switch] $FinalGpuEvaluation, # T010 paired seven-configuration campaign
     [switch] $SkipBuild,
     [switch] $SkipTests,
     [switch] $Gpu,                # also build with cuda13 and run GPU configurations
@@ -16,7 +17,9 @@ if (-not $env:RAYON_NUM_THREADS) { $env:RAYON_NUM_THREADS = '24' }
 $rev = (git rev-parse --short=12 HEAD).Trim()
 $dirty = [bool](git status --porcelain)
 $out = Join-Path 'results\local' ("t009-" + (Get-Date -Format 'yyyyMMdd-HHmmss') + "-$rev")
-New-Item -ItemType Directory -Path $out -Force | Out-Null
+if ($FinalGpuEvaluation) { $out = $out -replace "t009-", "t010-" }
+if (Test-Path -LiteralPath $out) { throw "Run directory exists: $out" }
+New-Item -ItemType Directory -Path $out | Out-Null
 $features = if ($Gpu) { @('--features','cuda13,cuda-emu') } else { @() }
 if (-not $SkipBuild) {
     cargo fmt --all -- --check; if ($LASTEXITCODE) { throw 'fmt' }
@@ -27,6 +30,33 @@ if (-not $SkipTests) {
 }
 $wod = '.\target\release\wod.exe'
 function Run([string[]] $a) { & $wod @a; if ($LASTEXITCODE) { throw "wod $($a -join ' ')" } }
+
+if ($FinalGpuEvaluation) {
+    if (-not $Gpu) { throw 'T010 requires -Gpu' }
+    $ac = @(Get-CimInstance -Namespace root/wmi -ClassName BatteryStatus | Select-Object -ExpandProperty PowerOnline)
+    if ($ac -contains $false) { throw 'Connect AC power' }
+    $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+    $os = Get-CimInstance Win32_OperatingSystem
+    $machine = @{source_revision=(git rev-parse HEAD).Trim();source_dirty=$dirty;cpu=$cpu.Name;
+      physical_cores=$cpu.NumberOfCores;logical_cores=$cpu.NumberOfLogicalProcessors;
+      ram_bytes=$os.TotalVisibleMemorySize*1024;os=$os.Caption;os_build=$os.BuildNumber;
+      rustc=(rustc -V);cargo=(cargo -V);cuda=(nvcc --version | Out-String);
+      gpu=(nvidia-smi -q | Out-String);power=(powercfg /getactivescheme | Out-String);
+      ac_power_online=$ac;rayon_threads=$env:RAYON_NUM_THREADS;
+      cargo_lock_sha256=(Get-FileHash Cargo.lock -Algorithm SHA256).Hash;
+      binary_sha256=(Get-FileHash $wod -Algorithm SHA256).Hash}
+    $machine | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $out 'machine.json')
+    Run @('gpu-vectors','--check','tests/vectors/bjj_mul_v1.json','--backend','cuda')
+    $cfg = 'v1-cpu,v1-tate,v1-gpu,v5-cpu,v6-cpu,v9-cpu,v9-gpu'
+    foreach ($n in @(64,256,1024)) {
+      Run @('secure-bench','--n',"$n",'--reps',"$Reps",'--configs',$cfg,'--out',"$out/engine-n$n")
+    }
+    @{status='complete';source_revision=(git rev-parse HEAD).Trim();source_dirty=$dirty;reps=$Reps;
+      configurations=$cfg;n=@(64,256,1024);completed_utc=[DateTimeOffset]::UtcNow.ToString('o')} |
+      ConvertTo-Json | Set-Content (Join-Path $out 'manifest.json')
+    Write-Host "T010 results in $out"
+    exit 0
+}
 Run @('subgroup-bench','--points','4096','--reps','5','--out',"$out\subgroup")
 Run @('lin-sweep','--k','1,16,64,256,1024,4096,16384','--reps',"$Reps",'--out',"$out\lin")
 Run @('tdec-sweep','--k','1,16,64,256,1024,4096,16384','--trustees','5','--threshold','3','--reps',"$Reps",'--out',"$out\tdec")
