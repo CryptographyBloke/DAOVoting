@@ -314,6 +314,7 @@ pub struct BatchRecord {
 pub struct Recorder {
     pub inner: Arc<dyn MulBackend>,
     pub log: Mutex<Vec<BatchRecord>>,
+    pub msm_log: Mutex<Vec<BatchRecord>>,
 }
 
 impl Recorder {
@@ -321,7 +322,11 @@ impl Recorder {
         Arc::new(Recorder {
             inner,
             log: Mutex::new(Vec::new()),
+            msm_log: Mutex::new(Vec::new()),
         })
+    }
+    pub fn take_msm(&self) -> Vec<BatchRecord> {
+        std::mem::take(&mut self.msm_log.lock().unwrap())
     }
     pub fn take(&self) -> Vec<BatchRecord> {
         std::mem::take(&mut self.log.lock().unwrap())
@@ -330,7 +335,13 @@ impl Recorder {
 
 impl MulBackend for Recorder {
     fn msm(&self, pts: &[G], sc: &[F]) -> Result<G> {
-        self.inner.msm(pts, sc)
+        let t = Instant::now();
+        let result = self.inner.msm(pts, sc)?;
+        self.msm_log.lock().unwrap().push(BatchRecord {
+            jobs: pts.len(),
+            seconds: t.elapsed().as_secs_f64(),
+        });
+        Ok(result)
     }
     fn telemetry(&self) -> serde_json::Value {
         self.inner.telemetry()

@@ -1864,10 +1864,12 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                 assert_eq!(tally["decision"], json!(want));
                 let after_tally = telemetry();
                 let tally_batches = recorder.as_ref().map(|r| histogram(&r.take()));
+                let tally_msms = recorder.as_ref().map(|r| histogram(&r.take_msm()));
                 let replay = replay_cfg(&pp, &circ, &inputs, &log, &cfg);
                 assert_eq!(replay["accepted"], true);
                 let after_replay = telemetry();
                 let replay_batches = recorder.as_ref().map(|r| histogram(&r.take()));
+                let replay_msms = recorder.as_ref().map(|r| histogram(&r.take_msm()));
                 let reference = replay_cfg(&pp, &circ, &inputs, &log, &|e: &mut Engine| {
                     e.select_format(version);
                     e.v2_individual = version >= 2;
@@ -1879,7 +1881,8 @@ pub fn secure_bench(ns: &[usize], reps: usize, names: &[String]) -> Value {
                 runs.push(json!({"rep":rep,"configuration":name,"format":version,"canonical_reference":canonical,
                     "backend":spec,"execution_order":order,"initialization_seconds":init_seconds,
                     "tally":tally,"replay":replay,"independent_cpu_individual":reference,
-                    "tally_batches":tally_batches,"replay_batches":replay_batches,"oracle_agrees":true,
+                    "tally_batches":tally_batches,"replay_batches":replay_batches,
+                    "tally_msms":tally_msms,"replay_msms":replay_msms,"oracle_agrees":true,
                     "telemetry_before":before,"telemetry_after_tally":after_tally,"telemetry_after_replay":after_replay}));
             }
         }
