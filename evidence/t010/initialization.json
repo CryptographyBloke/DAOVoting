@@ -1,0 +1,314 @@
+{
+  "machine": {
+    "arch": "x86_64",
+    "cargo_lock_sha256": "f4a9b50efcae2cf903fa0dbed7ae8ff44e6c560a6fcb2134cf7032e13ef2f7bb",
+    "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "crates": {
+      "ark-bn254": "0.5.0",
+      "ark-crypto-primitives": "0.5.0",
+      "ark-ed-on-bn254": "0.5.0",
+      "ark-groth16": "0.5.0",
+      "ark-r1cs-std": "0.5.0",
+      "ed25519-dalek": "2.2.0",
+      "rayon": "1.12.0",
+      "sha2": "0.10.9",
+      "sha3": "0.10.9",
+      "tokio": "1.54.1"
+    },
+    "kernel": null,
+    "logical_cores": 24,
+    "memory": null,
+    "os": "windows",
+    "profile": "release",
+    "rayon_threads": 24,
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+  },
+  "provenance": {
+    "features": {
+      "cuda12": false,
+      "cuda13": true,
+      "cuda_emu": true,
+      "gpu": true
+    },
+    "rayon_threads": 24,
+    "source_commit": "4aa3e7a6edd51b277372e4b874efe46e69888402",
+    "source_dirty": false,
+    "verify_backend_default": "inline"
+  },
+  "results": {
+    "initialization": [
+      {
+        "backend": "cpu",
+        "seconds": 0.0000128
+      },
+      {
+        "backend": "cuda",
+        "seconds": 0.3427686
+      }
+    ],
+    "public_input_seed": 20261124008,
+    "reps": 3,
+    "rows": [
+      {
+        "negative_short_128": 0,
+        "samples": [
+          {
+            "backend": "cpu",
+            "equal": true,
+            "execution_order": [
+              "cpu",
+              "cuda"
+            ],
+            "rep": 0,
+            "seconds": 0.0004321,
+            "telemetry_after": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cuda",
+            "equal": true,
+            "execution_order": [
+              "cpu",
+              "cuda"
+            ],
+            "rep": 0,
+            "seconds": 0.0033939,
+            "telemetry_after": {
+              "device": {
+                "compile_seconds": 0.0587334,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 2,
+                  "d2h": 0.0001584,
+                  "h2d": 0.0054446,
+                  "jobs": 2,
+                  "kernel": 0.009290099999999999,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 9.100000000000001e-6,
+                  "unpack": 9.2e-6
+                },
+                "total_mem": 6438780928
+              }
+            },
+            "telemetry_before": {
+              "device": {
+                "compile_seconds": 0.0587334,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 1,
+                  "d2h": 0.0001347,
+                  "h2d": 0.0053839,
+                  "jobs": 1,
+                  "kernel": 0.0059941,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 3.9e-6,
+                  "unpack": 7.7e-6
+                },
+                "total_mem": 6438780928
+              }
+            }
+          },
+          {
+            "backend": "cuda",
+            "equal": true,
+            "execution_order": [
+              "cuda",
+              "cpu"
+            ],
+            "rep": 1,
+            "seconds": 0.0034332,
+            "telemetry_after": {
+              "device": {
+                "compile_seconds": 0.0587334,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 3,
+                  "d2h": 0.00027079999999999997,
+                  "h2d": 0.0054688,
+                  "jobs": 3,
+                  "kernel": 0.012580299999999999,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 9.3e-6,
+                  "unpack": 0.0000102
+                },
+                "total_mem": 6438780928
+              }
+            },
+            "telemetry_before": {
+              "device": {
+                "compile_seconds": 0.0587334,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 2,
+                  "d2h": 0.0001584,
+                  "h2d": 0.0054446,
+                  "jobs": 2,
+                  "kernel": 0.009290099999999999,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 9.100000000000001e-6,
+                  "unpack": 9.2e-6
+                },
+                "total_mem": 6438780928
+              }
+            }
+          },
+          {
+            "backend": "cpu",
+            "equal": true,
+            "execution_order": [
+              "cuda",
+              "cpu"
+            ],
+            "rep": 1,
+            "seconds": 0.0002372,
+            "telemetry_after": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cpu",
+            "equal": true,
+            "execution_order": [
+              "cpu",
+              "cuda"
+            ],
+            "rep": 2,
+            "seconds": 0.0002231,
+            "telemetry_after": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "cuda",
+            "equal": true,
+            "execution_order": [
+              "cpu",
+              "cuda"
+            ],
+            "rep": 2,
+            "seconds": 0.0034768,
+            "telemetry_after": {
+              "device": {
+                "compile_seconds": 0.0587334,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 4,
+                  "d2h": 0.00038609999999999995,
+                  "h2d": 0.005523800000000001,
+                  "jobs": 4,
+                  "kernel": 0.01588,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 9.7e-6,
+                  "unpack": 0.0000113
+                },
+                "total_mem": 6438780928
+              }
+            },
+            "telemetry_before": {
+              "device": {
+                "compile_seconds": 0.0587334,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 3,
+                  "d2h": 0.00027079999999999997,
+                  "h2d": 0.0054688,
+                  "jobs": 3,
+                  "kernel": 0.012580299999999999,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 9.3e-6,
+                  "unpack": 0.0000102
+                },
+                "total_mem": 6438780928
+              }
+            }
+          }
+        ],
+        "terms": 1,
+        "unsigned_short_128": 1
+      }
+    ],
+    "scope": "Real MSM; mixed positive128/negative128/fullwidth scalars, same bases/scalars per backend, warmup equality check outside measured repetitions."
+  }
+}

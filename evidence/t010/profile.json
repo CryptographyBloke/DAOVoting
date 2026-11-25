@@ -1,0 +1,3053 @@
+{
+  "machine": {
+    "arch": "x86_64",
+    "cargo_lock_sha256": "f4a9b50efcae2cf903fa0dbed7ae8ff44e6c560a6fcb2134cf7032e13ef2f7bb",
+    "cpu": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "crates": {
+      "ark-bn254": "0.5.0",
+      "ark-crypto-primitives": "0.5.0",
+      "ark-ed-on-bn254": "0.5.0",
+      "ark-groth16": "0.5.0",
+      "ark-r1cs-std": "0.5.0",
+      "ed25519-dalek": "2.2.0",
+      "rayon": "1.12.0",
+      "sha2": "0.10.9",
+      "sha3": "0.10.9",
+      "tokio": "1.54.1"
+    },
+    "kernel": null,
+    "logical_cores": 24,
+    "memory": null,
+    "os": "windows",
+    "profile": "release",
+    "rayon_threads": 24,
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+  },
+  "provenance": {
+    "features": {
+      "cuda12": false,
+      "cuda13": true,
+      "cuda_emu": true,
+      "gpu": true
+    },
+    "rayon_threads": 24,
+    "source_commit": "4aa3e7a6edd51b277372e4b874efe46e69888402",
+    "source_dirty": false,
+    "verify_backend_default": "inline"
+  },
+  "secure_bench": {
+    "reps": 1,
+    "results": [
+      {
+        "gates": 1086,
+        "n": 64,
+        "runs": [
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v9-cpu",
+            "execution_order": [
+              "v9-cpu",
+              "v9-gpu"
+            ],
+            "format": 9,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((17268255711725041720316057979125207620887759330362296734449098057626761692466, 14614480124741842983261859657380361065983903868508346847981206007532030234195), (18927025967993406788743529895079369927689978108736781400855834566527384879223, 14993304853364491196408409508766689869406290171783893151710884368613942171257)))",
+              "prof": {
+                "apply": 0.0160979,
+                "batch_build": 0.18336890000000014,
+                "batch_check": 0.29006949999999965,
+                "batch_run": 0.6904171999999995,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 0.5165359999999999,
+                "finish": 0.0484432,
+                "jobs": 54300,
+                "max_batch": 0,
+                "signature": 0.04205999999999997,
+                "subgroup": 0.14883430000000006,
+                "verify_inline": 3.1942704999999947
+              },
+              "seconds_total": 4.9892691
+            },
+            "initialization_seconds": 0.0000105,
+            "oracle_agrees": true,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((17268255711725041720316057979125207620887759330362296734449098057626761692466, 14614480124741842983261859657380361065983903868508346847981206007532030234195), (18927025967993406788743529895079369927689978108736781400855834566527384879223, 14993304853364491196408409508766689869406290171783893151710884368613942171257)))",
+              "prof": {
+                "apply": 0.016019900000000052,
+                "batch_build": 0.23068820000000026,
+                "batch_check": 0.2880315000000001,
+                "batch_run": 1.0098501999999963,
+                "batches": 570,
+                "cofactor_decode": 0.0,
+                "decode": 0.5077912000000006,
+                "finish": 0.04786900000000001,
+                "jobs": 87660,
+                "max_batch": 1026,
+                "signature": 0.04121679999999997,
+                "subgroup": 0.1526580999999999,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 2.1481467
+            },
+            "replay_batches": {
+              "batches": 222,
+              "by_size": [
+                {
+                  "batches": 14,
+                  "jobs": 28,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0018637000000000003
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.00033870000000000005
+                },
+                {
+                  "batches": 73,
+                  "jobs": 728,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0192278
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0048393
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0121113
+                },
+                {
+                  "batches": 20,
+                  "jobs": 2012,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0275476
+                },
+                {
+                  "batches": 21,
+                  "jobs": 4192,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0538855
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8750,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.11004200000000003
+                },
+                {
+                  "batches": 36,
+                  "jobs": 26862,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.3371239000000001
+                },
+                {
+                  "batches": 5,
+                  "jobs": 12800,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.1649462
+                }
+              ],
+              "jobs": 56472,
+              "max_batch": 2560
+            },
+            "replay_msms": {
+              "batches": 570,
+              "by_size": [
+                {
+                  "batches": 190,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00003790000000000005
+                },
+                {
+                  "batches": 160,
+                  "jobs": 800,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.06719829999999996
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.012813599999999996
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.018589799999999993
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0236574
+                },
+                {
+                  "batches": 40,
+                  "jobs": 3690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.037962399999999986
+                },
+                {
+                  "batches": 55,
+                  "jobs": 9440,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0704051
+                },
+                {
+                  "batches": 30,
+                  "jobs": 9480,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.0513763
+                },
+                {
+                  "batches": 5,
+                  "jobs": 2570,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.010048099999999999
+                },
+                {
+                  "batches": 5,
+                  "jobs": 5130,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.017267
+                }
+              ],
+              "jobs": 33360,
+              "max_batch": 1026
+            },
+            "tally": {
+              "decision": true,
+              "gates": 1086,
+              "items": 16685,
+              "messages": 570,
+              "output": "Some(((17268255711725041720316057979125207620887759330362296734449098057626761692466, 14614480124741842983261859657380361065983903868508346847981206007532030234195), (18927025967993406788743529895079369927689978108736781400855834566527384879223, 14993304853364491196408409508766689869406290171783893151710884368613942171257)))",
+              "prof": {
+                "apply": 0.013161399999999985,
+                "batch_build": 0.15820750000000042,
+                "batch_check": 0.12073229999999996,
+                "batch_run": 0.5207996000000007,
+                "batches": 570,
+                "cofactor_decode": 0.0,
+                "decode": 0.28951660000000035,
+                "finish": 0.028524599999999997,
+                "jobs": 87660,
+                "max_batch": 1026,
+                "signature": 0.030773800000000004,
+                "subgroup": 0.08416970000000003,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 1.1679081000000002,
+              "seconds_produce": 0.8391329000000014,
+              "seconds_total": 2.0105301,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 50160,
+                    "items": 380,
+                    "points": 760
+                  },
+                  "mask+CSZ": {
+                    "bytes": 2432640,
+                    "items": 5430,
+                    "points": 27150
+                  },
+                  "reveal (batched)": {
+                    "bytes": 1130080,
+                    "items": 5435,
+                    "points": 21730
+                  },
+                  "share (batched)": {
+                    "bytes": 260880,
+                    "items": 5435,
+                    "points": 5435
+                  }
+                },
+                "framing_and_signature_bytes": 188770
+              },
+              "transcript_message_bytes": 4062730
+            },
+            "tally_batches": {
+              "batches": 222,
+              "by_size": [
+                {
+                  "batches": 14,
+                  "jobs": 28,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0012787
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0002225
+                },
+                {
+                  "batches": 73,
+                  "jobs": 728,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.015635099999999996
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0028024
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0070452000000000015
+                },
+                {
+                  "batches": 20,
+                  "jobs": 2012,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.013810200000000002
+                },
+                {
+                  "batches": 21,
+                  "jobs": 4192,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.025375
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8750,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.0524203
+                },
+                {
+                  "batches": 36,
+                  "jobs": 26862,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.1532547
+                },
+                {
+                  "batches": 5,
+                  "jobs": 12800,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.065765
+                }
+              ],
+              "jobs": 56472,
+              "max_batch": 2560
+            },
+            "tally_msms": {
+              "batches": 570,
+              "by_size": [
+                {
+                  "batches": 190,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00004380000000000008
+                },
+                {
+                  "batches": 160,
+                  "jobs": 800,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.04456799999999998
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.007990499999999998
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.011380399999999999
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.014663500000000001
+                },
+                {
+                  "batches": 40,
+                  "jobs": 3690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.023638700000000006
+                },
+                {
+                  "batches": 55,
+                  "jobs": 9440,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.043326800000000006
+                },
+                {
+                  "batches": 30,
+                  "jobs": 9480,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.03485089999999998
+                },
+                {
+                  "batches": 5,
+                  "jobs": 2570,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.006723300000000001
+                },
+                {
+                  "batches": 5,
+                  "jobs": 5130,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.0121058
+                }
+              ],
+              "jobs": 33360,
+              "max_batch": 1026
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "auto:4096:0",
+            "canonical_reference": false,
+            "configuration": "v9-gpu",
+            "execution_order": [
+              "v9-cpu",
+              "v9-gpu"
+            ],
+            "format": 9,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((3460386414319655663932344461936690371824657332204361827230398583736577023439, 9033102430458581433838150752571687452366041315917068191770193777587394955519), (9150481968353918482886504093746577163199908610724202299792830464489759932436, 7064051766774815463158710954954140958797031661525752812148820681243568191490)))",
+              "prof": {
+                "apply": 0.01559619999999997,
+                "batch_build": 0.17920750000000002,
+                "batch_check": 0.29122960000000003,
+                "batch_run": 0.6938208999999995,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 0.5221430000000006,
+                "finish": 0.049806500000000004,
+                "jobs": 54300,
+                "max_batch": 0,
+                "signature": 0.04274919999999998,
+                "subgroup": 0.15031250000000002,
+                "verify_inline": 3.1969907999999956
+              },
+              "seconds_total": 4.9989962
+            },
+            "initialization_seconds": 1.4e-6,
+            "oracle_agrees": true,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((3460386414319655663932344461936690371824657332204361827230398583736577023439, 9033102430458581433838150752571687452366041315917068191770193777587394955519), (9150481968353918482886504093746577163199908610724202299792830464489759932436, 7064051766774815463158710954954140958797031661525752812148820681243568191490)))",
+              "prof": {
+                "apply": 0.015316399999999973,
+                "batch_build": 0.23074060000000024,
+                "batch_check": 0.2832068000000002,
+                "batch_run": 0.992664599999998,
+                "batches": 570,
+                "cofactor_decode": 0.0,
+                "decode": 0.4964327999999997,
+                "finish": 0.0486498,
+                "jobs": 87660,
+                "max_batch": 1026,
+                "signature": 0.041137799999999995,
+                "subgroup": 0.14829130000000001,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 2.1140408
+            },
+            "replay_batches": {
+              "batches": 222,
+              "by_size": [
+                {
+                  "batches": 14,
+                  "jobs": 28,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0019305000000000001
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0003284
+                },
+                {
+                  "batches": 73,
+                  "jobs": 728,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.018819100000000002
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0047472
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0123986
+                },
+                {
+                  "batches": 20,
+                  "jobs": 2012,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.026685699999999996
+                },
+                {
+                  "batches": 21,
+                  "jobs": 4192,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0547942
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8750,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.10868189999999998
+                },
+                {
+                  "batches": 36,
+                  "jobs": 26862,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.33240940000000013
+                },
+                {
+                  "batches": 5,
+                  "jobs": 12800,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.1553805
+                }
+              ],
+              "jobs": 56472,
+              "max_batch": 2560
+            },
+            "replay_msms": {
+              "batches": 570,
+              "by_size": [
+                {
+                  "batches": 190,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00004010000000000006
+                },
+                {
+                  "batches": 160,
+                  "jobs": 800,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.06763569999999999
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.012738599999999997
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.018228799999999996
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0244353
+                },
+                {
+                  "batches": 40,
+                  "jobs": 3690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.038025600000000014
+                },
+                {
+                  "batches": 55,
+                  "jobs": 9440,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0697218
+                },
+                {
+                  "batches": 30,
+                  "jobs": 9480,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.05044150000000001
+                },
+                {
+                  "batches": 5,
+                  "jobs": 2570,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.0100664
+                },
+                {
+                  "batches": 5,
+                  "jobs": 5130,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.0174379
+                }
+              ],
+              "jobs": 33360,
+              "max_batch": 1026
+            },
+            "tally": {
+              "decision": true,
+              "gates": 1086,
+              "items": 16685,
+              "messages": 570,
+              "output": "Some(((3460386414319655663932344461936690371824657332204361827230398583736577023439, 9033102430458581433838150752571687452366041315917068191770193777587394955519), (9150481968353918482886504093746577163199908610724202299792830464489759932436, 7064051766774815463158710954954140958797031661525752812148820681243568191490)))",
+              "prof": {
+                "apply": 0.015676899999999976,
+                "batch_build": 0.23148810000000045,
+                "batch_check": 0.2893995000000002,
+                "batch_run": 1.0146908999999973,
+                "batches": 570,
+                "cofactor_decode": 0.0,
+                "decode": 0.5036975999999996,
+                "finish": 0.04817249999999999,
+                "jobs": 87660,
+                "max_batch": 1026,
+                "signature": 0.040124700000000006,
+                "subgroup": 0.1508767000000001,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 2.1484053999999992,
+              "seconds_produce": 1.4449639000000012,
+              "seconds_total": 3.5981163,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 50160,
+                    "items": 380,
+                    "points": 760
+                  },
+                  "mask+CSZ": {
+                    "bytes": 2432640,
+                    "items": 5430,
+                    "points": 27150
+                  },
+                  "reveal (batched)": {
+                    "bytes": 1130080,
+                    "items": 5435,
+                    "points": 21730
+                  },
+                  "share (batched)": {
+                    "bytes": 260880,
+                    "items": 5435,
+                    "points": 5435
+                  }
+                },
+                "framing_and_signature_bytes": 188770
+              },
+              "transcript_message_bytes": 4062730
+            },
+            "tally_batches": {
+              "batches": 222,
+              "by_size": [
+                {
+                  "batches": 14,
+                  "jobs": 28,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0018957
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0002748
+                },
+                {
+                  "batches": 73,
+                  "jobs": 728,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0182605
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0045947
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0122776
+                },
+                {
+                  "batches": 20,
+                  "jobs": 2012,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0272627
+                },
+                {
+                  "batches": 21,
+                  "jobs": 4192,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.053861
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8750,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.11073009999999998
+                },
+                {
+                  "batches": 36,
+                  "jobs": 26862,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.3377092
+                },
+                {
+                  "batches": 5,
+                  "jobs": 12800,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.1683259
+                }
+              ],
+              "jobs": 56472,
+              "max_batch": 2560
+            },
+            "tally_msms": {
+              "batches": 570,
+              "by_size": [
+                {
+                  "batches": 190,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00004770000000000002
+                },
+                {
+                  "batches": 160,
+                  "jobs": 800,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.06629449999999999
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.012592599999999999
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0183002
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.025276399999999997
+                },
+                {
+                  "batches": 40,
+                  "jobs": 3690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.038193299999999986
+                },
+                {
+                  "batches": 55,
+                  "jobs": 9440,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.06997519999999997
+                },
+                {
+                  "batches": 30,
+                  "jobs": 9480,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.05214560000000001
+                },
+                {
+                  "batches": 5,
+                  "jobs": 2570,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.0104779
+                },
+                {
+                  "batches": 5,
+                  "jobs": 5130,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.017594500000000002
+                }
+              ],
+              "jobs": 33360,
+              "max_batch": 1026
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          }
+        ],
+        "threshold": 4327
+      },
+      {
+        "gates": 4350,
+        "n": 256,
+        "runs": [
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v9-cpu",
+            "execution_order": [
+              "v9-cpu",
+              "v9-gpu"
+            ],
+            "format": 9,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((3221926383909162092157628418510382823503288195606935527410904169432954510012, 14700297842631419656347130582388266622852858125876752933033241137127005741036), (2406326898565266961695984421278745378061512923395715827112068858620577327344, 13637377542959209748694627215858582157031903926585290174326440306513822148949)))",
+              "prof": {
+                "apply": 0.0674160000000001,
+                "batch_build": 0.3664953000000003,
+                "batch_check": 1.0123049000000004,
+                "batch_run": 2.714563400000002,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 1.6191083000000002,
+                "finish": 0.17785299999999996,
+                "jobs": 217500,
+                "max_batch": 0,
+                "signature": 0.05698939999999995,
+                "subgroup": 0.4733797,
+                "verify_inline": 12.673053399999983
+              },
+              "seconds_total": 18.7144689
+            },
+            "initialization_seconds": 1.4e-6,
+            "oracle_agrees": true,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((3221926383909162092157628418510382823503288195606935527410904169432954510012, 14700297842631419656347130582388266622852858125876752933033241137127005741036), (2406326898565266961695984421278745378061512923395715827112068858620577327344, 13637377542959209748694627215858582157031903926585290174326440306513822148949)))",
+              "prof": {
+                "apply": 0.05856609999999999,
+                "batch_build": 0.4418862000000002,
+                "batch_check": 1.035031400000001,
+                "batch_run": 3.383728299999992,
+                "batches": 690,
+                "cofactor_decode": 0.0,
+                "decode": 1.6402118999999997,
+                "finish": 0.1814345,
+                "jobs": 348940,
+                "max_batch": 4098,
+                "signature": 0.05578919999999996,
+                "subgroup": 0.5000249000000007,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 6.8205086
+            },
+            "replay_batches": {
+              "batches": 270,
+              "by_size": [
+                {
+                  "batches": 16,
+                  "jobs": 32,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.002159
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0003204
+                },
+                {
+                  "batches": 83,
+                  "jobs": 828,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.022018300000000005
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0050098
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.012633199999999999
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1814,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.025511299999999997
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3768,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0478704
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8450,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.1070668
+                },
+                {
+                  "batches": 21,
+                  "jobs": 16710,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.21799390000000005
+                },
+                {
+                  "batches": 20,
+                  "jobs": 35050,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.5259915
+                },
+                {
+                  "batches": 36,
+                  "jobs": 107248,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 1.3164064
+                },
+                {
+                  "batches": 5,
+                  "jobs": 51200,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.6194672999999999
+                }
+              ],
+              "jobs": 226200,
+              "max_batch": 10240
+            },
+            "replay_msms": {
+              "batches": 690,
+              "by_size": [
+                {
+                  "batches": 230,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.0000632000000000001
+                },
+                {
+                  "batches": 180,
+                  "jobs": 900,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.08075750000000001
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0129464
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0183778
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0246079
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2680,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.028771499999999995
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5290,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.038269300000000006
+                },
+                {
+                  "batches": 40,
+                  "jobs": 14510,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.08056410000000003
+                },
+                {
+                  "batches": 55,
+                  "jobs": 37410,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.12613159999999998
+                },
+                {
+                  "batches": 30,
+                  "jobs": 37660,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.1110967
+                },
+                {
+                  "batches": 5,
+                  "jobs": 10250,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.0276231
+                },
+                {
+                  "batches": 5,
+                  "jobs": 20490,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.04486879999999999
+                }
+              ],
+              "jobs": 131440,
+              "max_batch": 4098
+            },
+            "tally": {
+              "decision": true,
+              "gates": 4350,
+              "items": 65725,
+              "messages": 690,
+              "output": "Some(((3221926383909162092157628418510382823503288195606935527410904169432954510012, 14700297842631419656347130582388266622852858125876752933033241137127005741036), (2406326898565266961695984421278745378061512923395715827112068858620577327344, 13637377542959209748694627215858582157031903926585290174326440306513822148949)))",
+              "prof": {
+                "apply": 0.06231339999999994,
+                "batch_build": 0.44533300000000065,
+                "batch_check": 1.0083894999999994,
+                "batch_run": 3.2819416999999897,
+                "batches": 690,
+                "cofactor_decode": 0.0,
+                "decode": 1.5862775999999994,
+                "finish": 0.17570500000000003,
+                "jobs": 348940,
+                "max_batch": 4098,
+                "signature": 0.054815299999999983,
+                "subgroup": 0.4680643999999997,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 6.635074799999987,
+              "seconds_produce": 4.573793899999999,
+              "seconds_total": 11.2274897,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 60720,
+                    "items": 460,
+                    "points": 920
+                  },
+                  "mask+CSZ": {
+                    "bytes": 9744000,
+                    "items": 21750,
+                    "points": 108750
+                  },
+                  "reveal (batched)": {
+                    "bytes": 4524640,
+                    "items": 21755,
+                    "points": 87010
+                  },
+                  "share (batched)": {
+                    "bytes": 1044240,
+                    "items": 21755,
+                    "points": 21755
+                  }
+                },
+                "framing_and_signature_bytes": 592730
+              },
+              "transcript_message_bytes": 15966530
+            },
+            "tally_batches": {
+              "batches": 270,
+              "by_size": [
+                {
+                  "batches": 16,
+                  "jobs": 32,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0022224
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.00026559999999999995
+                },
+                {
+                  "batches": 83,
+                  "jobs": 828,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.020537800000000012
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0047401
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.012552100000000002
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1814,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.024315999999999997
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3768,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.04848229999999999
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8450,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.1068598
+                },
+                {
+                  "batches": 21,
+                  "jobs": 16710,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.21022810000000003
+                },
+                {
+                  "batches": 20,
+                  "jobs": 35050,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.4331985000000001
+                },
+                {
+                  "batches": 36,
+                  "jobs": 107248,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 1.3117670999999997
+                },
+                {
+                  "batches": 5,
+                  "jobs": 51200,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.6285231
+                }
+              ],
+              "jobs": 226200,
+              "max_batch": 10240
+            },
+            "tally_msms": {
+              "batches": 690,
+              "by_size": [
+                {
+                  "batches": 230,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00006660000000000005
+                },
+                {
+                  "batches": 180,
+                  "jobs": 900,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.07494649999999996
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0131761
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.018728599999999995
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0244347
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2680,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0284135
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5290,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0381846
+                },
+                {
+                  "batches": 40,
+                  "jobs": 14510,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.07482790000000002
+                },
+                {
+                  "batches": 55,
+                  "jobs": 37410,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.1283071
+                },
+                {
+                  "batches": 30,
+                  "jobs": 37660,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.11209209999999999
+                },
+                {
+                  "batches": 5,
+                  "jobs": 10250,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.0295879
+                },
+                {
+                  "batches": 5,
+                  "jobs": 20490,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.0464104
+                }
+              ],
+              "jobs": 131440,
+              "max_batch": 4098
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "auto:4096:0",
+            "canonical_reference": false,
+            "configuration": "v9-gpu",
+            "execution_order": [
+              "v9-cpu",
+              "v9-gpu"
+            ],
+            "format": 9,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((9667323295722758801093375207602626414848735332500940889946036177117295404028, 3849544717412497324753040481908456229043685994454346122459910864913765849732), (21632191999284572736772180815811816782201802119351880963821191291229016500736, 10668658959644094347649919830043049382979677765506511043476033116303606190370)))",
+              "prof": {
+                "apply": 0.06827250000000006,
+                "batch_build": 0.35398590000000124,
+                "batch_check": 1.0003350000000002,
+                "batch_run": 2.7101449999999976,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 1.6048686999999984,
+                "finish": 0.17975829999999995,
+                "jobs": 217500,
+                "max_batch": 0,
+                "signature": 0.057449299999999974,
+                "subgroup": 0.46736049999999985,
+                "verify_inline": 12.659982399999999
+              },
+              "seconds_total": 18.6604389
+            },
+            "initialization_seconds": 1.7e-6,
+            "oracle_agrees": true,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((9667323295722758801093375207602626414848735332500940889946036177117295404028, 3849544717412497324753040481908456229043685994454346122459910864913765849732), (21632191999284572736772180815811816782201802119351880963821191291229016500736, 10668658959644094347649919830043049382979677765506511043476033116303606190370)))",
+              "prof": {
+                "apply": 0.05670009999999994,
+                "batch_build": 0.4327076000000002,
+                "batch_check": 1.0088804999999996,
+                "batch_run": 3.0548126999999967,
+                "batches": 690,
+                "cofactor_decode": 0.0,
+                "decode": 1.5820071999999972,
+                "finish": 0.17729760000000006,
+                "jobs": 348940,
+                "max_batch": 4098,
+                "signature": 0.05512349999999999,
+                "subgroup": 0.4679712000000003,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 6.3888735
+            },
+            "replay_batches": {
+              "batches": 270,
+              "by_size": [
+                {
+                  "batches": 16,
+                  "jobs": 32,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0022177000000000004
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0003056
+                },
+                {
+                  "batches": 83,
+                  "jobs": 828,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.021656100000000005
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0048324
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0122678
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1814,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0241191
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3768,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.04817250000000001
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8450,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.1055594
+                },
+                {
+                  "batches": 21,
+                  "jobs": 16710,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.21013610000000002
+                },
+                {
+                  "batches": 20,
+                  "jobs": 35050,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.4314109
+                },
+                {
+                  "batches": 36,
+                  "jobs": 107248,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 1.3306905000000002
+                },
+                {
+                  "batches": 5,
+                  "jobs": 51200,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.3286605
+                }
+              ],
+              "jobs": 226200,
+              "max_batch": 10240
+            },
+            "replay_msms": {
+              "batches": 690,
+              "by_size": [
+                {
+                  "batches": 230,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00007240000000000026
+                },
+                {
+                  "batches": 180,
+                  "jobs": 900,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.07475030000000002
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.012814999999999998
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.018457800000000003
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.024957999999999998
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2680,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.028300499999999996
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5290,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0387575
+                },
+                {
+                  "batches": 40,
+                  "jobs": 14510,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.0725392
+                },
+                {
+                  "batches": 55,
+                  "jobs": 37410,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.12736540000000002
+                },
+                {
+                  "batches": 30,
+                  "jobs": 37660,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.11188069999999999
+                },
+                {
+                  "batches": 5,
+                  "jobs": 10250,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.027380500000000002
+                },
+                {
+                  "batches": 5,
+                  "jobs": 20490,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.1090849
+                }
+              ],
+              "jobs": 131440,
+              "max_batch": 4098
+            },
+            "tally": {
+              "decision": true,
+              "gates": 4350,
+              "items": 65725,
+              "messages": 690,
+              "output": "Some(((9667323295722758801093375207602626414848735332500940889946036177117295404028, 3849544717412497324753040481908456229043685994454346122459910864913765849732), (21632191999284572736772180815811816782201802119351880963821191291229016500736, 10668658959644094347649919830043049382979677765506511043476033116303606190370)))",
+              "prof": {
+                "apply": 0.05607219999999999,
+                "batch_build": 0.42878490000000047,
+                "batch_check": 1.0138056999999994,
+                "batch_run": 3.5394242999999945,
+                "batches": 690,
+                "cofactor_decode": 0.0,
+                "decode": 1.5865818999999983,
+                "finish": 0.17515100000000003,
+                "jobs": 348940,
+                "max_batch": 4098,
+                "signature": 0.05398409999999998,
+                "subgroup": 0.4664411000000001,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 6.868570200000001,
+              "seconds_produce": 4.554291599999998,
+              "seconds_total": 11.4412363,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 60720,
+                    "items": 460,
+                    "points": 920
+                  },
+                  "mask+CSZ": {
+                    "bytes": 9744000,
+                    "items": 21750,
+                    "points": 108750
+                  },
+                  "reveal (batched)": {
+                    "bytes": 4524640,
+                    "items": 21755,
+                    "points": 87010
+                  },
+                  "share (batched)": {
+                    "bytes": 1044240,
+                    "items": 21755,
+                    "points": 21755
+                  }
+                },
+                "framing_and_signature_bytes": 592730
+              },
+              "transcript_message_bytes": 15966530
+            },
+            "tally_batches": {
+              "batches": 270,
+              "by_size": [
+                {
+                  "batches": 16,
+                  "jobs": 32,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0021705
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0002763
+                },
+                {
+                  "batches": 83,
+                  "jobs": 828,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.020838600000000002
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.004804900000000001
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0130318
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1814,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0246945
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3768,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.04855160000000001
+                },
+                {
+                  "batches": 20,
+                  "jobs": 8450,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.10612999999999999
+                },
+                {
+                  "batches": 21,
+                  "jobs": 16710,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.2061519
+                },
+                {
+                  "batches": 20,
+                  "jobs": 35050,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.43859659999999995
+                },
+                {
+                  "batches": 36,
+                  "jobs": 107248,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 1.329774
+                },
+                {
+                  "batches": 5,
+                  "jobs": 51200,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.8854093000000001
+                }
+              ],
+              "jobs": 226200,
+              "max_batch": 10240
+            },
+            "tally_msms": {
+              "batches": 690,
+              "by_size": [
+                {
+                  "batches": 230,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.0000875000000000003
+                },
+                {
+                  "batches": 180,
+                  "jobs": 900,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.07504480000000002
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0122568
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0182505
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.024878400000000002
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2680,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.027693399999999996
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5290,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.03887789999999999
+                },
+                {
+                  "batches": 40,
+                  "jobs": 14510,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.07076579999999999
+                },
+                {
+                  "batches": 55,
+                  "jobs": 37410,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.12815709999999997
+                },
+                {
+                  "batches": 30,
+                  "jobs": 37660,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.11126680000000001
+                },
+                {
+                  "batches": 5,
+                  "jobs": 10250,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.0279511
+                },
+                {
+                  "batches": 5,
+                  "jobs": 20490,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.034661399999999995
+                }
+              ],
+              "jobs": 131440,
+              "max_batch": 4098
+            },
+            "telemetry_after_replay": {
+              "device": {
+                "compile_seconds": 0.1863947,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 20,
+                  "d2h": 0.013384000000000004,
+                  "h2d": 0.032232800000000006,
+                  "jobs": 143380,
+                  "kernel": 0.4550934000000001,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 0.007669099999999999,
+                  "unpack": 0.019790099999999998
+                },
+                "total_mem": 6438780928
+              }
+            },
+            "telemetry_after_tally": {
+              "device": {
+                "compile_seconds": 0.1863947,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 10,
+                  "d2h": 0.0043204,
+                  "h2d": 0.012626700000000001,
+                  "jobs": 71690,
+                  "kernel": 0.0659581,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 0.0040057999999999995,
+                  "unpack": 0.0098773
+                },
+                "total_mem": 6438780928
+              }
+            },
+            "telemetry_before": null
+          }
+        ],
+        "threshold": 15710
+      },
+      {
+        "gates": 17406,
+        "n": 1024,
+        "runs": [
+          {
+            "backend": "cpu",
+            "canonical_reference": false,
+            "configuration": "v9-cpu",
+            "execution_order": [
+              "v9-cpu",
+              "v9-gpu"
+            ],
+            "format": 9,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((20457560920048113204324273592617128968522159587960800437913178485727049224220, 9844668062692092883528583238961430251400368845167118921827674474423091739396), (19215526711117294119110456521356191994456998250044632903506051205758485397058, 17781233417195068007283733488647599210959399969317879276364640005494464884583)))",
+              "prof": {
+                "apply": 0.3038806999999993,
+                "batch_build": 0.9274326999999973,
+                "batch_check": 3.8041573999999994,
+                "batch_run": 10.728505600000007,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 5.902659900000004,
+                "finish": 0.6903593999999997,
+                "jobs": 870300,
+                "max_batch": 0,
+                "signature": 0.08954300000000004,
+                "subgroup": 1.6965953000000003,
+                "verify_inline": 50.444811000000136
+              },
+              "seconds_total": 73.0021009
+            },
+            "initialization_seconds": 1.2e-6,
+            "oracle_agrees": true,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((20457560920048113204324273592617128968522159587960800437913178485727049224220, 9844668062692092883528583238961430251400368845167118921827674474423091739396), (19215526711117294119110456521356191994456998250044632903506051205758485397058, 17781233417195068007283733488647599210959399969317879276364640005494464884583)))",
+              "prof": {
+                "apply": 0.2738956999999999,
+                "batch_build": 1.160204300000002,
+                "batch_check": 3.864686799999999,
+                "batch_run": 12.089317899999969,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 5.878577799999994,
+                "finish": 0.6946709000000002,
+                "jobs": 1393580,
+                "max_batch": 16386,
+                "signature": 0.08661489999999993,
+                "subgroup": 1.6946213000000008,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 24.1471435
+            },
+            "replay_batches": {
+              "batches": 318,
+              "by_size": [
+                {
+                  "batches": 18,
+                  "jobs": 36,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0024806
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0002975
+                },
+                {
+                  "batches": 93,
+                  "jobs": 928,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.023981
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0047285
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0122813
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1816,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0244488
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3782,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0484548
+                },
+                {
+                  "batches": 18,
+                  "jobs": 7702,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.0977472
+                },
+                {
+                  "batches": 18,
+                  "jobs": 15372,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.18993159999999998
+                },
+                {
+                  "batches": 20,
+                  "jobs": 33698,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.41270499999999993
+                },
+                {
+                  "batches": 21,
+                  "jobs": 66836,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.8249671000000001
+                },
+                {
+                  "batches": 20,
+                  "jobs": 140150,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 1.7389146999999996
+                },
+                {
+                  "batches": 36,
+                  "jobs": 428892,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 5.285129899999999
+                },
+                {
+                  "batches": 5,
+                  "jobs": 204800,
+                  "jobs_hi": 65535,
+                  "jobs_lo": 32768,
+                  "seconds": 2.5175922999999996
+                }
+              ],
+              "jobs": 905112,
+              "max_batch": 40960
+            },
+            "replay_msms": {
+              "batches": 810,
+              "by_size": [
+                {
+                  "batches": 270,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00008490000000000044
+                },
+                {
+                  "batches": 200,
+                  "jobs": 1000,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.08345550000000003
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0130201
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0181853
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.024453700000000005
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.028127900000000004
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5380,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.038068700000000004
+                },
+                {
+                  "batches": 30,
+                  "jobs": 10640,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.052223399999999996
+                },
+                {
+                  "batches": 30,
+                  "jobs": 20940,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.06967259999999999
+                },
+                {
+                  "batches": 40,
+                  "jobs": 57790,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.1600455
+                },
+                {
+                  "batches": 55,
+                  "jobs": 149270,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.37164270000000016
+                },
+                {
+                  "batches": 30,
+                  "jobs": 150420,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.28976769999999996
+                },
+                {
+                  "batches": 5,
+                  "jobs": 40970,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.068991
+                },
+                {
+                  "batches": 5,
+                  "jobs": 81930,
+                  "jobs_hi": 32767,
+                  "jobs_lo": 16384,
+                  "seconds": 0.1252456
+                }
+              ],
+              "jobs": 523280,
+              "max_batch": 16386
+            },
+            "tally": {
+              "decision": true,
+              "gates": 17406,
+              "items": 261645,
+              "messages": 810,
+              "output": "Some(((20457560920048113204324273592617128968522159587960800437913178485727049224220, 9844668062692092883528583238961430251400368845167118921827674474423091739396), (19215526711117294119110456521356191994456998250044632903506051205758485397058, 17781233417195068007283733488647599210959399969317879276364640005494464884583)))",
+              "prof": {
+                "apply": 0.2786124999999988,
+                "batch_build": 1.1690748999999971,
+                "batch_check": 3.8543033000000033,
+                "batch_run": 12.148523599999985,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 5.879278400000007,
+                "finish": 0.6827020000000003,
+                "jobs": 1393580,
+                "max_batch": 16386,
+                "signature": 0.08360480000000005,
+                "subgroup": 1.703811100000001,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 24.174799699999983,
+              "seconds_produce": 16.784340800000027,
+              "seconds_total": 41.0327732,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 71280,
+                    "items": 540,
+                    "points": 1080
+                  },
+                  "mask+CSZ": {
+                    "bytes": 38989440,
+                    "items": 87030,
+                    "points": 435150
+                  },
+                  "reveal (batched)": {
+                    "bytes": 18102880,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share (batched)": {
+                    "bytes": 4177680,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2171730
+              },
+              "transcript_message_bytes": 63513210
+            },
+            "tally_batches": {
+              "batches": 318,
+              "by_size": [
+                {
+                  "batches": 18,
+                  "jobs": 36,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0026627
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.00027479999999999996
+                },
+                {
+                  "batches": 93,
+                  "jobs": 928,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.022778599999999993
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0046062
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0122505
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1816,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0243653
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3782,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.04819799999999999
+                },
+                {
+                  "batches": 18,
+                  "jobs": 7702,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.0980218
+                },
+                {
+                  "batches": 18,
+                  "jobs": 15372,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.1895014
+                },
+                {
+                  "batches": 20,
+                  "jobs": 33698,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.42109190000000013
+                },
+                {
+                  "batches": 21,
+                  "jobs": 66836,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.8230960999999998
+                },
+                {
+                  "batches": 20,
+                  "jobs": 140150,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 1.7150688
+                },
+                {
+                  "batches": 36,
+                  "jobs": 428892,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 5.337035899999998
+                },
+                {
+                  "batches": 5,
+                  "jobs": 204800,
+                  "jobs_hi": 65535,
+                  "jobs_lo": 32768,
+                  "seconds": 2.5174627
+                }
+              ],
+              "jobs": 905112,
+              "max_batch": 40960
+            },
+            "tally_msms": {
+              "batches": 810,
+              "by_size": [
+                {
+                  "batches": 270,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00009110000000000032
+                },
+                {
+                  "batches": 200,
+                  "jobs": 1000,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.08437850000000004
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0124935
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.018650399999999998
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.024885799999999996
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.028762899999999997
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5380,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.037796100000000006
+                },
+                {
+                  "batches": 30,
+                  "jobs": 10640,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.052613900000000005
+                },
+                {
+                  "batches": 30,
+                  "jobs": 20940,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.07107469999999999
+                },
+                {
+                  "batches": 40,
+                  "jobs": 57790,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.16018049999999998
+                },
+                {
+                  "batches": 55,
+                  "jobs": 149270,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.3686047
+                },
+                {
+                  "batches": 30,
+                  "jobs": 150420,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.29922640000000006
+                },
+                {
+                  "batches": 5,
+                  "jobs": 40970,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.07047880000000001
+                },
+                {
+                  "batches": 5,
+                  "jobs": 81930,
+                  "jobs_hi": 32767,
+                  "jobs_lo": 16384,
+                  "seconds": 0.1303262
+                }
+              ],
+              "jobs": 523280,
+              "max_batch": 16386
+            },
+            "telemetry_after_replay": null,
+            "telemetry_after_tally": null,
+            "telemetry_before": null
+          },
+          {
+            "backend": "auto:4096:0",
+            "canonical_reference": false,
+            "configuration": "v9-gpu",
+            "execution_order": [
+              "v9-cpu",
+              "v9-gpu"
+            ],
+            "format": 9,
+            "independent_cpu_individual": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((9921279440336897724883099710544988638106446222057954501674872494424957030607, 15255775517508657453774168590831815886676845257378005792016833803566940283378), (15767879289248653196103386041699488250160448343648580917476915262743875568674, 15333728186100086502905451257055823676352645369335881081526244107058921124398)))",
+              "prof": {
+                "apply": 0.3066458999999985,
+                "batch_build": 0.9358830999999974,
+                "batch_check": 3.8236205999999986,
+                "batch_run": 10.726254400000002,
+                "batches": 0,
+                "cofactor_decode": 0.0,
+                "decode": 5.871111000000012,
+                "finish": 0.6848040000000002,
+                "jobs": 870300,
+                "max_batch": 0,
+                "signature": 0.0889697999999999,
+                "subgroup": 1.6864242000000005,
+                "verify_inline": 50.409824900000054
+              },
+              "seconds_total": 72.9581351
+            },
+            "initialization_seconds": 2.1e-6,
+            "oracle_agrees": true,
+            "rep": 0,
+            "replay": {
+              "accepted": true,
+              "decision": true,
+              "output": "Some(((9921279440336897724883099710544988638106446222057954501674872494424957030607, 15255775517508657453774168590831815886676845257378005792016833803566940283378), (15767879289248653196103386041699488250160448343648580917476915262743875568674, 15333728186100086502905451257055823676352645369335881081526244107058921124398)))",
+              "prof": {
+                "apply": 0.26423979999999936,
+                "batch_build": 1.157752200000002,
+                "batch_check": 3.826531999999998,
+                "batch_run": 5.697084799999985,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 5.829720399999993,
+                "finish": 0.6091778000000002,
+                "jobs": 1393580,
+                "max_batch": 16386,
+                "signature": 0.0875275000000001,
+                "subgroup": 1.6809656000000024,
+                "verify_inline": 0.0
+              },
+              "seconds_total": 17.565598
+            },
+            "replay_batches": {
+              "batches": 318,
+              "by_size": [
+                {
+                  "batches": 18,
+                  "jobs": 36,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0024471
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0003104
+                },
+                {
+                  "batches": 93,
+                  "jobs": 928,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.02405639999999999
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.005165800000000001
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0121783
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1816,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.024242300000000005
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3782,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.0484207
+                },
+                {
+                  "batches": 18,
+                  "jobs": 7702,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.096953
+                },
+                {
+                  "batches": 18,
+                  "jobs": 15372,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.18894670000000002
+                },
+                {
+                  "batches": 20,
+                  "jobs": 33698,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.4202195
+                },
+                {
+                  "batches": 21,
+                  "jobs": 66836,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.8123273999999999
+                },
+                {
+                  "batches": 20,
+                  "jobs": 140150,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.5326521000000001
+                },
+                {
+                  "batches": 36,
+                  "jobs": 428892,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 1.6015880000000002
+                },
+                {
+                  "batches": 5,
+                  "jobs": 204800,
+                  "jobs_hi": 65535,
+                  "jobs_lo": 32768,
+                  "seconds": 0.41863370000000005
+                }
+              ],
+              "jobs": 905112,
+              "max_batch": 40960
+            },
+            "replay_msms": {
+              "batches": 810,
+              "by_size": [
+                {
+                  "batches": 270,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.00011410000000000021
+                },
+                {
+                  "batches": 200,
+                  "jobs": 1000,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.08244810000000001
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.012967200000000002
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0189776
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.025829199999999993
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.028128100000000003
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5380,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.03832950000000001
+                },
+                {
+                  "batches": 30,
+                  "jobs": 10640,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.0533287
+                },
+                {
+                  "batches": 30,
+                  "jobs": 20940,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.06908360000000001
+                },
+                {
+                  "batches": 40,
+                  "jobs": 57790,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.1570827
+                },
+                {
+                  "batches": 55,
+                  "jobs": 149270,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.36954349999999997
+                },
+                {
+                  "batches": 30,
+                  "jobs": 150420,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.7032332
+                },
+                {
+                  "batches": 5,
+                  "jobs": 40970,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.1311071
+                },
+                {
+                  "batches": 5,
+                  "jobs": 81930,
+                  "jobs_hi": 32767,
+                  "jobs_lo": 16384,
+                  "seconds": 0.1745538
+                }
+              ],
+              "jobs": 523280,
+              "max_batch": 16386
+            },
+            "tally": {
+              "decision": true,
+              "gates": 17406,
+              "items": 261645,
+              "messages": 810,
+              "output": "Some(((9921279440336897724883099710544988638106446222057954501674872494424957030607, 15255775517508657453774168590831815886676845257378005792016833803566940283378), (15767879289248653196103386041699488250160448343648580917476915262743875568674, 15333728186100086502905451257055823676352645369335881081526244107058921124398)))",
+              "prof": {
+                "apply": 0.27041629999999867,
+                "batch_build": 1.190928499999994,
+                "batch_check": 3.8235026000000008,
+                "batch_run": 7.5364265,
+                "batches": 810,
+                "cofactor_decode": 0.0,
+                "decode": 5.8436416999999885,
+                "finish": 0.6051965,
+                "jobs": 1393580,
+                "max_batch": 16386,
+                "signature": 0.08406319999999992,
+                "subgroup": 1.6805016000000021,
+                "verify_inline": 0.0
+              },
+              "seconds_process": 19.432318900000016,
+              "seconds_produce": 16.690146799999983,
+              "seconds_total": 36.1947431,
+              "stream": {
+                "families": {
+                  "commit": {
+                    "bytes": 200,
+                    "items": 5,
+                    "points": 0
+                  },
+                  "linear batch proof": {
+                    "bytes": 71280,
+                    "items": 540,
+                    "points": 1080
+                  },
+                  "mask+CSZ": {
+                    "bytes": 38989440,
+                    "items": 87030,
+                    "points": 435150
+                  },
+                  "reveal (batched)": {
+                    "bytes": 18102880,
+                    "items": 87035,
+                    "points": 348130
+                  },
+                  "share (batched)": {
+                    "bytes": 4177680,
+                    "items": 87035,
+                    "points": 87035
+                  }
+                },
+                "framing_and_signature_bytes": 2171730
+              },
+              "transcript_message_bytes": 63513210
+            },
+            "tally_batches": {
+              "batches": 318,
+              "by_size": [
+                {
+                  "batches": 18,
+                  "jobs": 36,
+                  "jobs_hi": 3,
+                  "jobs_lo": 2,
+                  "seconds": 0.0025781999999999997
+                },
+                {
+                  "batches": 2,
+                  "jobs": 8,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.0002788
+                },
+                {
+                  "batches": 93,
+                  "jobs": 928,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0231497
+                },
+                {
+                  "batches": 13,
+                  "jobs": 262,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0049203
+                },
+                {
+                  "batches": 18,
+                  "jobs": 830,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.012942200000000001
+                },
+                {
+                  "batches": 18,
+                  "jobs": 1816,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.024302499999999998
+                },
+                {
+                  "batches": 18,
+                  "jobs": 3782,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.04813730000000001
+                },
+                {
+                  "batches": 18,
+                  "jobs": 7702,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.09587320000000002
+                },
+                {
+                  "batches": 18,
+                  "jobs": 15372,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.1897183
+                },
+                {
+                  "batches": 20,
+                  "jobs": 33698,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.42746009999999995
+                },
+                {
+                  "batches": 21,
+                  "jobs": 66836,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.8177985999999998
+                },
+                {
+                  "batches": 20,
+                  "jobs": 140150,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 0.9586446999999999
+                },
+                {
+                  "batches": 36,
+                  "jobs": 428892,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 2.6534647
+                },
+                {
+                  "batches": 5,
+                  "jobs": 204800,
+                  "jobs_hi": 65535,
+                  "jobs_lo": 32768,
+                  "seconds": 0.5115344000000001
+                }
+              ],
+              "jobs": 905112,
+              "max_batch": 40960
+            },
+            "tally_msms": {
+              "batches": 810,
+              "by_size": [
+                {
+                  "batches": 270,
+                  "jobs": 0,
+                  "jobs_hi": 1,
+                  "jobs_lo": 1,
+                  "seconds": 0.0001394000000000004
+                },
+                {
+                  "batches": 200,
+                  "jobs": 1000,
+                  "jobs_hi": 7,
+                  "jobs_lo": 4,
+                  "seconds": 0.08354740000000004
+                },
+                {
+                  "batches": 25,
+                  "jobs": 270,
+                  "jobs_hi": 15,
+                  "jobs_lo": 8,
+                  "seconds": 0.0123157
+                },
+                {
+                  "batches": 30,
+                  "jobs": 650,
+                  "jobs_hi": 31,
+                  "jobs_lo": 16,
+                  "seconds": 0.0185468
+                },
+                {
+                  "batches": 30,
+                  "jobs": 1330,
+                  "jobs_hi": 63,
+                  "jobs_lo": 32,
+                  "seconds": 0.0248318
+                },
+                {
+                  "batches": 30,
+                  "jobs": 2690,
+                  "jobs_hi": 127,
+                  "jobs_lo": 64,
+                  "seconds": 0.0285045
+                },
+                {
+                  "batches": 30,
+                  "jobs": 5380,
+                  "jobs_hi": 255,
+                  "jobs_lo": 128,
+                  "seconds": 0.03878410000000001
+                },
+                {
+                  "batches": 30,
+                  "jobs": 10640,
+                  "jobs_hi": 511,
+                  "jobs_lo": 256,
+                  "seconds": 0.05444569999999999
+                },
+                {
+                  "batches": 30,
+                  "jobs": 20940,
+                  "jobs_hi": 1023,
+                  "jobs_lo": 512,
+                  "seconds": 0.07184580000000002
+                },
+                {
+                  "batches": 40,
+                  "jobs": 57790,
+                  "jobs_hi": 2047,
+                  "jobs_lo": 1024,
+                  "seconds": 0.1627624
+                },
+                {
+                  "batches": 55,
+                  "jobs": 149270,
+                  "jobs_hi": 4095,
+                  "jobs_lo": 2048,
+                  "seconds": 0.369783
+                },
+                {
+                  "batches": 30,
+                  "jobs": 150420,
+                  "jobs_hi": 8191,
+                  "jobs_lo": 4096,
+                  "seconds": 1.0876822000000002
+                },
+                {
+                  "batches": 5,
+                  "jobs": 40970,
+                  "jobs_hi": 16383,
+                  "jobs_lo": 8192,
+                  "seconds": 0.0642071
+                },
+                {
+                  "batches": 5,
+                  "jobs": 81930,
+                  "jobs_hi": 32767,
+                  "jobs_lo": 16384,
+                  "seconds": 0.096443
+                }
+              ],
+              "jobs": 523280,
+              "max_batch": 16386
+            },
+            "telemetry_after_replay": {
+              "device": {
+                "compile_seconds": 0.0317496,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 202,
+                  "d2h": 0.18381080000000005,
+                  "h2d": 0.3674223999999997,
+                  "jobs": 2094324,
+                  "kernel": 7.511309500000004,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 0.10017330000000002,
+                  "unpack": 0.2574184
+                },
+                "total_mem": 6438780928
+              }
+            },
+            "telemetry_after_tally": {
+              "device": {
+                "compile_seconds": 0.0317496,
+                "compute_capability": [
+                  8,
+                  9
+                ],
+                "name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+                "times": {
+                  "batches": 101,
+                  "d2h": 0.10005540000000004,
+                  "h2d": 0.19027839999999993,
+                  "jobs": 1047162,
+                  "kernel": 4.466922800000001,
+                  "msm_buckets": 0.0,
+                  "msm_calls": 0,
+                  "msm_combine": 0.0,
+                  "msm_negated_terms": 0,
+                  "msm_peak_buffers_bytes": 0,
+                  "msm_reduce": 0.0,
+                  "msm_scatter": 0.0,
+                  "msm_short_terms": 0,
+                  "msm_signed_calls": 0,
+                  "msm_terms": 0,
+                  "msm_window": 0,
+                  "pack": 0.05245160000000001,
+                  "unpack": 0.132808
+                },
+                "total_mem": 6438780928
+              }
+            },
+            "telemetry_before": null
+          }
+        ],
+        "threshold": 64432
+      }
+    ],
+    "scope": "Engine only, genuine encrypted inputs and trustee proofs. Setup/Groth16/admission/file IO excluded. Independent CPU individual verification outside selected timings."
+  }
+}

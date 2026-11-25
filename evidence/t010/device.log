@@ -1,0 +1,11 @@
+    Finished `release` profile [optimized] target(s) in 0.28s
+     Running unittests src\lib.rs (target\release\deps\wod-39b6d7e36c915f9e.exe)
+
+running 4 tests
+test gpu::tests::actual_cuda_certified_products_match_cpu ... ok
+test gpu::tests::actual_gpu_pippenger_matches_arkworks ... ok
+test gpu::tests::actual_gpu_signed_pippenger_matches_arkworks ... ok
+test gpu::tests::actual_cuda_vectors_and_randomized_equivalence ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 63 filtered out; finished in 1.51s
+

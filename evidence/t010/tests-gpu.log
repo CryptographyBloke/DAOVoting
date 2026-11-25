@@ -1,0 +1,119 @@
+   Compiling wod v0.1.0 (C:\Users\31831\AppData\Local\Temp\Voting-T002-upstream-objects\authentic-clone)
+    Finished `release` profile [optimized] target(s) in 1m 00s
+     Running unittests src\lib.rs (target\release\deps\wod-39b6d7e36c915f9e.exe)
+
+running 67 tests
+test gpu::tests::actual_cuda_certified_products_match_cpu ... ignored, requires a real CUDA device and NVRTC
+test gpu::tests::actual_cuda_vectors_and_randomized_equivalence ... ignored, requires a real CUDA device and NVRTC
+test gpu::tests::actual_gpu_pippenger_matches_arkworks ... ignored, requires a real CUDA device and NVRTC
+test gpu::tests::actual_gpu_signed_pippenger_matches_arkworks ... ignored, requires a real CUDA device and NVRTC
+test circuit::tests::paper_figure2_example ... ok
+test bench::gpu_summary_tests::prepared_results_require_both_verifiers_and_oracle ... ok
+test evm::tests::public_event_parser_rejects_noncanonical_field_values ... ok
+test gpu::tests::kernel_constants_match_arkworks ... ok
+test evm::tests::public_event_parser_rejects_uint64_overflow ... ok
+test batch::tests::adaptive_small_batch_does_not_initialize_cuda ... ok
+test batch::tests::msm_job_lengths_are_checked ... ok
+test gpu::tests::hostile_raw_device_words_rejected_before_arithmetic ... ok
+test evm::tests::public_event_parser_rejects_truncated_frames ... ok
+test batch::tests::certified_nonmember_subgroup_job_falls_back_exactly ... ok
+test batch::tests::certified_raw_scalar_boundaries_are_reduced_not_zeroed ... ok
+test gpu::tests::pack_unpack_roundtrip ... ok
+test gpu::tests::signed_msm_recode_requires_prime_order_bases ... ok
+test group::tests::generators_valid ... ok
+test group::tests::wide_message_encoding_validates_curve_fields_and_scope ... ok
+test group::tests::point_validation_rejects_small_order ... ok
+test gpu::tests::truncated_vector_backend_is_rejected ... ok
+test batch::tests::certified_offload_detects_faulty_devices ... ok
+test group::tests::uniform_torsion_masks_the_entire_fibre_for_both_signs ... ok
+test circuit::tests::reference_schedule_preserves_dag_and_parallel_adders ... ok
+test subgroup::tests::tate_membership_matches_q_multiplication ... ok
+test circuit::tests::gate_counts_match_paper ... ok
+test gpu::tests::committed_vectors_match_cpu_reference ... ok
+test gpu::tests::secure_fibre_vectors_cover_all_rational_representatives ... ok
+test batch::tests::cpu_backend_matches_reference_ops ... ok
+test group::tests::fixed_and_window_mul_agree ... ok
+test circuit::tests::plaintext_circuit_computes_threshold ... ok
+test experiment::tests::machine_reports_standard_cargo_lock_sha256 ... ok
+test sigma::tests::dleq_roundtrip ... ok
+test sigma::tests::zkp0_roundtrip ... ok
+test gpu::tests::emulated_kernel_matches_arkworks ... ok
+test group::tests::elgamal_homomorphic ... ok
+test group::tests::cofactor_image_encoding ... ok
+test sigma::tests::cancellation_and_torsion_residuals ... ok
+test shamir::tests::threshold_decrypt_5_of_5_and_t_plus_1 ... ok
+test sigma::tests::csz_both_signs_and_forgery ... ok
+test sigma::tests::v2_zkp0_and_weighted_dleq ... ok
+test sigma::tests::v2_csz_complete_sound_and_batchable ... ok
+test transcript::tests::reader_accepts_clean_end_of_transcript ... ok
+test transcript::tests::reader_rejects_partial_frame_length_and_body ... ok
+test bench::t008_bench_tests::heterogeneous_proof_and_codec_smoke ... ok
+test sigma::tests::t009_lin_batch_complete_sound_and_bound ... ok
+test tally::tests::cold_public_tables_do_not_hold_a_lock_across_rayon_work ... ok
+test tally::tests::tampered_message_rejected ... ok
+test gpu::tests::t007_msm_vectors_match ... ok
+test tally::tests::t009_v9_compact_csz_tamper_rejected ... ok
+test tally::tests::t009_wrong_share_rejected_with_fresh_proof ... ok
+test tally::tests::v2_cross_slot_substitution_rejected ... ok
+test tdec::tests::t009_threshold_decryption_methods_complete_and_sound ... ok
+test tally::tests::small_election_circuit_n4 ... ok
+test tally::tests::single_conditional_gate_all_inputs ... ok
+test tally::tests::v2_adversarial_messages_rejected ... ok
+test ballot::tests::groth16_roundtrip_and_constraints ... ok
+test tally::tests::v2_single_gate_and_replays ... ok
+test ballot::tests::relation_satisfied_and_rejects_bad_witness ... ok
+test ballot::tests::staged_prover_proofs_verify ... ok
+test tally::tests::malicious_predecessor_tags_legacy_sign_and_secure_formats_replay ... ok
+test tally::tests::v2_election_n4_matches_v1_semantics ... ok
+test tally::tests::t009_adversarial_batched_messages_rejected ... ok
+test tally::tests::batched_verification_matches_inline_and_rejects_forgeries ... ok
+test tally::tests::t009_formats_single_gate_and_replays ... ok
+test tally::tests::t009_election_n4_all_formats_agree ... ok
+test tally::tests::schedulers_share_circuit_and_reject_invalid_proofs ... ok
+
+test result: ok. 63 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 8.24s
+
+     Running unittests src\main.rs (target\release\deps\wod-378f4526ef74d675.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\e2e.rs (target\release\deps\e2e-036c46e5fef0c348.exe)
+
+running 7 tests
+[n=8 rep=0] setup
+[n=8 rep=0] proving 8 ballots
+[n=8 rep=0] admitted: {"accepted":8,"sealed_commitment":"d64f65549ec0dbbc2a5c067028a66116bacb6d63bd0f5f53c5d709f305452886","seconds_admission":0.0781704}
+[n=8 rep=0] tally local
+[n=8 rep=0] local: tally 1.70s; verifying
+[n=8 rep=0] tally dist-rtt0
+trustee 0 done: {"id":0,"seconds_verify":1.153566299999999,"seconds_produce":0.12273409999999993,"seconds_wait":0.4642932000000007,"seconds_total":1.7406578000000001,"msgs_sent":78,"bytes_sent":133322,"entries_received":390,"bytes_received":663580,"peak_rss_bytes":19767296,"verify_backend":"inline","engine_prof":{"decode":0.28533739999999985,"cofactor_decode":0.0,"subgroup":0.0,"signature":0.018811899999999986,"verify_inline":0.7762595999999996,"batch_build":0.0,"batch_run":0.0,"batch_check":0.0,"apply":0.0702657000000001,"finish":0.0,"jobs":0,"batches":0,"max_batch":0},"device_times":null,"verification_telemetry":null}
+trustee 1 done: {"id":1,"seconds_verify":1.1525752000000005,"seconds_produce":0.12847529999999996,"seconds_wait":0.45857430000000055,"seconds_total":1.7396871,"msgs_sent":78,"bytes_sent":133314,"entries_received":390,"bytes_received":663580,"peak_rss_bytes":19931136,"verify_backend":"inline","engine_prof":{"decode":0.3094288000000002,"cofactor_decode":0.0,"subgroup":0.0,"signature":0.01938430000000001,"verify_inline":0.7539959999999998,"batch_build":0.0,"batch_run":0.0,"batch_check":0.0,"apply":0.06692960000000002,"finish":0.0,"jobs":0,"batches":0,"max_batch":0},"device_times":null,"verification_telemetry":null}
+trustee 2 done: {"id":2,"seconds_verify":1.1603257999999996,"seconds_produce":0.12416989999999996,"seconds_wait":0.45585930000000086,"seconds_total":1.7404145,"msgs_sent":78,"bytes_sent":133316,"entries_received":390,"bytes_received":663580,"peak_rss_bytes":19816448,"verify_backend":"inline","engine_prof":{"decode":0.28720120000000027,"cofactor_decode":0.0,"subgroup":0.0,"signature":0.019286499999999988,"verify_inline":0.7823347000000006,"batch_build":0.0,"batch_run":0.0,"batch_check":0.0,"apply":0.06865190000000006,"finish":0.0,"jobs":0,"batches":0,"max_batch":0},"device_times":null,"verification_telemetry":null}
+trustee 3 done: {"id":3,"seconds_verify":1.1589790999999998,"seconds_produce":0.12676259999999998,"seconds_wait":0.4549372000000006,"seconds_total":1.7407398,"msgs_sent":78,"bytes_sent":133314,"entries_received":390,"bytes_received":663580,"peak_rss_bytes":19738624,"verify_backend":"inline","engine_prof":{"decode":0.2831612999999999,"cofactor_decode":0.0,"subgroup":0.0,"signature":0.019426500000000006,"verify_inline":0.7862150000000003,"batch_build":0.0,"batch_run":0.0,"batch_check":0.0,"apply":0.06733640000000003,"finish":0.0,"jobs":0,"batches":0,"max_batch":0},"device_times":null,"verification_telemetry":null}
+trustee 4 done: {"id":4,"seconds_verify":1.1776744,"seconds_produce":0.13731439999999998,"seconds_wait":0.42506630000000034,"seconds_total":1.7401212,"msgs_sent":78,"bytes_sent":133307,"entries_received":390,"bytes_received":663580,"peak_rss_bytes":19722240,"verify_backend":"inline","engine_prof":{"decode":0.32562589999999997,"cofactor_decode":0.0,"subgroup":0.0,"signature":0.018574299999999995,"verify_inline":0.7630969000000004,"batch_build":0.0,"batch_run":0.0,"batch_check":0.0,"apply":0.06750420000000013,"finish":0.0,"jobs":0,"batches":0,"max_batch":0},"device_times":null,"verification_telemetry":null}
+[n=8 rep=0] dist-rtt0: tally 1.74s; verifying
+| n | variant | gates | depth (paper/dataflow) | proving s | admission s | gates s | release s | tally s (range) | verify s | msgs | transcript MB | accept | oracle |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 8 | dist-rtt0 | 134 | 72/25 | 11.94 | 0.08 | 1.72 | 0.01 | 1.74 (1.74–1.74) | 1.92 | 390.00 | 0.66 | true | true |
+| 8 | local | 134 | 72/25 | 11.94 | 0.08 | 1.68 | 0.02 | 1.70 (1.70–1.70) | 1.12 | 390.00 | 0.66 | true | true |
+
+test eight_voter_election_local_and_distributed ... ok
+test v2_format_end_to_end ... ok
+test secure_lift_formats_public_only_individual_replay ... ok
+test certified_offload_end_to_end ... ok
+test batched_verification_backends_end_to_end ... ok
+test paired_scheduler_public_replay_and_claim_rejection has been running for over 60 seconds
+test t009_formats_end_to_end has been running for over 60 seconds
+test paired_scheduler_public_replay_and_claim_rejection ... ok
+test t009_formats_end_to_end ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 86.47s
+
+   Doc-tests wod
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

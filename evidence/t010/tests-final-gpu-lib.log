@@ -1,0 +1,75 @@
+   Compiling wod v0.1.0 (C:\Users\31831\AppData\Local\Temp\Voting-T002-upstream-objects\authentic-clone)
+    Finished `release` profile [optimized] target(s) in 1m 34s
+     Running unittests src\lib.rs (target\release\deps\wod-39b6d7e36c915f9e.exe)
+
+running 67 tests
+test gpu::tests::actual_cuda_certified_products_match_cpu ... ignored, requires a real CUDA device and NVRTC
+test gpu::tests::actual_cuda_vectors_and_randomized_equivalence ... ignored, requires a real CUDA device and NVRTC
+test gpu::tests::actual_gpu_pippenger_matches_arkworks ... ignored, requires a real CUDA device and NVRTC
+test gpu::tests::actual_gpu_signed_pippenger_matches_arkworks ... ignored, requires a real CUDA device and NVRTC
+test evm::tests::public_event_parser_rejects_uint64_overflow ... ok
+test circuit::tests::paper_figure2_example ... ok
+test evm::tests::public_event_parser_rejects_truncated_frames ... ok
+test evm::tests::public_event_parser_rejects_noncanonical_field_values ... ok
+test batch::tests::certified_nonmember_subgroup_job_falls_back_exactly ... ok
+test batch::tests::adaptive_small_batch_does_not_initialize_cuda ... ok
+test gpu::tests::kernel_constants_match_arkworks ... ok
+test batch::tests::msm_job_lengths_are_checked ... ok
+test batch::tests::certified_raw_scalar_boundaries_are_reduced_not_zeroed ... ok
+test bench::gpu_summary_tests::prepared_results_require_both_verifiers_and_oracle ... ok
+test gpu::tests::pack_unpack_roundtrip ... ok
+test gpu::tests::hostile_raw_device_words_rejected_before_arithmetic ... ok
+test gpu::tests::signed_msm_recode_requires_prime_order_bases ... ok
+test group::tests::generators_valid ... ok
+test group::tests::wide_message_encoding_validates_curve_fields_and_scope ... ok
+test group::tests::point_validation_rejects_small_order ... ok
+test batch::tests::certified_offload_detects_faulty_devices ... ok
+test gpu::tests::truncated_vector_backend_is_rejected ... ok
+test group::tests::uniform_torsion_masks_the_entire_fibre_for_both_signs ... ok
+test circuit::tests::reference_schedule_preserves_dag_and_parallel_adders ... ok
+test gpu::tests::secure_fibre_vectors_cover_all_rational_representatives ... ok
+test subgroup::tests::tate_membership_matches_q_multiplication ... ok
+test batch::tests::cpu_backend_matches_reference_ops ... ok
+test circuit::tests::gate_counts_match_paper ... ok
+test gpu::tests::committed_vectors_match_cpu_reference ... ok
+test group::tests::fixed_and_window_mul_agree ... ok
+test group::tests::elgamal_homomorphic ... ok
+test experiment::tests::machine_reports_standard_cargo_lock_sha256 ... ok
+test sigma::tests::dleq_roundtrip ... ok
+test circuit::tests::plaintext_circuit_computes_threshold ... ok
+test gpu::tests::emulated_kernel_matches_arkworks ... ok
+test sigma::tests::zkp0_roundtrip ... ok
+test group::tests::cofactor_image_encoding ... ok
+test shamir::tests::threshold_decrypt_5_of_5_and_t_plus_1 ... ok
+test sigma::tests::cancellation_and_torsion_residuals ... ok
+test sigma::tests::csz_both_signs_and_forgery ... ok
+test sigma::tests::v2_zkp0_and_weighted_dleq ... ok
+test sigma::tests::v2_csz_complete_sound_and_batchable ... ok
+test transcript::tests::reader_accepts_clean_end_of_transcript ... ok
+test transcript::tests::reader_rejects_partial_frame_length_and_body ... ok
+test sigma::tests::t009_lin_batch_complete_sound_and_bound ... ok
+test bench::t008_bench_tests::heterogeneous_proof_and_codec_smoke ... ok
+test tally::tests::cold_public_tables_do_not_hold_a_lock_across_rayon_work ... ok
+test tally::tests::tampered_message_rejected ... ok
+test gpu::tests::t007_msm_vectors_match ... ok
+test tally::tests::t009_v9_compact_csz_tamper_rejected ... ok
+test tally::tests::t009_wrong_share_rejected_with_fresh_proof ... ok
+test tally::tests::v2_cross_slot_substitution_rejected ... ok
+test tdec::tests::t009_threshold_decryption_methods_complete_and_sound ... ok
+test tally::tests::small_election_circuit_n4 ... ok
+test tally::tests::single_conditional_gate_all_inputs ... ok
+test tally::tests::v2_adversarial_messages_rejected ... ok
+test ballot::tests::groth16_roundtrip_and_constraints ... ok
+test tally::tests::v2_single_gate_and_replays ... ok
+test ballot::tests::staged_prover_proofs_verify ... ok
+test tally::tests::malicious_predecessor_tags_legacy_sign_and_secure_formats_replay ... ok
+test ballot::tests::relation_satisfied_and_rejects_bad_witness ... ok
+test tally::tests::v2_election_n4_matches_v1_semantics ... ok
+test tally::tests::t009_adversarial_batched_messages_rejected ... ok
+test tally::tests::batched_verification_matches_inline_and_rejects_forgeries ... ok
+test tally::tests::t009_formats_single_gate_and_replays ... ok
+test tally::tests::t009_election_n4_all_formats_agree ... ok
+test tally::tests::schedulers_share_circuit_and_reject_invalid_proofs ... ok
+
+test result: ok. 63 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 11.11s
+

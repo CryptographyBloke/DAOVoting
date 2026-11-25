@@ -1,0 +1,13 @@
+{
+  "status": "complete",
+  "completed_utc": "2026-11-25T03:16:37.5795842+00:00",
+  "n": [
+    64,
+    256,
+    1024
+  ],
+  "source_dirty": false,
+  "source_revision": "baffda243b562be8ba71db139333d24f4fafef81",
+  "reps": 3,
+  "configurations": "v1-cpu,v1-tate,v1-gpu,v5-cpu,v6-cpu,v9-cpu,v9-gpu"
+}

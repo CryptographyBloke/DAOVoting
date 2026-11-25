@@ -1,0 +1,66 @@
+{
+  "task": "T010",
+  "starting_revision": "1d09d2767c1542d07f7b81819f0564c3dc630019",
+  "principal_revision": "baffda243b562be8ba71db139333d24f4fafef81",
+  "profile_revision": "4aa3e7a6edd51b277372e4b874efe46e69888402",
+  "branch": "research/t010-final-gpu-evaluation",
+  "principal_runs": 63,
+  "principal_repetitions": 3,
+  "profile_runs": 6,
+  "independent_cpu_and_reference_pass": true,
+  "data_scope": "Generated engine elections, public output and timing only. No exported full transcripts or private witnesses.",
+  "files": {
+    "analyze.py": {
+      "bytes": 4808,
+      "sha256": "516e3dff6282fa57014827d6481202c0207b84accc18369f7547a06be9da8883"
+    },
+    "device.log": {
+      "bytes": 535,
+      "sha256": "049e6676c6b3d4770ab47171c397af1490ced6f990a39dc37340eb3d22f792bb"
+    },
+    "engine_n1024.json": {
+      "bytes": 251042,
+      "sha256": "232dcdbf9a318701e858ff8812071d36a5ec765646e859c778b51204c371e19b"
+    },
+    "engine_n256.json": {
+      "bytes": 232304,
+      "sha256": "53bb22fdb6d0b09a01d0156ffb621cb679bd0ce09967ed990ea780b84576da05"
+    },
+    "engine_n64.json": {
+      "bytes": 201439,
+      "sha256": "5526914b939394c3d90bc39170bfab69ce28b771a641efaccfd7a26241359a15"
+    },
+    "initialization.json": {
+      "bytes": 9572,
+      "sha256": "314effe648488c30f655ae9f5b493c9f27229c60f0270d214e6376de95ec0675"
+    },
+    "machine.json": {
+      "bytes": 30868,
+      "sha256": "1724cb16ce5078913224eef1907d2fdacad999856f328cb3f372b14f7762470b"
+    },
+    "manifest.json": {
+      "bytes": 312,
+      "sha256": "a776c3624122ab2a77f33d5dd0ff7cd312f1b94d3505cefbcbc87424b4acd034"
+    },
+    "profile.json": {
+      "bytes": 101712,
+      "sha256": "2a12095062d317f544204bf192530b4c476dc8856d64c5b2eb39f825517cc38d"
+    },
+    "summary.json": {
+      "bytes": 112569,
+      "sha256": "b867ffb2ff0e66c77b88af3d65c2e004f19170174f3f26261315585465b1384b"
+    },
+    "tests-cpu.log": {
+      "bytes": 9399,
+      "sha256": "48df9fbeace37b68a375d946568d19289b6cb7e534dee53861645bb7e1953dcb"
+    },
+    "tests-final-gpu-lib.log": {
+      "bytes": 4944,
+      "sha256": "32031cf7837166841d08cfd7a0c6b25f22765730068f08ec8c6b386c7ab58eb4"
+    },
+    "tests-gpu.log": {
+      "bytes": 9906,
+      "sha256": "bb2b66f13e0e44ea7fc077b2bf0130c99fb8868116855661ce9931489b09b775"
+    }
+  }
+}
